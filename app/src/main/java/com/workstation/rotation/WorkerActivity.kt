@@ -171,6 +171,9 @@ class WorkerActivity : AppCompatActivity() {
         // Setup training system
         setupTrainingSystem(dialogBinding)
         
+        // Hide certification section for new workers
+        dialogBinding.cardCertification.visibility = View.GONE
+        
         // Load workstations
         viewModel.activeWorkstations.observe(this) { workstations ->
             val checkItems = workstations.map { WorkstationCheckItem(it, false) }
@@ -304,6 +307,27 @@ class WorkerActivity : AppCompatActivity() {
             etAvailabilityPercentage.setText(worker.availabilityPercentage.toString())
             etRestrictionNotes.setText(worker.restrictionNotes)
             
+            // Setup training status
+            checkboxIsTrainer.isChecked = worker.isTrainer
+            checkboxIsTrainee.isChecked = worker.isTrainee
+            checkboxIsCertified.isChecked = worker.isCertified
+            
+            // Show certification option if worker can be certified
+            if (worker.canBeCertified()) {
+                cardCertification.visibility = View.VISIBLE
+            } else {
+                cardCertification.visibility = View.GONE
+            }
+            
+            // Setup certification checkbox listener
+            checkboxIsCertified.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    // When certifying, remove trainee status
+                    checkboxIsTrainee.isChecked = false
+                    layoutTrainingDetails.visibility = View.GONE
+                }
+            }
+            
             recyclerViewWorkstations.apply {
                 layoutManager = LinearLayoutManager(this@WorkerActivity)
                 adapter = workstationAdapter
@@ -330,6 +354,9 @@ class WorkerActivity : AppCompatActivity() {
                 val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
                 val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
                 val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
+                val isTrainer = dialogBinding.checkboxIsTrainer.isChecked
+                val isTrainee = dialogBinding.checkboxIsTrainee.isChecked
+                val isCertified = dialogBinding.checkboxIsCertified.isChecked
                 
                 if (name.isNotEmpty()) {
                     val selectedWorkstations = workstationAdapter.currentList
@@ -337,15 +364,25 @@ class WorkerActivity : AppCompatActivity() {
                         .map { it.workstation.id }
                     
                     lifecycleScope.launch {
-                        viewModel.updateWorkerWithWorkstations(
-                            worker.copy(
-                                name = name, 
-                                email = email,
-                                availabilityPercentage = availability,
-                                restrictionNotes = restrictionNotes
-                            ),
-                            selectedWorkstations
+                        val updatedWorker = worker.copy(
+                            name = name, 
+                            email = email,
+                            availabilityPercentage = availability,
+                            restrictionNotes = restrictionNotes,
+                            isTrainer = isTrainer,
+                            isTrainee = isTrainee,
+                            isCertified = isCertified,
+                            certificationDate = if (isCertified && !worker.isCertified) {
+                                System.currentTimeMillis()
+                            } else {
+                                worker.certificationDate
+                            },
+                            // Clear training data if certified
+                            trainerId = if (isCertified) null else worker.trainerId,
+                            trainingWorkstationId = if (isCertified) null else worker.trainingWorkstationId
                         )
+                        
+                        viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
                     }
                 }
             }

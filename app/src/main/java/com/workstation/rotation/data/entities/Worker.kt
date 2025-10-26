@@ -44,6 +44,15 @@ import androidx.room.PrimaryKey
  *   • Estación específica solicitada para el entrenamiento
  *   • Entrenador y entrenado se asignan SIEMPRE a esta estación
  * 
+ * 🏆 SISTEMA DE CERTIFICACIÓN:
+ * @property isCertified - Indica si el trabajador completó su entrenamiento y fue certificado
+ *   • Trabajadores certificados pueden rotar libremente
+ *   • Se muestran con icono 🏆
+ * 
+ * @property certificationDate - Fecha de certificación (timestamp)
+ *   • Registro histórico de cuándo se completó el entrenamiento
+ *   • Útil para reportes y seguimiento de progreso
+ * 
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
  * 🔄 COMPORTAMIENTO EN ROTACIONES:
  * 
@@ -67,6 +76,8 @@ data class Worker(
     val trainerId: Long? = null,
     val trainingWorkstationId: Long? = null,
     val isActive: Boolean = true,
+    val isCertified: Boolean = false,
+    val certificationDate: Long? = null,
     // Campos para seguimiento de rotación
     val currentWorkstationId: Long? = null,
     val rotationsInCurrentStation: Int = 0,
@@ -79,6 +90,7 @@ data class Worker(
         val status = when {
             isTrainer -> " 👨‍🏫"
             isTrainee -> " 🎯"
+            isCertified -> " 🏆"
             else -> ""
         }
         return "$name$status"
@@ -105,6 +117,13 @@ data class Worker(
      */
     fun isTrainedWorker(): Boolean {
         return !isTrainer && !isTrainee
+    }
+    
+    /**
+     * Checks if this worker can be certified (was in training but not certified yet).
+     */
+    fun canBeCertified(): Boolean {
+        return !isTrainee && !isCertified && trainerId != null
     }
     
     /**
