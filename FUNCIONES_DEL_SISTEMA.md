@@ -304,8 +304,9 @@ WorkerWorkstation (Relaciones)
 ## 👨‍💻 CRÉDITOS
 
 **Desarrollado por:** Brandon Josué Hidalgo Paz  
-**Versión:** Sistema de Rotación Inteligente v2.0  
-**Fecha:** 2024  
+**Versión:** Sistema de Rotación Inteligente v2.0.0  
+**Fecha:** Octubre 2024  
+**Código de Versión:** 2  
 
 ---
 

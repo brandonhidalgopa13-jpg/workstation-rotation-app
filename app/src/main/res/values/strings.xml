@@ -30,4 +30,9 @@
     <string name="watermark_creator_short">Brandon J. Hidalgo Paz</string>
     <string name="watermark_icon_dev">💻</string>
     <string name="watermark_icon_gear">⚙️</string>
+    
+    <!-- Información de versión -->
+    <string name="app_version">v2.0.0</string>
+    <string name="app_version_full">Sistema de Rotación Inteligente v2.0.0</string>
+    <string name="version_info">Versión 2.0.0 - Octubre 2024</string>
 </resources>

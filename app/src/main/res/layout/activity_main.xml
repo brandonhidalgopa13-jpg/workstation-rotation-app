@@ -224,29 +224,46 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Marca de agua del creador -->
+    <!-- Marca de agua del creador y versión -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:gravity="center"
         android:padding="8dp"
         android:alpha="0.6">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/watermark_icon_dev"
-            android:textSize="12sp"
-            android:layout_marginEnd="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/watermark_icon_dev"
+                android:textSize="12sp"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/watermark_creator_full"
+                android:textSize="11sp"
+                android:textColor="@color/text_secondary"
+                android:textStyle="italic"
+                android:fontFamily="sans-serif-light" />
+
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/watermark_creator_full"
-            android:textSize="11sp"
+            android:text="@string/version_info"
+            android:textSize="10sp"
             android:textColor="@color/text_secondary"
-            android:textStyle="italic"
+            android:layout_marginTop="2dp"
             android:fontFamily="sans-serif-light" />
 
     </LinearLayout>

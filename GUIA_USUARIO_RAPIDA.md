@@ -136,4 +136,4 @@ Con esta configuración básica ya puedes:
 
 ---
 
-*Desarrollado por Brandon Josué Hidalgo Paz - Sistema de Rotación Inteligente v2.0*
+*Desarrollado por Brandon Josué Hidalgo Paz - Sistema de Rotación Inteligente v2.0.0*

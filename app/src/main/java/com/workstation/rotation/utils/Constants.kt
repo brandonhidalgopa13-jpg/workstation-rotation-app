@@ -47,4 +47,11 @@ object Constants {
     const val COLOR_HIGH_AVAILABILITY = "#FF018786"
     const val COLOR_MEDIUM_AVAILABILITY = "#FFFF9800"
     const val COLOR_LOW_AVAILABILITY = "#FFF44336"
+    
+    // App version information
+    const val APP_VERSION = "2.0.0"
+    const val APP_VERSION_CODE = 2
+    const val APP_NAME = "Sistema de Rotación Inteligente"
+    const val DEVELOPER_NAME = "Brandon Josué Hidalgo Paz"
+    const val RELEASE_DATE = "Octubre 2024"
 }
