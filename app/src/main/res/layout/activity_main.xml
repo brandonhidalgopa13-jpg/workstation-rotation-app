@@ -1,443 +1,272 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
-
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@android:color/white">
 
+    <!-- Header Elegante -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/header_gradient"
-        android:padding="24dp"
-        android:layout_marginBottom="24dp">
+        android:background="@drawable/gradient_primary"
+        android:padding="32dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔄"
+            android:textSize="48sp"
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🏭 Rotación de Estaciones"
-            android:textSize="28sp"
+            android:text="Sistema de Rotación"
+            android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="@color/white"
-            android:gravity="center" />
+            android:textColor="@android:color/white"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Gestión inteligente de personal y rotaciones"
+            android:text="Gestión inteligente de personal"
             android:textSize="16sp"
-            android:textColor="@color/white"
+            android:textColor="@android:color/white"
             android:alpha="0.9"
-            android:gravity="center"
-            android:layout_marginTop="8dp" />
+            android:gravity="center" />
 
     </LinearLayout>
 
-    <com.google.android.material.card.MaterialCardView
-        style="@style/CardStyle"
+    <!-- Contenido Principal -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
 
-        <LinearLayout
+        <!-- Estaciones de Trabajo -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="20dp"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@android:color/white">
 
-            <LinearLayout
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="@drawable/icon_background_blue"
-                android:gravity="center"
-                android:layout_marginEnd="16dp">
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_workstation"
-                    app:tint="@color/white" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Estaciones de Trabajo"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Crea y gestiona las estaciones donde trabajarán los empleados. Define capacidades y prioridades."
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginTop="4dp" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnWorkstations"
-                style="@style/SecondaryButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Abrir" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        style="@style/CardStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="20dp"
-            android:gravity="center_vertical">
-
-            <LinearLayout
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="@drawable/icon_background_orange"
-                android:gravity="center"
-                android:layout_marginEnd="16dp">
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_worker"
-                    app:tint="@color/white" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Trabajadores"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Registra empleados, asigna estaciones y configura entrenamiento. Define disponibilidad y restricciones."
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginTop="4dp" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnWorkers"
-                style="@style/SecondaryButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Abrir" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        style="@style/CardStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="20dp"
-            android:gravity="center_vertical">
-
-            <LinearLayout
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:background="@drawable/icon_background_green"
-                android:gravity="center"
-                android:layout_marginEnd="16dp">
-
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_rotation"
-                    app:tint="@color/white" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Sistema de Rotación"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Genera rotaciones automáticas considerando entrenamiento, disponibilidad y prioridades de estaciones."
-                    android:textSize="14sp"
-                    android:textColor="@color/text_secondary"
-                    android:layout_marginTop="4dp" />
-
-            </LinearLayout>
-
-            <Button
-                android:id="@+id/btnRotation"
-                style="@style/PrimaryButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Generar" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Sección de Guía Completa -->
-    <com.google.android.material.card.MaterialCardView
-        style="@style/CardStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        app:cardBackgroundColor="@color/info_background">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <!-- Header de la Guía -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:padding="24dp"
+                android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="📚"
-                    android:textSize="24sp"
-                    android:layout_marginEnd="12dp" />
+                <LinearLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/icon_background_blue"
+                    android:gravity="center"
+                    android:layout_marginEnd="20dp">
 
-                <TextView
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🏭"
+                        android:textSize="24sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Guía Rápida de Uso"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_primary" />
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Estaciones de Trabajo"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Gestiona estaciones y capacidades"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnWorkstations"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/primary_blue" />
 
             </LinearLayout>
 
-            <!-- Paso 1: Estaciones -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/rounded_border"
-                android:padding="16dp"
-                android:layout_marginBottom="12dp">
+        </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="1️⃣ Crear Estaciones de Trabajo"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/primary_blue"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="• Toca 'Estaciones de Trabajo' arriba\n• Presiona el botón '+' para agregar\n• Completa: nombre, trabajadores necesarios\n• Marca 'Prioritaria' si es área crítica\n• Crea 3-5 estaciones mínimo"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_primary"
-                    android:lineSpacingExtra="2dp" />
-
-            </LinearLayout>
-
-            <!-- Paso 2: Trabajadores -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/rounded_border"
-                android:padding="16dp"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="2️⃣ Registrar Trabajadores"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/accent_orange"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="• Toca 'Trabajadores' arriba\n• Presiona el botón '+' para agregar\n• Completa: nombre, email, disponibilidad\n• ⚠️ IMPORTANTE: Marca las estaciones donde puede trabajar\n• Configura entrenamiento si es necesario\n• Crea 5-10 trabajadores mínimo"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_primary"
-                    android:lineSpacingExtra="2dp" />
-
-            </LinearLayout>
-
-            <!-- Paso 3: Rotación -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/rounded_border"
-                android:padding="16dp"
-                android:layout_marginBottom="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="3️⃣ Generar Rotación"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/accent_green"
-                    android:layout_marginBottom="8dp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="• Toca 'Sistema de Rotación' arriba\n• Presiona 'Generar Rotación'\n• Revisa la tabla de asignaciones\n• Usa 'Limpiar' para generar nueva rotación\n• ¡Listo! El sistema asigna automáticamente"
-                    android:textSize="14sp"
-                    android:textColor="@color/text_primary"
-                    android:lineSpacingExtra="2dp" />
-
-            </LinearLayout>
-
-            <!-- Funciones Avanzadas -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="🎓 Funciones Avanzadas"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="• Entrenamiento: Marca trabajadores como entrenadores o en entrenamiento\n• Certificación: Edita trabajadores completados para certificarlos\n• Prioridades: Estaciones prioritarias se llenan primero\n• Disponibilidad: 100% = siempre, 80% = reducida\n• Restricciones: Trabajadores con limitaciones se mantienen en su estación"
-                android:textSize="13sp"
-                android:textColor="@color/text_secondary"
-                android:lineSpacingExtra="2dp"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Consejos -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="💡 Consejos Importantes"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="• Sin estaciones asignadas = trabajador NO aparece en rotaciones\n• Crea mínimo 3 estaciones y 5 trabajadores\n• Usa estaciones prioritarias para áreas críticas\n• Varía disponibilidades para mayor realismo\n• El sistema considera automáticamente entrenamiento y restricciones"
-                android:textSize="13sp"
-                android:textColor="@color/text_secondary"
-                android:lineSpacingExtra="2dp" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Marca de agua del creador y versión -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:padding="8dp"
-        android:alpha="0.6">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
+        <!-- Trabajadores -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@android:color/white">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/watermark_icon_dev"
-                android:textSize="12sp"
-                android:layout_marginEnd="4dp" />
+                android:orientation="horizontal"
+                android:padding="24dp"
+                android:gravity="center_vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/watermark_creator_full"
-                android:textSize="11sp"
-                android:textColor="@color/text_secondary"
-                android:textStyle="italic"
-                android:fontFamily="sans-serif-light" />
+                <LinearLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/icon_background_orange"
+                    android:gravity="center"
+                    android:layout_marginEnd="20dp">
 
-        </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="👥"
+                        android:textSize="24sp" />
 
-        <TextView
-            android:layout_width="wrap_content"
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Trabajadores"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Administra personal y disponibilidad"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnWorkers"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/accent_orange" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Sistema de Rotación -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/version_info"
-            android:textSize="10sp"
-            android:textColor="@color/text_secondary"
-            android:layout_marginTop="2dp"
-            android:fontFamily="sans-serif-light" />
+            android:layout_marginBottom="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="@android:color/white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="24dp"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/icon_background_green"
+                    android:gravity="center"
+                    android:layout_marginEnd="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔄"
+                        android:textSize="24sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Sistema de Rotación"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Genera rotaciones automáticas"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRotation"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Generar"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/accent_green" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 
-</LinearLayout>
+    <!-- Footer Minimalista -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/watermark_creator_full"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:padding="16dp"
+        android:alpha="0.7" />
 
-</ScrollView>
+</LinearLayout>
