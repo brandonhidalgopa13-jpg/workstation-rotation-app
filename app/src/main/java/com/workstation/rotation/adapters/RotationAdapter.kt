@@ -31,6 +31,15 @@ class RotationAdapter : ListAdapter<RotationItem, RotationAdapter.RotationViewHo
                 tvWorkerName.text = rotationItem.workerName
                 tvCurrentWorkstation.text = rotationItem.currentWorkstation
                 tvNextWorkstation.text = rotationItem.nextWorkstation
+                
+                // Show capacity info if it's a priority assignment or capacity is managed
+                if (rotationItem.isPriorityAssignment || 
+                    (rotationItem.currentWorkstation.contains("/") && rotationItem.nextWorkstation.contains("/"))) {
+                    tvCapacityInfo.visibility = android.view.View.VISIBLE
+                    tvCapacityInfo.text = "✅ Asignación inteligente - Capacidad controlada"
+                } else {
+                    tvCapacityInfo.visibility = android.view.View.GONE
+                }
             }
         }
     }

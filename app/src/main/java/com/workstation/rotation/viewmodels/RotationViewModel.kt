@@ -52,64 +52,122 @@ class RotationViewModel(
                 return false
             }
             
-            // Generate rotation with priority logic
+            // Generate intelligent rotation with capacity control
             val rotationItems = mutableListOf<RotationItem>()
             
-            // First, handle priority workstations
-            val priorityWorkstations = allWorkstations.filter { it.isPriority }
-            val assignedToPriority = mutableSetOf<Long>() // Track workers assigned to priority stations
+            // Track current assignments per workstation
+            val currentAssignments = mutableMapOf<Long, MutableList<Worker>>()
+            val nextAssignments = mutableMapOf<Long, MutableList<Worker>>()
             
-            // Assign exact number of workers to priority stations
+            // Initialize assignment tracking
+            allWorkstations.forEach { station ->
+                currentAssignments[station.id] = mutableListOf()
+                nextAssignments[station.id] = mutableListOf()
+            }
+            
+            // Separate priority and normal workstations
+            val priorityWorkstations = allWorkstations.filter { it.isPriority }
+            val normalWorkstations = allWorkstations.filter { !it.isPriority }
+            
+            // Phase 1: Assign workers to PRIORITY workstations first (current positions)
             for (priorityStation in priorityWorkstations) {
                 val availableWorkers = eligibleWorkers.filter { worker ->
-                    !assignedToPriority.contains(worker.id) &&
-                    workerDao.getWorkerWorkstationIds(worker.id).contains(priorityStation.id)
+                    workerDao.getWorkerWorkstationIds(worker.id).contains(priorityStation.id) &&
+                    currentAssignments.values.none { it.contains(worker) }
                 }
                 
                 val workersToAssign = minOf(priorityStation.requiredWorkers, availableWorkers.size)
                 
                 for (i in 0 until workersToAssign) {
-                    val worker = availableWorkers[i]
-                    assignedToPriority.add(worker.id)
-                    
-                    val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
-                    val workerWorkstations = allWorkstations.filter { it.id in workerWorkstationIds }
-                    val nextStation = workerWorkstations.find { it.id != priorityStation.id } ?: priorityStation
-                    
-                    val currentInfo = "${priorityStation.name} (${priorityStation.requiredWorkers} req.) ⭐"
-                    val nextInfo = "${nextStation.name} (${nextStation.requiredWorkers} req.)"
-                    
-                    rotationItems.add(
-                        RotationItem(
-                            workerName = "${worker.name} [PRIORITARIO]",
-                            currentWorkstation = currentInfo,
-                            nextWorkstation = nextInfo,
-                            rotationOrder = rotationItems.size + 1
-                        )
-                    )
+                    currentAssignments[priorityStation.id]?.add(availableWorkers[i])
                 }
             }
             
-            // Then handle remaining workers normally
-            val remainingWorkers = eligibleWorkers.filter { !assignedToPriority.contains(it.id) }
+            // Phase 2: Assign remaining workers to normal workstations (current positions)
+            val unassignedWorkers = eligibleWorkers.filter { worker ->
+                currentAssignments.values.none { it.contains(worker) }
+            }
             
-            for ((index, worker) in remainingWorkers.withIndex()) {
+            for (worker in unassignedWorkers) {
                 val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
-                val workerWorkstations = allWorkstations.filter { it.id in workerWorkstationIds }
+                val availableStations = normalWorkstations.filter { station ->
+                    station.id in workerWorkstationIds &&
+                    (currentAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                }
                 
-                if (workerWorkstations.isNotEmpty()) {
-                    val currentIndex = index % workerWorkstations.size
-                    val nextIndex = (currentIndex + 1) % workerWorkstations.size
+                if (availableStations.isNotEmpty()) {
+                    // Assign to station with least workers
+                    val targetStation = availableStations.minByOrNull { 
+                        currentAssignments[it.id]?.size ?: 0 
+                    }
+                    targetStation?.let { station ->
+                        currentAssignments[station.id]?.add(worker)
+                    }
+                }
+            }
+            
+            // Phase 3: Generate next rotation positions
+            // Priority stations maintain their required workers
+            for (priorityStation in priorityWorkstations) {
+                val currentWorkers = currentAssignments[priorityStation.id] ?: emptyList()
+                
+                for (worker in currentWorkers) {
+                    val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    val otherStations = allWorkstations.filter { 
+                        it.id in workerWorkstationIds && it.id != priorityStation.id 
+                    }
                     
-                    val currentWorkstation = workerWorkstations[currentIndex]
-                    val nextWorkstation = workerWorkstations[nextIndex]
+                    // Find next available station with capacity
+                    val nextStation = otherStations.find { station ->
+                        (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                    } ?: priorityStation // Stay in same station if no capacity elsewhere
                     
-                    val currentInfo = "${currentWorkstation.name} (${currentWorkstation.requiredWorkers} req.)"
-                    val nextInfo = "${nextWorkstation.name} (${nextWorkstation.requiredWorkers} req.)"
+                    nextAssignments[nextStation.id]?.add(worker)
+                }
+            }
+            
+            // Normal stations rotate workers
+            for (normalStation in normalWorkstations) {
+                val currentWorkers = currentAssignments[normalStation.id] ?: emptyList()
+                
+                for (worker in currentWorkers) {
+                    val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    val availableStations = allWorkstations.filter { station ->
+                        station.id in workerWorkstationIds && 
+                        station.id != normalStation.id &&
+                        (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                    }
+                    
+                    val nextStation = availableStations.firstOrNull() ?: normalStation
+                    nextAssignments[nextStation.id]?.add(worker)
+                }
+            }
+            
+            // Phase 4: Create rotation items
+            for (station in allWorkstations) {
+                val currentWorkers = currentAssignments[station.id] ?: emptyList()
+                
+                for (worker in currentWorkers) {
+                    // Find where this worker goes next
+                    val nextStation = nextAssignments.entries.find { entry ->
+                        entry.value.contains(worker)
+                    }?.let { entry ->
+                        allWorkstations.find { it.id == entry.key }
+                    } ?: station
+                    
+                    val isPriorityWorker = station.isPriority
+                    val workerLabel = if (isPriorityWorker) "${worker.name} [PRIORITARIO]" else worker.name
+                    
+                    val currentInfo = "${station.name} (${currentWorkers.size}/${station.requiredWorkers})" + 
+                                    if (station.isPriority) " ⭐" else ""
+                    
+                    val nextWorkerCount = nextAssignments[nextStation.id]?.size ?: 0
+                    val nextInfo = "${nextStation.name} (${nextWorkerCount}/${nextStation.requiredWorkers})" +
+                                  if (nextStation.isPriority) " ⭐" else ""
                     
                     rotationItems.add(
                         RotationItem(
-                            workerName = worker.name,
+                            workerName = workerLabel,
                             currentWorkstation = currentInfo,
                             nextWorkstation = nextInfo,
                             rotationOrder = rotationItems.size + 1
@@ -118,7 +176,7 @@ class RotationViewModel(
                 }
             }
             
-            _rotationItems.value = rotationItems
+            _rotationItems.value = rotationItems.sortedBy { it.rotationOrder }
             rotationItems.isNotEmpty()
             
         } catch (e: Exception) {

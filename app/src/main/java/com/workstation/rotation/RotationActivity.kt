@@ -65,7 +65,7 @@ class RotationActivity : AppCompatActivity() {
                         val message = if (count == 0) {
                             "No hay trabajadores con estaciones asignadas. Agrega trabajadores y asigna estaciones primero."
                         } else {
-                            "No se pudo generar la rotación. Verifica que haya estaciones activas."
+                            "No se pudo generar la rotación. Verifica que haya estaciones activas y capacidad suficiente."
                         }
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
                     }
@@ -97,8 +97,8 @@ class RotationActivity : AppCompatActivity() {
             try {
                 viewModel.updateEligibleWorkersCount()
                 val count = viewModel.getEligibleWorkersCount()
-                binding.tvRotationInfo.text = "Trabajadores elegibles para rotación: $count " +
-                        "(Solo aquellos con estaciones asignadas)"
+                binding.tvRotationInfo.text = "Trabajadores elegibles: $count | " +
+                        "Rotación inteligente con control de capacidad y prioridades"
             } catch (e: Exception) {
                 binding.tvRotationInfo.text = "Error al contar trabajadores elegibles"
             }

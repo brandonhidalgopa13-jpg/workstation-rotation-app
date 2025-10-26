@@ -49,7 +49,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="De: "
+                    android:text="Actual: "
                     android:textSize="14sp"
                     android:textColor="@android:color/darker_gray" />
 
@@ -58,7 +58,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Estación A"
+                    android:text="Estación A (2/3)"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/purple_700" />
@@ -74,7 +74,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="A: "
+                    android:text="Siguiente: "
                     android:textSize="14sp"
                     android:textColor="@android:color/darker_gray" />
 
@@ -83,12 +83,22 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Estación B"
+                    android:text="Estación B (1/2)"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:textColor="@color/teal_700" />
 
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvCapacityInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✅ Capacidad respetada"
+                android:textSize="12sp"
+                android:textColor="@color/teal_700"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
 
         </LinearLayout>
 
