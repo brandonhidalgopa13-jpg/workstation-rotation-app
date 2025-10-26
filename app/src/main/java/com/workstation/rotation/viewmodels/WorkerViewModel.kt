@@ -69,7 +69,7 @@ class WorkerViewModel(
         val worker = workerDao.getWorkerById(workerId)
         worker?.let {
             val certifiedWorker = it.copy(
-                isInTraining = false,
+                isTrainee = false,
                 trainerId = null,
                 trainingWorkstationId = null
             )
@@ -81,7 +81,7 @@ class WorkerViewModel(
      * Obtiene todos los trabajadores que están en entrenamiento.
      */
     suspend fun getWorkersInTraining(): List<Worker> {
-        return workerDao.getAllWorkers().first().filter { it.isInTraining && it.isActive }
+        return workerDao.getAllWorkers().first().filter { it.isTrainee && it.isActive }
     }
 }
 
