@@ -164,7 +164,8 @@
     <com.google.android.material.card.MaterialCardView
         style="@style/CardStyle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -222,5 +223,32 @@
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Marca de agua del creador -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="8dp"
+        android:alpha="0.6">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watermark_icon_dev"
+            android:textSize="12sp"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watermark_creator_full"
+            android:textSize="11sp"
+            android:textColor="@color/text_secondary"
+            android:textStyle="italic"
+            android:fontFamily="sans-serif-light" />
+
+    </LinearLayout>
 
 </LinearLayout>

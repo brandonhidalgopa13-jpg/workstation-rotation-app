@@ -24,4 +24,10 @@
     <string name="clear_rotation">Limpiar</string>
     <string name="rotation_generated">Rotación generada exitosamente</string>
     <string name="no_eligible_workers">No hay trabajadores elegibles para rotación</string>
+    
+    <!-- Marca de agua del creador -->
+    <string name="watermark_creator_full">Desarrollado por Brandon Josué Hidalgo Paz</string>
+    <string name="watermark_creator_short">Brandon J. Hidalgo Paz</string>
+    <string name="watermark_icon_dev">💻</string>
+    <string name="watermark_icon_gear">⚙️</string>
 </resources>
