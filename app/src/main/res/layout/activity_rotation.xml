@@ -22,20 +22,21 @@
 
         <Button
             android:id="@+id/btnGenerateRotation"
+            style="@style/PrimaryButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Generar Rotación"
+            android:text="🔄 Generar Rotación"
             android:layout_marginEnd="8dp" />
 
         <Button
             android:id="@+id/btnClearRotation"
+            style="@style/SecondaryButtonStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Limpiar"
-            android:layout_marginStart="8dp"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
+            android:text="🗑️ Limpiar"
+            android:layout_marginStart="8dp" />
 
     </LinearLayout>
 

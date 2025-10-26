@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/CardStyle"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_margin="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <TextView
             android:id="@+id/tvRotationOrder"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:text="1"
-            android:textSize="16sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center"
-            android:background="@drawable/circle_background"
+            android:background="@drawable/rotation_number_background"
             android:textColor="@android:color/white"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="20dp"
             android:layout_gravity="center_vertical" />
 
         <LinearLayout
