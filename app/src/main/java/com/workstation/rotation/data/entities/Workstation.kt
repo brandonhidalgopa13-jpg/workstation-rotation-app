@@ -8,6 +8,6 @@ data class Workstation(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
-    val description: String = "",
+    val requiredWorkers: Int = 1,
     val isActive: Boolean = true
 )

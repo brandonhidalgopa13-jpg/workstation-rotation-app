@@ -23,11 +23,12 @@
         android:layout_height="wrap_content">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etWorkstationDescription"
+            android:id="@+id/etRequiredWorkers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Descripción (opcional)"
-            android:minLines="2" />
+            android:hint="Trabajadores necesarios"
+            android:inputType="number"
+            android:text="1" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

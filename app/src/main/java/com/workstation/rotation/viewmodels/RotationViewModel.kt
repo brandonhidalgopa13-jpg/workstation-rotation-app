@@ -67,11 +67,15 @@ class RotationViewModel(
                     val currentWorkstation = workerWorkstations[currentIndex]
                     val nextWorkstation = workerWorkstations[nextIndex]
                     
+                    // Create rotation info with worker requirements
+                    val currentInfo = "${currentWorkstation.name} (${currentWorkstation.requiredWorkers} trabajadores)"
+                    val nextInfo = "${nextWorkstation.name} (${nextWorkstation.requiredWorkers} trabajadores)"
+                    
                     rotationItems.add(
                         RotationItem(
                             workerName = worker.name,
-                            currentWorkstation = currentWorkstation.name,
-                            nextWorkstation = nextWorkstation.name,
+                            currentWorkstation = currentInfo,
+                            nextWorkstation = nextInfo,
                             rotationOrder = index + 1
                         )
                     )

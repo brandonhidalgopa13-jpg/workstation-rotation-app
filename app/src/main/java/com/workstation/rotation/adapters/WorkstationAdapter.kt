@@ -31,7 +31,7 @@ class WorkstationAdapter(
         fun bind(workstation: Workstation) {
             binding.apply {
                 tvWorkstationName.text = workstation.name
-                tvWorkstationDescription.text = workstation.description
+                tvRequiredWorkers.text = "Trabajadores necesarios: ${workstation.requiredWorkers}"
                 switchActive.isChecked = workstation.isActive
                 
                 switchActive.setOnCheckedChangeListener { _, isChecked ->

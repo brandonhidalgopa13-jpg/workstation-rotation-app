@@ -72,19 +72,20 @@ class WorkstationActivity : AppCompatActivity() {
     private fun showAddDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
-        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationDescription)
+        val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
         
         AlertDialog.Builder(this)
             .setTitle("Agregar Estación de Trabajo")
             .setView(dialogView)
             .setPositiveButton("Guardar") { _, _ ->
                 val name = etName.text.toString().trim()
-                val description = etDescription.text.toString().trim()
+                val requiredWorkersText = etRequiredWorkers.text.toString().trim()
+                val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
                 
-                if (name.isNotEmpty()) {
+                if (name.isNotEmpty() && requiredWorkers > 0) {
                     lifecycleScope.launch {
                         viewModel.insertWorkstation(
-                            Workstation(name = name, description = description)
+                            Workstation(name = name, requiredWorkers = requiredWorkers)
                         )
                     }
                 }
@@ -96,22 +97,23 @@ class WorkstationActivity : AppCompatActivity() {
     private fun showEditDialog(workstation: Workstation) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
-        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationDescription)
+        val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
         
         etName.setText(workstation.name)
-        etDescription.setText(workstation.description)
+        etRequiredWorkers.setText(workstation.requiredWorkers.toString())
         
         AlertDialog.Builder(this)
             .setTitle("Editar Estación de Trabajo")
             .setView(dialogView)
             .setPositiveButton("Guardar") { _, _ ->
                 val name = etName.text.toString().trim()
-                val description = etDescription.text.toString().trim()
+                val requiredWorkersText = etRequiredWorkers.text.toString().trim()
+                val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
                 
-                if (name.isNotEmpty()) {
+                if (name.isNotEmpty() && requiredWorkers > 0) {
                     lifecycleScope.launch {
                         viewModel.updateWorkstation(
-                            workstation.copy(name = name, description = description)
+                            workstation.copy(name = name, requiredWorkers = requiredWorkers)
                         )
                     }
                 }

@@ -12,7 +12,7 @@ import com.workstation.rotation.data.entities.WorkerWorkstation
 
 @Database(
     entities = [Worker::class, Workstation::class, WorkerWorkstation::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -30,7 +30,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "workstation_rotation_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() // Para desarrollo - recreará la DB
+                .build()
                 INSTANCE = instance
                 instance
             }

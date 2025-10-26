@@ -12,7 +12,7 @@
     <string name="cancel">Cancelar</string>
     <string name="delete">Eliminar</string>
     <string name="name">Nombre</string>
-    <string name="description">Descripción</string>
+    <string name="required_workers">Trabajadores Necesarios</string>
     <string name="email">Email</string>
     <string name="active">Activo</string>
     <string name="inactive">Inactivo</string>
