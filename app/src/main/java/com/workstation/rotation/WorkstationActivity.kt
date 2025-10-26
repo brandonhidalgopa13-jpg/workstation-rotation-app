@@ -79,42 +79,81 @@ class WorkstationActivity : AppCompatActivity() {
         val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
         val checkboxPriority = dialogView.findViewById<CheckBox>(R.id.checkboxPriority)
         
-        AlertDialog.Builder(this)
+        // Set default value for required workers
+        etRequiredWorkers.setText(com.workstation.rotation.utils.Constants.DEFAULT_REQUIRED_WORKERS.toString())
+        
+        // Add real-time validation
+        setupRealTimeValidation(etName, etRequiredWorkers)
+        
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Agregar Estación de Trabajo")
             .setView(dialogView)
-            .setPositiveButton("Guardar") { _, _ ->
-                handleWorkstationSave(etName, etRequiredWorkers, checkboxPriority, null)
-            }
+            .setPositiveButton("Guardar", null) // Set to null initially
             .setNegativeButton("Cancelar", null)
-            .show()
+            .create()
+        
+        dialog.show()
+        
+        // Override the positive button to add validation
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            if (validateAndSaveWorkstation(etName, etRequiredWorkers, checkboxPriority, null)) {
+                dialog.dismiss()
+            }
+        }
     }
     
     /**
-     * Handles saving workstation data with proper validation.
+     * Validates input and saves workstation data.
+     * @return true if validation passed and save was attempted, false otherwise
      */
-    private fun handleWorkstationSave(
+    private fun validateAndSaveWorkstation(
         etName: TextInputEditText,
         etRequiredWorkers: TextInputEditText,
         checkboxPriority: CheckBox,
         existingWorkstation: Workstation?
-    ) {
+    ): Boolean {
         val name = etName.text.toString().trim()
         val requiredWorkersText = etRequiredWorkers.text.toString().trim()
-        val requiredWorkers = requiredWorkersText.toIntOrNull()?.coerceIn(1, 50) ?: 1
+        val requiredWorkers = requiredWorkersText.toIntOrNull()?.coerceIn(
+            com.workstation.rotation.utils.Constants.MIN_REQUIRED_WORKERS,
+            com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS
+        ) ?: com.workstation.rotation.utils.Constants.DEFAULT_REQUIRED_WORKERS
         val isPriority = checkboxPriority.isChecked
+        
+        // Clear previous errors
+        etName.error = null
+        etRequiredWorkers.error = null
         
         when {
             name.isEmpty() -> {
                 etName.error = "El nombre es requerido"
-                return
+                etName.requestFocus()
+                return false
             }
-            name.length < 3 -> {
-                etName.error = "El nombre debe tener al menos 3 caracteres"
-                return
+            name.length < com.workstation.rotation.utils.Constants.MIN_NAME_LENGTH -> {
+                etName.error = "El nombre debe tener al menos ${com.workstation.rotation.utils.Constants.MIN_NAME_LENGTH} caracteres"
+                etName.requestFocus()
+                return false
             }
-            requiredWorkers < 1 -> {
-                etRequiredWorkers.error = "Debe requerir al menos 1 trabajador"
-                return
+            name.length > com.workstation.rotation.utils.Constants.MAX_NAME_LENGTH -> {
+                etName.error = "El nombre no puede exceder ${com.workstation.rotation.utils.Constants.MAX_NAME_LENGTH} caracteres"
+                etName.requestFocus()
+                return false
+            }
+            requiredWorkersText.isEmpty() -> {
+                etRequiredWorkers.error = "El número de trabajadores es requerido"
+                etRequiredWorkers.requestFocus()
+                return false
+            }
+            requiredWorkers < com.workstation.rotation.utils.Constants.MIN_REQUIRED_WORKERS -> {
+                etRequiredWorkers.error = "Debe requerir al menos ${com.workstation.rotation.utils.Constants.MIN_REQUIRED_WORKERS} trabajador"
+                etRequiredWorkers.requestFocus()
+                return false
+            }
+            requiredWorkers > com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS -> {
+                etRequiredWorkers.error = "No puede exceder ${com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS} trabajadores"
+                etRequiredWorkers.requestFocus()
+                return false
             }
         }
         
@@ -138,9 +177,17 @@ class WorkstationActivity : AppCompatActivity() {
                     )
                 }
             } catch (e: Exception) {
-                // Handle error - could show a toast or snackbar
+                // Show error message to user
+                androidx.appcompat.app.AlertDialog.Builder(this@WorkstationActivity)
+                    .setTitle("Error")
+                    .setMessage("No se pudo guardar la estación: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return false
             }
         }
+        
+        return true
     }
     
     /**
@@ -157,13 +204,63 @@ class WorkstationActivity : AppCompatActivity() {
         etRequiredWorkers.setText(workstation.requiredWorkers.toString())
         checkboxPriority.isChecked = workstation.isPriority
         
-        AlertDialog.Builder(this)
+        // Add real-time validation
+        setupRealTimeValidation(etName, etRequiredWorkers)
+        
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Editar Estación de Trabajo")
             .setView(dialogView)
-            .setPositiveButton("Guardar") { _, _ ->
-                handleWorkstationSave(etName, etRequiredWorkers, checkboxPriority, workstation)
-            }
+            .setPositiveButton("Guardar", null) // Set to null initially
             .setNegativeButton("Cancelar", null)
-            .show()
+            .create()
+        
+        dialog.show()
+        
+        // Override the positive button to add validation
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            if (validateAndSaveWorkstation(etName, etRequiredWorkers, checkboxPriority, workstation)) {
+                dialog.dismiss()
+            }
+        }
+    }
+    
+    /**
+     * Sets up real-time validation for input fields.
+     */
+    private fun setupRealTimeValidation(
+        etName: TextInputEditText,
+        etRequiredWorkers: TextInputEditText
+    ) {
+        // Name validation
+        etName.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val name = etName.text.toString().trim()
+                when {
+                    name.isEmpty() -> etName.error = "El nombre es requerido"
+                    name.length < com.workstation.rotation.utils.Constants.MIN_NAME_LENGTH -> 
+                        etName.error = "Mínimo ${com.workstation.rotation.utils.Constants.MIN_NAME_LENGTH} caracteres"
+                    name.length > com.workstation.rotation.utils.Constants.MAX_NAME_LENGTH -> 
+                        etName.error = "Máximo ${com.workstation.rotation.utils.Constants.MAX_NAME_LENGTH} caracteres"
+                    else -> etName.error = null
+                }
+            }
+        }
+        
+        // Required workers validation
+        etRequiredWorkers.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val text = etRequiredWorkers.text.toString().trim()
+                val workers = text.toIntOrNull()
+                when {
+                    text.isEmpty() -> etRequiredWorkers.error = "Número requerido"
+                    workers == null -> etRequiredWorkers.error = "Debe ser un número válido"
+                    workers < com.workstation.rotation.utils.Constants.MIN_REQUIRED_WORKERS -> 
+                        etRequiredWorkers.error = "Mínimo ${com.workstation.rotation.utils.Constants.MIN_REQUIRED_WORKERS}"
+                    workers > com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS -> 
+                        etRequiredWorkers.error = "Máximo ${com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS}"
+                    else -> etRequiredWorkers.error = null
+                }
+            }
+        }
     }
 }
