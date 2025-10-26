@@ -68,6 +68,16 @@ class RotationViewModel(
     private val workstationDao: WorkstationDao
 ) : ViewModel() {
     
+    // Cache for worker-workstation relationships to avoid multiple DB calls
+    private var workerWorkstationCache: Map<Long, List<Long>> = emptyMap()
+    
+    /**
+     * Gets worker workstation IDs from cache or database.
+     */
+    private suspend fun getWorkerWorkstationIds(workerId: Long): List<Long> {
+        return workerWorkstationCache[workerId] ?: workerDao.getWorkerWorkstationIds(workerId)
+    }
+    
     private val _rotationItems = MutableLiveData<List<RotationItem>>()
     val rotationItems: LiveData<List<RotationItem>> = _rotationItems
     
@@ -128,12 +138,19 @@ class RotationViewModel(
         val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
         val eligibleWorkers = mutableListOf<Worker>()
         
+        // Pre-load all worker-workstation relationships to avoid multiple DB calls
+        val workerWorkstationMap = mutableMapOf<Long, List<Long>>()
+        
         for (worker in allWorkers) {
             val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            workerWorkstationMap[worker.id] = workstationIds
             if (workstationIds.isNotEmpty()) {
                 eligibleWorkers.add(worker)
             }
         }
+        
+        // Cache the relationships for use in other functions
+        workerWorkstationCache = workerWorkstationMap
         
         eligibleWorkersCount = eligibleWorkers.size
         val allWorkstations = workstationDao.getAllActiveWorkstations().first()
@@ -241,7 +258,7 @@ class RotationViewModel(
             
             if (remainingCapacity > 0) {
                 val availableWorkers = eligibleWorkers.filter { worker ->
-                    workerDao.getWorkerWorkstationIds(worker.id).contains(station.id) &&
+                    getWorkerWorkstationIds(worker.id).contains(station.id) &&
                     assignments.values.none { it.contains(worker) }
                 }
                 
