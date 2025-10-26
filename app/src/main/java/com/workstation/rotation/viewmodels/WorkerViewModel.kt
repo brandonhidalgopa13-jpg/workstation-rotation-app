@@ -18,12 +18,13 @@ class WorkerViewModel(
 ) : ViewModel() {
     
     val allWorkers = liveData {
-        workerDao.getAllWorkers().combine(workerDao.getAllWorkers()) { workers, _ ->
-            workers.map { worker ->
+        workerDao.getAllWorkers().collect { workers ->
+            val workersWithCount = workers.map { worker ->
                 val count = workerDao.getWorkerWorkstationIds(worker.id).size
                 WorkerWithWorkstationCount(worker, count)
             }
-        }.collect { emit(it) }
+            emit(workersWithCount)
+        }
     }
     
     val activeWorkstations = workstationDao.getAllActiveWorkstations().asLiveData()

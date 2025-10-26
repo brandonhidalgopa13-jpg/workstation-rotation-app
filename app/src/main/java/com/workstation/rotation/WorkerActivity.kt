@@ -196,35 +196,35 @@ class WorkerActivity : AppCompatActivity() {
                 var trainerId: Long? = null
                 var trainingWorkstationId: Long? = null
                 
-                if (isTrainee) {
-                    // Get selected trainer and workstation
-                    val trainerPosition = dialogBinding.spinnerTrainer.selectedItemPosition
-                    val workstationPosition = dialogBinding.spinnerTrainingWorkstation.selectedItemPosition
-                    
-                    if (trainerPosition > 0) {
-                        lifecycleScope.launch {
+                // Handle training data synchronously to avoid concurrency issues
+                lifecycleScope.launch {
+                    if (isTrainee) {
+                        // Get selected trainer and workstation
+                        val trainerPosition = dialogBinding.spinnerTrainer.selectedItemPosition
+                        val workstationPosition = dialogBinding.spinnerTrainingWorkstation.selectedItemPosition
+                        
+                        if (trainerPosition > 0) {
                             val trainers = viewModel.getTrainers()
                             if (trainerPosition <= trainers.size) {
                                 trainerId = trainers[trainerPosition - 1].id
                             }
                         }
-                    }
-                    
-                    if (workstationPosition > 0) {
-                        viewModel.activeWorkstations.value?.let { workstations ->
-                            if (workstationPosition <= workstations.size) {
-                                trainingWorkstationId = workstations[workstationPosition - 1].id
+                        
+                        if (workstationPosition > 0) {
+                            viewModel.activeWorkstations.value?.let { workstations ->
+                                if (workstationPosition <= workstations.size) {
+                                    trainingWorkstationId = workstations[workstationPosition - 1].id
+                                }
                             }
                         }
                     }
-                }
-                
-                if (name.isNotEmpty()) {
-                    val selectedWorkstations = workstationAdapter.currentList
-                        .filter { it.isChecked }
-                        .map { it.workstation.id }
                     
-                    lifecycleScope.launch {
+                    // Validate and save worker data
+                    if (name.isNotEmpty()) {
+                        val selectedWorkstations = workstationAdapter.currentList
+                            .filter { it.isChecked }
+                            .map { it.workstation.id }
+                        
                         viewModel.insertWorkerWithWorkstations(
                             Worker(
                                 name = name, 

@@ -4,48 +4,74 @@ import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 
 /**
- * Data class representing a tabular rotation view with workstations as columns
- * and workers distributed in current and next phases.
+ * Data class representing the complete rotation table for visualization.
+ * 
+ * @property workstations List of all workstations in the rotation
+ * @property currentPhase Map of workstation ID to list of workers in current phase
+ * @property nextPhase Map of workstation ID to list of workers in next phase
  */
 data class RotationTable(
     val workstations: List<Workstation>,
-    val currentPhase: Map<Long, List<Worker>>, // workstationId -> workers
-    val nextPhase: Map<Long, List<Worker>>     // workstationId -> workers
-)
-
-/**
- * Data class for individual workstation column in the rotation table.
- */
-data class WorkstationColumn(
-    val workstation: Workstation,
-    val currentWorkers: List<Worker>,
-    val nextWorkers: List<Worker>
+    val currentPhase: Map<Long, List<Worker>>,
+    val nextPhase: Map<Long, List<Worker>>
 ) {
     /**
-     * Gets the capacity status for current phase.
+     * Gets the total number of workers in the current phase.
      */
-    fun getCurrentCapacityStatus(): String {
-        return "${currentWorkers.size}/${workstation.requiredWorkers}"
+    fun getTotalCurrentWorkers(): Int {
+        return currentPhase.values.sumOf { it.size }
     }
     
     /**
-     * Gets the capacity status for next phase.
+     * Gets the total number of workers in the next phase.
      */
-    fun getNextCapacityStatus(): String {
-        return "${nextWorkers.size}/${workstation.requiredWorkers}"
+    fun getTotalNextWorkers(): Int {
+        return nextPhase.values.sumOf { it.size }
     }
     
     /**
-     * Checks if current phase is at full capacity.
+     * Gets the total capacity of all workstations.
      */
-    fun isCurrentAtCapacity(): Boolean {
-        return currentWorkers.size >= workstation.requiredWorkers
+    fun getTotalCapacity(): Int {
+        return workstations.sumOf { it.requiredWorkers }
     }
     
     /**
-     * Checks if next phase is at full capacity.
+     * Gets the current occupancy percentage.
      */
-    fun isNextAtCapacity(): Boolean {
-        return nextWorkers.size >= workstation.requiredWorkers
+    fun getCurrentOccupancyPercentage(): Double {
+        val totalCapacity = getTotalCapacity()
+        return if (totalCapacity > 0) {
+            (getTotalCurrentWorkers().toDouble() / totalCapacity) * 100
+        } else {
+            0.0
+        }
+    }
+    
+    /**
+     * Gets workstations that are at full capacity in current phase.
+     */
+    fun getFullCapacityStations(): List<Workstation> {
+        return workstations.filter { station ->
+            val currentWorkers = currentPhase[station.id]?.size ?: 0
+            currentWorkers >= station.requiredWorkers
+        }
+    }
+    
+    /**
+     * Gets priority workstations.
+     */
+    fun getPriorityWorkstations(): List<Workstation> {
+        return workstations.filter { it.isPriority }
+    }
+    
+    /**
+     * Checks if all priority workstations are at full capacity.
+     */
+    fun areAllPriorityStationsFull(): Boolean {
+        return getPriorityWorkstations().all { station ->
+            val currentWorkers = currentPhase[station.id]?.size ?: 0
+            currentWorkers >= station.requiredWorkers
+        }
     }
 }
