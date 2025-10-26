@@ -10,8 +10,7 @@ package com.workstation.rotation.tutorial
 enum class TutorialStep(
     val title: String,
     val description: String,
-    val actionText: String,
-    val nextStep: TutorialStep? = null
+    val actionText: String
 ) {
     
     WELCOME(
@@ -27,8 +26,7 @@ enum class TutorialStep(
             
             ¿Quieres continuar con la guía interactiva?
         """.trimIndent(),
-        actionText = "Comenzar Guía",
-        nextStep = MAIN_SCREEN
+        actionText = "Comenzar Guía"
     ),
     
     MAIN_SCREEN(
@@ -50,8 +48,7 @@ enum class TutorialStep(
             
             Empezaremos configurando las estaciones de trabajo.
         """.trimIndent(),
-        actionText = "Ir a Estaciones",
-        nextStep = WORKSTATIONS_INTRO
+        actionText = "Ir a Estaciones"
     ),
     
     WORKSTATIONS_INTRO(
@@ -71,8 +68,7 @@ enum class TutorialStep(
             
             Vamos a crear tu primera estación.
         """.trimIndent(),
-        actionText = "Crear Estación",
-        nextStep = WORKSTATION_CREATE
+        actionText = "Crear Estación"
     ),
     
     WORKSTATION_CREATE(
@@ -93,8 +89,7 @@ enum class TutorialStep(
             
             Crea al menos 2-3 estaciones para tener variedad en las rotaciones.
         """.trimIndent(),
-        actionText = "Entendido",
-        nextStep = WORKERS_INTRO
+        actionText = "Entendido"
     ),
     
     WORKERS_INTRO(
@@ -116,8 +111,7 @@ enum class TutorialStep(
             • Selecciona dónde puede trabajar cada persona
             • Debe tener al menos una estación asignada
         """.trimIndent(),
-        actionText = "Crear Trabajador",
-        nextStep = WORKER_CREATE
+        actionText = "Crear Trabajador"
     ),
     
     WORKER_CREATE(
@@ -138,8 +132,7 @@ enum class TutorialStep(
             • Asigna diferentes combinaciones de estaciones
             • Configura al menos un entrenador y un entrenado
         """.trimIndent(),
-        actionText = "Entendido",
-        nextStep = TRAINING_SYSTEM
+        actionText = "Entendido"
     ),
     
     TRAINING_SYSTEM(
@@ -160,8 +153,7 @@ enum class TutorialStep(
             
             Esto garantiza continuidad en la capacitación.
         """.trimIndent(),
-        actionText = "Continuar",
-        nextStep = ROTATION_INTRO
+        actionText = "Continuar"
     ),
     
     ROTATION_INTRO(
@@ -185,8 +177,7 @@ enum class TutorialStep(
             • Indicadores de entrenamiento 🤝
             • Estado de capacidad por estación
         """.trimIndent(),
-        actionText = "Generar Rotación",
-        nextStep = ROTATION_GENERATE
+        actionText = "Generar Rotación"
     ),
     
     ROTATION_GENERATE(
@@ -210,8 +201,7 @@ enum class TutorialStep(
             
             ¡El sistema hace todo el trabajo pesado por ti!
         """.trimIndent(),
-        actionText = "Entendido",
-        nextStep = CERTIFICATION_SYSTEM
+        actionText = "Entendido"
     ),
     
     CERTIFICATION_SYSTEM(
@@ -237,8 +227,7 @@ enum class TutorialStep(
             • Al completar el período de entrenamiento establecido
             • Cuando puede trabajar independientemente
         """.trimIndent(),
-        actionText = "Continuar",
-        nextStep = TIPS_AND_TRICKS
+        actionText = "Continuar"
     ),
     
     TIPS_AND_TRICKS(
@@ -272,7 +261,25 @@ enum class TutorialStep(
             • Cada sección tiene su propia ayuda contextual
             • Los iconos te guían visualmente por la aplicación
         """.trimIndent(),
-        actionText = "Finalizar Tutorial",
-        nextStep = null
-    )
+        actionText = "Finalizar Tutorial"
+    );
+    
+    /**
+     * Obtiene el siguiente paso del tutorial.
+     */
+    fun getNextStep(): TutorialStep? {
+        return when (this) {
+            WELCOME -> MAIN_SCREEN
+            MAIN_SCREEN -> WORKSTATIONS_INTRO
+            WORKSTATIONS_INTRO -> WORKSTATION_CREATE
+            WORKSTATION_CREATE -> WORKERS_INTRO
+            WORKERS_INTRO -> WORKER_CREATE
+            WORKER_CREATE -> TRAINING_SYSTEM
+            TRAINING_SYSTEM -> ROTATION_INTRO
+            ROTATION_INTRO -> ROTATION_GENERATE
+            ROTATION_GENERATE -> CERTIFICATION_SYSTEM
+            CERTIFICATION_SYSTEM -> TIPS_AND_TRICKS
+            TIPS_AND_TRICKS -> null
+        }
+    }
 }

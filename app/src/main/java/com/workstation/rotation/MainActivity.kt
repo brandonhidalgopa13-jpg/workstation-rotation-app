@@ -133,31 +133,20 @@ class MainActivity : AppCompatActivity() {
      * Resalta las tarjetas principales.
      */
     private fun highlightMainCards() {
-        // Encontrar las tarjetas en el layout
-        val cardViews = listOf(
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkstations),
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkers),
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRotation)
-        )
-        
-        cardViews.filterNotNull().forEach { card ->
-            tutorialManager.highlightView(card)
-        }
+        // Resaltar los botones principales en lugar de las tarjetas
+        tutorialManager.highlightView(binding.btnWorkstations)
+        tutorialManager.highlightView(binding.btnWorkers)
+        tutorialManager.highlightView(binding.btnRotation)
     }
     
     /**
      * Quita todos los resaltados.
      */
     private fun clearHighlights() {
-        val cardViews = listOf(
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkstations),
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkers),
-            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRotation)
-        )
-        
-        cardViews.filterNotNull().forEach { card ->
-            tutorialManager.highlightView(card, false)
-        }
+        // Quitar resaltados de los botones
+        tutorialManager.highlightView(binding.btnWorkstations, false)
+        tutorialManager.highlightView(binding.btnWorkers, false)
+        tutorialManager.highlightView(binding.btnRotation, false)
     }
     
     /**

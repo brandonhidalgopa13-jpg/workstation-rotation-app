@@ -112,8 +112,9 @@ class TutorialManager(private val context: Context) {
             .setMessage(step.description)
             .setPositiveButton(step.actionText) { _, _ ->
                 onStepComplete(step)
-                if (step.nextStep != null) {
-                    showTutorialStep(step.nextStep, onStepComplete)
+                val nextStep = step.getNextStep()
+                if (nextStep != null) {
+                    showTutorialStep(nextStep, onStepComplete)
                 } else {
                     completeTutorial()
                 }

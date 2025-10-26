@@ -388,10 +388,10 @@ class WorkerActivity : AppCompatActivity() {
             AlertDialog.Builder(this@WorkerActivity)
                 .setTitle("🎓 Certificar Trabajadores")
                 .setMessage("Selecciona los trabajadores que han completado su entrenamiento y están listos para ser certificados:")
-                .setMultiChoiceItems(workerNames, selectedWorkers) { _, which, isChecked ->
+                .setMultiChoiceItems(workerNames, selectedWorkers) { dialog, which, isChecked ->
                     selectedWorkers[which] = isChecked
                 }
-                .setPositiveButton("Certificar Seleccionados") { _, _ ->
+                .setPositiveButton("Certificar Seleccionados") { dialog, which ->
                     lifecycleScope.launch {
                         var certifiedCount = 0
                         selectedWorkers.forEachIndexed { index, isSelected ->

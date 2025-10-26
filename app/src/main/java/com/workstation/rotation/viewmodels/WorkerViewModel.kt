@@ -60,6 +60,29 @@ class WorkerViewModel(
     suspend fun getWorkerById(workerId: Long): Worker? {
         return workerDao.getWorkerById(workerId)
     }
+    
+    /**
+     * Certifica a un trabajador (remueve el estado de entrenamiento).
+     * El trabajador pasa de "en entrenamiento" a "trabajador normal".
+     */
+    suspend fun certifyWorker(workerId: Long) {
+        val worker = workerDao.getWorkerById(workerId)
+        worker?.let {
+            val certifiedWorker = it.copy(
+                isInTraining = false,
+                trainerId = null,
+                trainingWorkstationId = null
+            )
+            workerDao.updateWorker(certifiedWorker)
+        }
+    }
+    
+    /**
+     * Obtiene todos los trabajadores que están en entrenamiento.
+     */
+    suspend fun getWorkersInTraining(): List<Worker> {
+        return workerDao.getAllWorkers().first().filter { it.isInTraining && it.isActive }
+    }
 }
 
 class WorkerViewModelFactory(
