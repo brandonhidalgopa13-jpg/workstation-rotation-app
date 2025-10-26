@@ -3,7 +3,9 @@ package com.workstation.rotation.data.database
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.annotation.VisibleForTesting
 import android.content.Context
+import com.workstation.rotation.utils.Constants
 import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.entities.Worker
@@ -29,13 +31,21 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "workstation_rotation_database"
+                    Constants.DATABASE_NAME
                 )
-                .fallbackToDestructiveMigration() // Para desarrollo - recreará la DB
+                .fallbackToDestructiveMigration() // For development - will recreate DB on schema changes
                 .build()
                 INSTANCE = instance
                 instance
             }
+        }
+        
+        /**
+         * Clears the database instance. Useful for testing.
+         */
+        @VisibleForTesting
+        fun clearInstance() {
+            INSTANCE = null
         }
     }
 }

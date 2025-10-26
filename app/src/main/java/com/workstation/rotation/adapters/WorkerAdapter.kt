@@ -36,41 +36,76 @@ class WorkerAdapter(
         fun bind(workerWithCount: WorkerWithWorkstationCount) {
             val worker = workerWithCount.worker
             binding.apply {
+                bindBasicInfo(worker, workerWithCount.workstationCount)
+                bindAvailabilityInfo(worker)
+                bindTrainingStatus(worker)
+                bindRestrictions(worker)
+                setupClickListeners(worker)
+            }
+        }
+        
+        /**
+         * Binds basic worker information.
+         */
+        private fun bindBasicInfo(worker: Worker, workstationCount: Int) {
+            binding.apply {
                 tvWorkerName.text = worker.name
                 tvWorkerEmail.text = if (worker.email.isNotEmpty()) worker.email else "Sin email"
-                tvAssignedWorkstations.text = "Estaciones: ${workerWithCount.workstationCount} asignadas"
+                tvAssignedWorkstations.text = "Estaciones: $workstationCount asignadas"
                 switchActive.isChecked = worker.isActive
-                
-                // Mostrar disponibilidad con color según porcentaje
-                tvAvailability.text = "📊 Disponibilidad: ${worker.availabilityPercentage}%"
-                tvAvailability.setTextColor(when {
-                    worker.availabilityPercentage >= 80 -> android.graphics.Color.parseColor("#FF018786")
-                    worker.availabilityPercentage >= 50 -> android.graphics.Color.parseColor("#FFFF9800")
-                    else -> android.graphics.Color.parseColor("#FFF44336")
-                })
-                
-                // Mostrar restricciones si existen
+            }
+        }
+        
+        /**
+         * Binds availability information with appropriate colors.
+         */
+        private fun bindAvailabilityInfo(worker: Worker) {
+            binding.tvAvailability.apply {
+                text = "📊 Disponibilidad: ${worker.availabilityPercentage}%"
+                setTextColor(getAvailabilityColor(worker.availabilityPercentage))
+            }
+        }
+        
+        /**
+         * Returns appropriate color based on availability percentage.
+         */
+        private fun getAvailabilityColor(percentage: Int): Int {
+            return when {
+                percentage >= 80 -> android.graphics.Color.parseColor("#FF018786")
+                percentage >= 50 -> android.graphics.Color.parseColor("#FFFF9800")
+                else -> android.graphics.Color.parseColor("#FFF44336")
+            }
+        }
+        
+        /**
+         * Binds training status badges.
+         */
+        private fun bindTrainingStatus(worker: Worker) {
+            binding.apply {
+                tvTrainerStatus.visibility = if (worker.isTrainer) android.view.View.VISIBLE else android.view.View.GONE
+                tvTraineeStatus.visibility = if (worker.isTrainee) android.view.View.VISIBLE else android.view.View.GONE
+            }
+        }
+        
+        /**
+         * Binds restriction information.
+         */
+        private fun bindRestrictions(worker: Worker) {
+            binding.tvRestrictionStatus.apply {
                 if (worker.restrictionNotes.isNotEmpty()) {
-                    tvRestrictionStatus.visibility = android.view.View.VISIBLE
-                    tvRestrictionStatus.text = "⚠️ ${worker.restrictionNotes}"
+                    visibility = android.view.View.VISIBLE
+                    text = "⚠️ ${worker.restrictionNotes}"
                 } else {
-                    tvRestrictionStatus.visibility = android.view.View.GONE
+                    visibility = android.view.View.GONE
                 }
-                
-                // Mostrar estado de entrenador
-                if (worker.isTrainer) {
-                    tvTrainerStatus.visibility = android.view.View.VISIBLE
-                } else {
-                    tvTrainerStatus.visibility = android.view.View.GONE
-                }
-                
-                // Mostrar estado de entrenamiento
-                if (worker.isTrainee) {
-                    tvTraineeStatus.visibility = android.view.View.VISIBLE
-                } else {
-                    tvTraineeStatus.visibility = android.view.View.GONE
-                }
-                
+            }
+        }
+        
+        /**
+         * Sets up click listeners for interactive elements.
+         */
+        private fun setupClickListeners(worker: Worker) {
+            binding.apply {
                 switchActive.setOnCheckedChangeListener { _, isChecked ->
                     onStatusChange(worker, isChecked)
                 }

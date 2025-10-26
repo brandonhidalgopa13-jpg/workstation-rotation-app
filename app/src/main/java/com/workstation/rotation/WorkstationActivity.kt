@@ -70,6 +70,9 @@ class WorkstationActivity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Shows dialog for adding a new workstation with validation.
+     */
     private fun showAddDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
@@ -80,33 +83,76 @@ class WorkstationActivity : AppCompatActivity() {
             .setTitle("Agregar Estación de Trabajo")
             .setView(dialogView)
             .setPositiveButton("Guardar") { _, _ ->
-                val name = etName.text.toString().trim()
-                val requiredWorkersText = etRequiredWorkers.text.toString().trim()
-                val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
-                val isPriority = checkboxPriority.isChecked
-                
-                if (name.isNotEmpty() && requiredWorkers > 0) {
-                    lifecycleScope.launch {
-                        viewModel.insertWorkstation(
-                            Workstation(
-                                name = name, 
-                                requiredWorkers = requiredWorkers,
-                                isPriority = isPriority
-                            )
-                        )
-                    }
-                }
+                handleWorkstationSave(etName, etRequiredWorkers, checkboxPriority, null)
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
     
+    /**
+     * Handles saving workstation data with proper validation.
+     */
+    private fun handleWorkstationSave(
+        etName: TextInputEditText,
+        etRequiredWorkers: TextInputEditText,
+        checkboxPriority: CheckBox,
+        existingWorkstation: Workstation?
+    ) {
+        val name = etName.text.toString().trim()
+        val requiredWorkersText = etRequiredWorkers.text.toString().trim()
+        val requiredWorkers = requiredWorkersText.toIntOrNull()?.coerceIn(1, 50) ?: 1
+        val isPriority = checkboxPriority.isChecked
+        
+        when {
+            name.isEmpty() -> {
+                etName.error = "El nombre es requerido"
+                return
+            }
+            name.length < 3 -> {
+                etName.error = "El nombre debe tener al menos 3 caracteres"
+                return
+            }
+            requiredWorkers < 1 -> {
+                etRequiredWorkers.error = "Debe requerir al menos 1 trabajador"
+                return
+            }
+        }
+        
+        lifecycleScope.launch {
+            try {
+                if (existingWorkstation != null) {
+                    viewModel.updateWorkstation(
+                        existingWorkstation.copy(
+                            name = name,
+                            requiredWorkers = requiredWorkers,
+                            isPriority = isPriority
+                        )
+                    )
+                } else {
+                    viewModel.insertWorkstation(
+                        Workstation(
+                            name = name,
+                            requiredWorkers = requiredWorkers,
+                            isPriority = isPriority
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle error - could show a toast or snackbar
+            }
+        }
+    }
+    
+    /**
+     * Shows dialog for editing an existing workstation.
+     */
     private fun showEditDialog(workstation: Workstation) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
         val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
         val checkboxPriority = dialogView.findViewById<CheckBox>(R.id.checkboxPriority)
         
+        // Pre-populate fields with existing data
         etName.setText(workstation.name)
         etRequiredWorkers.setText(workstation.requiredWorkers.toString())
         checkboxPriority.isChecked = workstation.isPriority
@@ -115,22 +161,7 @@ class WorkstationActivity : AppCompatActivity() {
             .setTitle("Editar Estación de Trabajo")
             .setView(dialogView)
             .setPositiveButton("Guardar") { _, _ ->
-                val name = etName.text.toString().trim()
-                val requiredWorkersText = etRequiredWorkers.text.toString().trim()
-                val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
-                val isPriority = checkboxPriority.isChecked
-                
-                if (name.isNotEmpty() && requiredWorkers > 0) {
-                    lifecycleScope.launch {
-                        viewModel.updateWorkstation(
-                            workstation.copy(
-                                name = name, 
-                                requiredWorkers = requiredWorkers,
-                                isPriority = isPriority
-                            )
-                        )
-                    }
-                }
+                handleWorkstationSave(etName, etRequiredWorkers, checkboxPriority, workstation)
             }
             .setNegativeButton("Cancelar", null)
             .show()

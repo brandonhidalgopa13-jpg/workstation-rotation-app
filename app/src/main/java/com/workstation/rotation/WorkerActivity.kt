@@ -169,20 +169,47 @@ class WorkerActivity : AppCompatActivity() {
             .show()
     }
     
+    /**
+     * Sets up the training system UI components and their interactions.
+     */
     private fun setupTrainingSystem(dialogBinding: DialogAddWorkerBinding) {
-        // Setup trainee checkbox listener
-        dialogBinding.checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
-            dialogBinding.layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
-            
-            if (isChecked) {
-                // Load trainers
-                lifecycleScope.launch {
-                    val trainers = viewModel.getTrainers()
-                    val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
-                    val trainerAdapter = ArrayAdapter(this@WorkerActivity, android.R.layout.simple_spinner_item, trainerNames)
-                    trainerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    dialogBinding.spinnerTrainer.adapter = trainerAdapter
+        with(dialogBinding) {
+            // Setup trainee checkbox listener
+            checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
+                layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+                
+                if (isChecked) {
+                    loadTrainersForSpinner(dialogBinding)
                 }
+            }
+            
+            // Prevent trainer and trainee from being selected simultaneously
+            checkboxIsTrainer.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    checkboxIsTrainee.isChecked = false
+                    layoutTrainingDetails.visibility = View.GONE
+                }
+            }
+        }
+    }
+    
+    /**
+     * Loads available trainers into the spinner.
+     */
+    private fun loadTrainersForSpinner(dialogBinding: DialogAddWorkerBinding) {
+        lifecycleScope.launch {
+            try {
+                val trainers = viewModel.getTrainers()
+                val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { "${it.name} (${it.email})" }
+                val trainerAdapter = ArrayAdapter(
+                    this@WorkerActivity,
+                    android.R.layout.simple_spinner_item,
+                    trainerNames
+                )
+                trainerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerTrainer.adapter = trainerAdapter
+            } catch (e: Exception) {
+                // Handle error loading trainers
             }
         }
     }

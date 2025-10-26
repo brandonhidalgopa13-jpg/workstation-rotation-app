@@ -23,34 +23,64 @@ class RotationViewModel(
     
     private var eligibleWorkersCount = 0
     
+    /**
+     * Generates an intelligent rotation considering priorities, availability, and training relationships.
+     * @return Boolean indicating if rotation was successfully generated
+     */
     suspend fun generateRotation(): Boolean {
         return try {
-            // Get all active workers using first() to get single emission
-            val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
-            
-            // Get workers that have workstations assigned
-            val eligibleWorkers = mutableListOf<Worker>()
-            for (worker in allWorkers) {
-                val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
-                if (workstationIds.isNotEmpty()) {
-                    eligibleWorkers.add(worker)
-                }
-            }
-            
-            eligibleWorkersCount = eligibleWorkers.size
-            
-            if (eligibleWorkers.isEmpty()) {
+            val rotationData = prepareRotationData()
+            if (!rotationData.isValid()) {
                 _rotationItems.value = emptyList()
                 return false
             }
             
-            // Get all active workstations
-            val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+            val rotationItems = executeRotationAlgorithm(rotationData)
+            _rotationItems.value = rotationItems.sortedBy { it.rotationOrder }
             
-            if (allWorkstations.isEmpty()) {
-                _rotationItems.value = emptyList()
-                return false
+            rotationItems.isNotEmpty()
+            
+        } catch (e: Exception) {
+            _rotationItems.value = emptyList()
+            eligibleWorkersCount = 0
+            false
+        }
+    }
+    
+    /**
+     * Prepares and validates data needed for rotation generation.
+     */
+    private suspend fun prepareRotationData(): RotationData {
+        val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
+        val eligibleWorkers = mutableListOf<Worker>()
+        
+        for (worker in allWorkers) {
+            val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            if (workstationIds.isNotEmpty()) {
+                eligibleWorkers.add(worker)
             }
+        }
+        
+        eligibleWorkersCount = eligibleWorkers.size
+        val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+        
+        return RotationData(eligibleWorkers, allWorkstations)
+    }
+    
+    /**
+     * Data class to hold rotation preparation data.
+     */
+    private data class RotationData(
+        val eligibleWorkers: List<Worker>,
+        val allWorkstations: List<Workstation>
+    ) {
+        fun isValid(): Boolean = eligibleWorkers.isNotEmpty() && allWorkstations.isNotEmpty()
+    }
+    
+    /**
+     * Executes the main rotation algorithm with all business logic.
+     */
+    private suspend fun executeRotationAlgorithm(data: RotationData): List<RotationItem> {
             
             // Generate intelligent rotation with capacity control
             val rotationItems = mutableListOf<RotationItem>()
