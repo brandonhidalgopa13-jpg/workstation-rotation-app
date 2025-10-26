@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res/auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_primary">
@@ -43,34 +43,3 @@
         app:elevation="8dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
-        android:padding="8dp" />
-
-    <!-- Marca de agua del creador -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:padding="6dp"
-        android:alpha="0.5"
-        android:background="@color/background_surface">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/watermark_icon_gear"
-            android:textSize="10sp"
-            android:layout_marginEnd="3dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/watermark_creator_short"
-            android:textSize="10sp"
-            android:textColor="@color/text_secondary"
-            android:textStyle="italic"
-            android:fontFamily="sans-serif-light" />
-
-    </LinearLayout>
-
-</LinearLayout>
