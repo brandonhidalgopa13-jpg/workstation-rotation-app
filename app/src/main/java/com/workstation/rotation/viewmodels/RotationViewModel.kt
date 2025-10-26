@@ -377,6 +377,203 @@ class RotationViewModel(
     }
 
     /**
+     * Assigns workers with forced rotation - ensures workers change stations between current and next rotation.
+     * This is the core improvement that guarantees true rotation of personnel.
+     * 
+     * ROTATION RULES:
+     * 1. Trainer-trainee pairs are EXEMPT from forced rotation (they stay together)
+     * 2. All other workers MUST change stations between current and next rotation
+     * 3. Priority stations maintain their capacity requirements
+     * 4. Workers can only be assigned to stations they're qualified for
+     * 5. If no alternative station is available, worker stays in current (exception case)
+     */
+    private suspend fun assignWorkersWithForcedRotation(
+        eligibleWorkers: List<Worker>,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>,
+        priorityWorkstations: List<Workstation>
+    ) {
+        // Get all workers who are already assigned in current rotation
+        val workersInCurrentRotation = currentAssignments.values.flatten()
+        
+        // Separate workers by type
+        val traineeWorkers = workersInCurrentRotation.filter { it.isTrainee && it.trainerId != null }
+        val trainerWorkers = workersInCurrentRotation.filter { worker ->
+            worker.isTrainer && traineeWorkers.any { trainee -> trainee.trainerId == worker.id }
+        }
+        val regularWorkers = workersInCurrentRotation.filter { worker ->
+            !traineeWorkers.contains(worker) && !trainerWorkers.contains(worker)
+        }
+        
+        // Phase 1: Handle priority stations first (maintain capacity)
+        assignPriorityStationsWithRotation(
+            priorityWorkstations,
+            regularWorkers,
+            currentAssignments,
+            nextAssignments,
+            allWorkstations
+        )
+        
+        // Phase 2: Handle remaining regular workers with forced rotation
+        assignRemainingWorkersWithRotation(
+            regularWorkers,
+            currentAssignments,
+            nextAssignments,
+            allWorkstations
+        )
+        
+        // Phase 3: Fill any remaining capacity with unassigned workers
+        fillRemainingCapacity(
+            eligibleWorkers,
+            nextAssignments,
+            allWorkstations
+        )
+    }
+    
+    /**
+     * Assigns workers to priority stations ensuring capacity while forcing rotation.
+     */
+    private suspend fun assignPriorityStationsWithRotation(
+        priorityWorkstations: List<Workstation>,
+        regularWorkers: List<Worker>,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        for (station in priorityWorkstations) {
+            val currentCapacity = nextAssignments[station.id]?.size ?: 0
+            val remainingCapacity = station.requiredWorkers - currentCapacity
+            
+            if (remainingCapacity > 0) {
+                // Get workers who can work at this station but are NOT currently assigned to it
+                val availableWorkers = regularWorkers.filter { worker ->
+                    // Worker is qualified for this station
+                    runBlocking { workerDao.getWorkerWorkstationIds(worker.id).contains(station.id) } &&
+                    // Worker is NOT currently assigned to this station
+                    !isWorkerCurrentlyAssignedToStation(worker, station.id, currentAssignments) &&
+                    // Worker is not already assigned to next rotation
+                    !nextAssignments.values.any { it.contains(worker) }
+                }
+                
+                // Sort by availability and trainer status
+                val sortedWorkers = availableWorkers.sortedWith(
+                    compareByDescending<Worker> { it.isTrainer }
+                        .thenByDescending { it.availabilityPercentage }
+                )
+                
+                // Assign workers up to remaining capacity
+                val workersToAssign = sortedWorkers.take(remainingCapacity)
+                nextAssignments[station.id]?.addAll(workersToAssign)
+            }
+        }
+    }
+    
+    /**
+     * Assigns remaining workers ensuring they rotate to different stations.
+     */
+    private suspend fun assignRemainingWorkersWithRotation(
+        regularWorkers: List<Worker>,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        // Get workers not yet assigned to next rotation
+        val unassignedWorkers = regularWorkers.filter { worker ->
+            !nextAssignments.values.any { it.contains(worker) }
+        }
+        
+        for (worker in unassignedWorkers) {
+            // Find current station of this worker
+            val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
+            
+            // Get all stations this worker can work at
+            val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
+            
+            // Find alternative stations (different from current)
+            val alternativeStations = qualifiedStations.filter { station ->
+                station.id != currentStationId &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            // Assign to best alternative station
+            val targetStation = if (alternativeStations.isNotEmpty()) {
+                // Prefer stations with fewer assigned workers
+                alternativeStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
+            } else {
+                // Fallback: if no alternatives, find any available station (including current)
+                qualifiedStations.find { station ->
+                    (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                }
+            }
+            
+            targetStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+                
+                // Update rotation tracking
+                updateWorkerRotationTracking(worker, station.id)
+            }
+        }
+    }
+    
+    /**
+     * Fills remaining capacity with any unassigned eligible workers.
+     */
+    private suspend fun fillRemainingCapacity(
+        eligibleWorkers: List<Worker>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        // Get workers not assigned to any rotation yet
+        val completelyUnassigned = eligibleWorkers.filter { worker ->
+            !nextAssignments.values.any { it.contains(worker) }
+        }
+        
+        for (worker in completelyUnassigned) {
+            // Find stations with available capacity
+            val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            val availableStations = allWorkstations.filter { station ->
+                station.id in qualifiedStationIds &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            // Assign to station with least workers
+            val targetStation = availableStations.minByOrNull { 
+                nextAssignments[it.id]?.size ?: 0 
+            }
+            
+            targetStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+                updateWorkerRotationTracking(worker, station.id)
+            }
+        }
+    }
+    
+    /**
+     * Checks if a worker is currently assigned to a specific station.
+     */
+    private fun isWorkerCurrentlyAssignedToStation(
+        worker: Worker,
+        stationId: Long,
+        currentAssignments: Map<Long, List<Worker>>
+    ): Boolean {
+        return currentAssignments[stationId]?.contains(worker) ?: false
+    }
+    
+    /**
+     * Finds the current station ID for a worker.
+     */
+    private fun findWorkerCurrentStation(
+        worker: Worker,
+        currentAssignments: Map<Long, List<Worker>>
+    ): Long? {
+        return currentAssignments.entries
+            .find { it.value.contains(worker) }
+            ?.key
+    }
+    
+    /**
      * Executes the main rotation algorithm with all business logic.
      * Returns both the rotation items list and the rotation table.
      */
@@ -401,19 +598,19 @@ class RotationViewModel(
         // Phase 2: Assign remaining workers to NORMAL workstations (current positions)
         assignNormalWorkstations(normalWorkstations, eligibleWorkers, currentAssignments)
         
-        // Phase 3: Generate next rotation positions
+        // Phase 3: Generate next rotation positions with FORCED ROTATION
         // PHASE 3.0: ABSOLUTE PRIORITY - Assign ALL trainer-trainee pairs FIRST for next rotation
         val allUnassignedWorkersNext = eligibleWorkers.toMutableList()
         assignTrainerTraineePairsWithPriority(eligibleWorkers, nextAssignments, allWorkstations, allUnassignedWorkersNext)
         
-        // Phase 3.1: Priority stations must maintain full capacity
-        assignPriorityWorkstations(priorityWorkstations, eligibleWorkers, nextAssignments)
-        
-        // Phase 3.2: Assign remaining workers to normal stations for next rotation
-        val remainingWorkers = eligibleWorkers.filter { worker ->
-            nextAssignments.values.none { it.contains(worker) }
-        }
-        assignNormalWorkstations(normalWorkstations, remainingWorkers, nextAssignments)
+        // Phase 3.1: FORCED ROTATION - Ensure workers change stations between current and next
+        assignWorkersWithForcedRotation(
+            eligibleWorkers, 
+            currentAssignments, 
+            nextAssignments, 
+            allWorkstations,
+            priorityWorkstations
+        )
         
         // Phase 4: Create rotation items and table
         val rotationItems = createRotationItems(allWorkstations, currentAssignments, nextAssignments)
@@ -469,7 +666,7 @@ class RotationViewModel(
     }
 
     /**
-     * Creates a formatted worker label with status indicators.
+     * Creates a formatted worker label with status indicators including rotation status.
      */
     private fun createWorkerLabel(
         worker: Worker,
@@ -481,6 +678,7 @@ class RotationViewModel(
         val availabilityStatus = getAvailabilityStatus(worker)
         val restrictionStatus = if (worker.restrictionNotes.isNotEmpty()) " 🔒" else ""
         val trainingStatus = getTrainingStatus(worker, currentWorkers)
+        val rotationStatus = getRotationStatus(currentStation, nextStation, worker)
         
         val baseName = if (isPriorityWorker) {
             "${worker.name} [PRIORITARIO]"
@@ -488,7 +686,25 @@ class RotationViewModel(
             worker.name
         }
         
-        return "$baseName$availabilityStatus$restrictionStatus$trainingStatus"
+        return "$baseName$availabilityStatus$restrictionStatus$trainingStatus$rotationStatus"
+    }
+    
+    /**
+     * Gets rotation status indicator showing if worker is rotating or staying.
+     */
+    private fun getRotationStatus(
+        currentStation: Workstation,
+        nextStation: Workstation,
+        worker: Worker
+    ): String {
+        return when {
+            // Trainer-trainee pairs are exempt from rotation indicators
+            worker.isTrainee && worker.trainerId != null -> ""
+            worker.isTrainer -> ""
+            // Show rotation status for regular workers
+            currentStation.id != nextStation.id -> " 🔄 [ROTANDO]"
+            else -> " 📍 [PERMANECE]"
+        }
     }
 
     /**
@@ -580,6 +796,81 @@ class RotationViewModel(
     
     fun getEligibleWorkersCount(): Int {
         return eligibleWorkersCount
+    }
+    
+    /**
+     * Gets rotation statistics for the current rotation.
+     */
+    fun getRotationStatistics(): RotationStatistics {
+        val rotationTable = _rotationTable.value
+        val rotationItems = _rotationItems.value ?: emptyList()
+        
+        if (rotationTable == null) {
+            return RotationStatistics()
+        }
+        
+        var totalWorkers = 0
+        var workersRotating = 0
+        var workersStaying = 0
+        var trainerTraineePairs = 0
+        
+        // Count workers in current phase
+        rotationTable.currentPhase.values.forEach { workers ->
+            totalWorkers += workers.size
+        }
+        
+        // Analyze rotation patterns
+        rotationTable.currentPhase.forEach { (currentStationId, currentWorkers) ->
+            currentWorkers.forEach { worker ->
+                // Find where this worker goes in next phase
+                val nextStationId = rotationTable.nextPhase.entries
+                    .find { it.value.contains(worker) }?.key
+                
+                when {
+                    worker.isTrainee && worker.trainerId != null -> {
+                        // Count trainer-trainee pairs
+                        val trainer = rotationTable.currentPhase.values.flatten()
+                            .find { it.id == worker.trainerId }
+                        if (trainer != null) {
+                            trainerTraineePairs++
+                        }
+                    }
+                    nextStationId != null && nextStationId != currentStationId -> {
+                        workersRotating++
+                    }
+                    nextStationId == currentStationId -> {
+                        workersStaying++
+                    }
+                }
+            }
+        }
+        
+        // Avoid double counting trainer-trainee pairs
+        trainerTraineePairs = trainerTraineePairs / 2
+        
+        return RotationStatistics(
+            totalWorkers = totalWorkers,
+            workersRotating = workersRotating,
+            workersStaying = workersStaying,
+            trainerTraineePairs = trainerTraineePairs,
+            rotationPercentage = if (totalWorkers > 0) (workersRotating * 100) / totalWorkers else 0
+        )
+    }
+    
+    /**
+     * Data class for rotation statistics.
+     */
+    data class RotationStatistics(
+        val totalWorkers: Int = 0,
+        val workersRotating: Int = 0,
+        val workersStaying: Int = 0,
+        val trainerTraineePairs: Int = 0,
+        val rotationPercentage: Int = 0
+    ) {
+        fun getSummaryText(): String {
+            return "Rotación: $workersRotating/$totalWorkers trabajadores ($rotationPercentage%) • " +
+                   "Permanecen: $workersStaying • Entrenamientos: $trainerTraineePairs parejas"
+        }
     }
 }
 

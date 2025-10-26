@@ -233,8 +233,14 @@ class RotationActivity : AppCompatActivity() {
                 try {
                     val rotationGenerated = viewModel.generateRotation()
                     if (rotationGenerated) {
-                        Snackbar.make(binding.root, "Rotación generada exitosamente", Snackbar.LENGTH_SHORT).show()
+                        val stats = viewModel.getRotationStatistics()
+                        Snackbar.make(
+                            binding.root, 
+                            "✅ Rotación generada: ${stats.getSummaryText()}", 
+                            Snackbar.LENGTH_LONG
+                        ).show()
                         updateWorkerCount()
+                        updateRotationInfo(stats)
                     } else {
                         val count = viewModel.getEligibleWorkersCount()
                         val message = if (count == 0) {
@@ -292,5 +298,19 @@ class RotationActivity : AppCompatActivity() {
                 binding.tvRotationInfo.text = "Error al contar trabajadores elegibles"
             }
         }
+    }
+    
+    /**
+     * Updates the rotation information display with statistics.
+     */
+    private fun updateRotationInfo(stats: RotationViewModel.RotationStatistics) {
+        val baseInfo = "Trabajadores elegibles: ${viewModel.getEligibleWorkersCount()}"
+        val rotationInfo = if (stats.totalWorkers > 0) {
+            "\n🔄 ${stats.getSummaryText()}"
+        } else {
+            ""
+        }
+        
+        binding.tvRotationInfo.text = "$baseInfo$rotationInfo"
     }
 }

@@ -99,9 +99,9 @@ class BackupManager(private val context: Context) {
     ): String = withContext(Dispatchers.IO) {
         
         val backupData = BackupData(
-            version = "2.0.0",
+            version = "2.1.0",
             timestamp = System.currentTimeMillis(),
-            appVersion = "2.0.0",
+            appVersion = "2.1.0",
             workers = workers.map { it.toSerializable() },
             workstations = workstations.map { it.toSerializable() },
             workerWorkstations = workerWorkstations.map { it.toSerializable() }

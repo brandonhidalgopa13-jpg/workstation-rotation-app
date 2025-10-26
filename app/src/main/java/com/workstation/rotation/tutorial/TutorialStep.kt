@@ -210,9 +210,9 @@ enum class TutorialStep(
             Una vez que los trabajadores completan su entrenamiento, puedes certificarlos:
             
             PROCESO DE CERTIFICACIÓN:
-            1. Ve a la sección "👥 Trabajadores"
-            2. Toca el menú (⋮) en la barra superior
-            3. Selecciona "🎓 Certificar Trabajadores"
+            1. Ve al menú principal y selecciona "⚙️ Configuraciones"
+            2. En la sección "Tutorial y Ayuda"
+            3. Toca "🎓 Certificar Trabajadores"
             4. Marca los trabajadores que completaron su entrenamiento
             5. Confirma la certificación
             

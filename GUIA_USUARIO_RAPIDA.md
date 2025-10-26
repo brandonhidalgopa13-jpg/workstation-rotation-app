@@ -46,9 +46,9 @@
 4. El sistema los mantendrá **siempre juntos** 🤝
 
 ### Certificar Trabajadores (Completar Entrenamiento)
-1. Ve a **"👥 Trabajadores"**
-2. Toca el menú **⋮** en la barra superior
-3. Selecciona **"🎓 Certificar Trabajadores"**
+1. Ve al **menú principal** y selecciona **"⚙️ Configuraciones"**
+2. En la sección **"Tutorial y Ayuda"**
+3. Toca **"🎓 Certificar Trabajadores"**
 4. Marca los trabajadores que completaron su entrenamiento
 5. Confirma la certificación
 6. ¡Ya son trabajadores normales! 🎉

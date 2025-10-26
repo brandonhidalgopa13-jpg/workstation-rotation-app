@@ -255,6 +255,14 @@
                     android:text="🔄 Reiniciar Tutorial"
                     android:layout_marginBottom="8dp" />
 
+                <Button
+                    android:id="@+id/btnCertifyWorkers"
+                    style="@style/PrimaryButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🎓 Certificar Trabajadores"
+                    android:layout_marginBottom="8dp" />
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
