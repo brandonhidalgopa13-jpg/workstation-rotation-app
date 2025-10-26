@@ -52,4 +52,30 @@ interface WorkerDao {
         ORDER BY w.name
     """)
     fun getWorkersWithWorkstations(): Flow<List<Worker>>
+    
+    // Rotation tracking methods
+    @Query("""
+        UPDATE workers 
+        SET currentWorkstationId = :workstationId, 
+            rotationsInCurrentStation = CASE 
+                WHEN currentWorkstationId = :workstationId THEN rotationsInCurrentStation + 1 
+                ELSE 1 
+            END,
+            lastRotationTimestamp = :timestamp
+        WHERE id = :workerId
+    """)
+    suspend fun updateWorkerRotation(workerId: Long, workstationId: Long, timestamp: Long)
+    
+    @Query("""
+        SELECT * FROM workers 
+        WHERE isActive = 1 
+        AND isTrainer = 0 
+        AND isTrainee = 0 
+        AND rotationsInCurrentStation >= :minRotations
+        ORDER BY rotationsInCurrentStation DESC, name
+    """)
+    suspend fun getWorkersNeedingRotation(minRotations: Int = 2): List<Worker>
+    
+    @Query("UPDATE workers SET rotationsInCurrentStation = 0 WHERE id = :workerId")
+    suspend fun resetWorkerRotationCount(workerId: Long)
 }

@@ -66,7 +66,11 @@ data class Worker(
     val isTrainee: Boolean = false,
     val trainerId: Long? = null,
     val trainingWorkstationId: Long? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    // Campos para seguimiento de rotación
+    val currentWorkstationId: Long? = null,
+    val rotationsInCurrentStation: Int = 0,
+    val lastRotationTimestamp: Long = 0L
 ) {
     /**
      * Returns a display name for the worker including training status.
@@ -93,6 +97,36 @@ data class Worker(
             availabilityPercentage >= 80 -> "Alta"
             availabilityPercentage >= 50 -> "Media"
             else -> "Baja"
+        }
+    }
+    
+    /**
+     * Checks if this worker is a trained worker (not trainer, not trainee).
+     */
+    fun isTrainedWorker(): Boolean {
+        return !isTrainer && !isTrainee
+    }
+    
+    /**
+     * Checks if this worker needs to rotate based on time spent in current station.
+     * Trained workers should rotate after being in the same station for half the rotation cycle.
+     */
+    fun needsToRotate(maxRotationsInSameStation: Int = 2): Boolean {
+        return isTrainedWorker() && rotationsInCurrentStation >= maxRotationsInSameStation
+    }
+    
+    /**
+     * Gets the rotation priority for this worker.
+     * Higher numbers indicate higher priority to rotate.
+     */
+    fun getRotationPriority(): Int {
+        return when {
+            // Trained workers who have been in same station too long get highest priority
+            isTrainedWorker() && needsToRotate() -> 100 + rotationsInCurrentStation
+            // Regular trained workers get medium priority
+            isTrainedWorker() -> 50
+            // Trainers and trainees get lower priority (they have other constraints)
+            else -> 10
         }
     }
 }

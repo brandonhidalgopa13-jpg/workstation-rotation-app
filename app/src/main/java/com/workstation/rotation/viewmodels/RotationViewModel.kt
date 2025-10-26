@@ -77,22 +77,26 @@ class RotationViewModel(
     private var eligibleWorkersCount = 0
     
     /**
-     * Generates an intelligent rotation considering priorities, availability, and training relationships.
+     * Generates an intelligent rotation considering priorities, availability, training relationships, and rotation cycles.
      * 
      * PRIORITY HIERARCHY (from highest to lowest):
      * 1. MAXIMUM PRIORITY: Trainer-trainee pairs in PRIORITY workstations
      * 2. HIGH PRIORITY: Trainer-trainee pairs in normal workstations  
-     * 3. MEDIUM PRIORITY: Individual workers in priority workstations
-     * 4. NORMAL PRIORITY: Individual workers in normal workstations
+     * 3. MEDIUM-HIGH PRIORITY: Trained workers needing forced rotation (been in same station too long)
+     * 4. MEDIUM PRIORITY: Individual workers in priority workstations
+     * 5. NORMAL PRIORITY: Individual workers in normal workstations
      * 
      * Key Features:
      * - ABSOLUTE PRIORITY for trainer-trainee pairs: When a trainee has an assigned trainer, 
      *   both are ALWAYS placed together at the trainee's requested training workstation
      * - SPECIAL PRIORITY for training in priority workstations: These get assigned FIRST
+     * - FORCED ROTATION for trained workers: Workers who are not trainers/trainees and have been
+     *   in the same station for multiple rotations are forced to change stations
      * - Training relationships override ALL other constraints (capacity, availability, workstation restrictions)
      * - Maintains priority workstation capacity requirements for non-training assignments
      * - Considers worker availability percentages and restrictions for individual assignments
      * - Ensures proper rotation variety while guaranteeing training continuity
+     * - Tracks rotation history to prevent stagnation and promote skill development
      * 
      * @return Boolean indicating if rotation was successfully generated
      */
@@ -267,7 +271,10 @@ class RotationViewModel(
         // First assign trainer-trainee pairs
         assignTrainerTraineePairs(eligibleWorkers, assignments, normalWorkstations, unassignedWorkers)
         
-        // Then assign remaining workers
+        // Then handle forced rotation for trained workers
+        assignTrainedWorkersWithRotation(normalWorkstations, unassignedWorkers, assignments)
+        
+        // Finally assign remaining workers
         val sortedWorkers = unassignedWorkers.sortedWith(
             compareByDescending<Worker> { it.isTrainer }
                 .thenByDescending { worker ->
@@ -280,6 +287,64 @@ class RotationViewModel(
                 assignWorkerToOptimalStation(worker, normalWorkstations, assignments)
             }
         }
+    }
+
+    /**
+     * Handles forced rotation for trained workers who have been in the same station too long.
+     * Trained workers (not trainers, not trainees) must rotate after being in the same station
+     * for half the rotation cycle to ensure skill development and prevent stagnation.
+     */
+    private suspend fun assignTrainedWorkersWithRotation(
+        availableStations: List<Workstation>,
+        unassignedWorkers: MutableList<Worker>,
+        assignments: MutableMap<Long, MutableList<Worker>>
+    ) {
+        // Get trained workers who need to rotate (sorted by priority)
+        val trainedWorkersNeedingRotation = unassignedWorkers
+            .filter { it.isTrainedWorker() }
+            .sortedByDescending { it.getRotationPriority() }
+        
+        for (worker in trainedWorkersNeedingRotation) {
+            val workerStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            val compatibleStations = availableStations.filter { station ->
+                station.id in workerStationIds &&
+                (assignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            val targetStation = if (worker.needsToRotate()) {
+                // Force rotation: avoid current station if possible
+                val alternativeStations = compatibleStations.filter { 
+                    it.id != worker.currentWorkstationId 
+                }
+                
+                if (alternativeStations.isNotEmpty()) {
+                    // Assign to different station with least workers
+                    alternativeStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                } else {
+                    // If no alternatives, assign to any compatible station
+                    compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                }
+            } else {
+                // Normal assignment for trained workers
+                compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+            }
+            
+            targetStation?.let { station ->
+                assignments[station.id]?.add(worker)
+                unassignedWorkers.remove(worker)
+                
+                // Update rotation tracking
+                updateWorkerRotationTracking(worker, station.id)
+            }
+        }
+    }
+
+    /**
+     * Updates rotation tracking for a worker assigned to a station.
+     */
+    private suspend fun updateWorkerRotationTracking(worker: Worker, stationId: Long) {
+        val currentTime = System.currentTimeMillis()
+        workerDao.updateWorkerRotation(worker.id, stationId, currentTime)
     }
 
     /**
@@ -306,6 +371,8 @@ class RotationViewModel(
         
         targetStation?.let { station ->
             assignments[station.id]?.add(worker)
+            // Update rotation tracking for all workers
+            updateWorkerRotationTracking(worker, station.id)
         }
     }
 
