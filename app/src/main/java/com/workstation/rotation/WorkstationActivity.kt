@@ -1,6 +1,7 @@
 package com.workstation.rotation
 
 import android.os.Bundle
+import android.widget.CheckBox
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
