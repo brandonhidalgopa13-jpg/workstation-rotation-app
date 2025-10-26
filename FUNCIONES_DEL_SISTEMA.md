@@ -16,11 +16,13 @@ Este sistema automatiza la gestión y rotación de personal en estaciones de tra
 - ✅ **Sistema de Disponibilidad**: Configurar porcentajes de disponibilidad (0-100%)
 - ✅ **Gestión de Restricciones**: Notas sobre limitaciones laborales específicas
 - ✅ **Roles de Entrenamiento**: Configurar entrenadores (👨‍🏫) y entrenados (🎯)
+- ✅ **Sistema de Certificación**: Remover estado de entrenamiento al completar capacitación
 - ✅ **Asignación de Estaciones**: Seleccionar estaciones donde puede trabajar cada empleado
 - ✅ **Estado Activo/Inactivo**: Control de participación en rotaciones
 
 #### Características Especiales:
 - 🎓 **Sistema de Entrenamiento Integrado**: Relaciones entrenador-entrenado
+- 🏆 **Certificación de Trabajadores**: Proceso para completar entrenamientos
 - 📊 **Indicadores Visuales**: Iconos y colores para identificación rápida
 - 🔒 **Restricciones Personalizadas**: Notas sobre limitaciones específicas
 
@@ -77,7 +79,43 @@ FASE 4: Rotación Siguiente
 
 ---
 
-### 4. 🎨 VISUALIZACIÓN AVANZADA
+### 4. 🎓 SISTEMA DE CERTIFICACIÓN DE TRABAJADORES
+**Ubicación:** `WorkerActivity.kt` + `WorkerViewModel.kt`
+
+#### Funciones de Certificación:
+- ✅ **Identificación de Candidatos**: Lista automática de trabajadores en entrenamiento
+- ✅ **Selección Múltiple**: Certificar varios trabajadores simultáneamente
+- ✅ **Proceso de Certificación**: Remover estado de entrenamiento completamente
+- ✅ **Actualización Automática**: Sincronización inmediata con sistema de rotación
+
+#### Proceso de Certificación:
+```
+1. Acceso al Sistema
+   ├── Ir a sección "👥 Trabajadores"
+   ├── Tocar menú (⋮) en barra superior
+   └── Seleccionar "🎓 Certificar Trabajadores"
+
+2. Selección de Candidatos
+   ├── Ver lista de trabajadores en entrenamiento
+   ├── Seleccionar trabajadores completados
+   └── Confirmar certificación
+
+3. Efectos de la Certificación
+   ├── Remover estado "en entrenamiento"
+   ├── Eliminar relación con entrenador
+   ├── Liberar de estación de entrenamiento específica
+   └── Habilitar participación normal en rotaciones
+```
+
+#### Criterios para Certificación:
+- 🎯 **Dominio de Tareas**: Trabajador puede realizar tareas independientemente
+- ⏱️ **Tiempo Completado**: Ha cumplido período de entrenamiento establecido
+- ✅ **Evaluación Positiva**: Entrenador confirma competencia adquirida
+- 🔄 **Flexibilidad Operativa**: Puede rotar entre diferentes estaciones
+
+---
+
+### 5. 🎨 VISUALIZACIÓN AVANZADA
 **Ubicación:** `RotationActivity.kt` + Layouts XML
 
 #### Elementos Visuales:
@@ -93,7 +131,7 @@ FASE 4: Rotación Siguiente
 
 ---
 
-### 5. 🗄️ SISTEMA DE PERSISTENCIA
+### 6. 🗄️ SISTEMA DE PERSISTENCIA
 **Ubicación:** `AppDatabase.kt` + DAOs
 
 #### Estructura de Datos:
@@ -122,6 +160,56 @@ WorkerWorkstation (Relaciones)
 
 ---
 
+### 7. 📚 SISTEMA DE TUTORIAL INTERACTIVO
+**Ubicación:** `TutorialManager.kt` + `TutorialStep.kt`
+
+#### Funciones del Tutorial:
+- ✅ **Guía Paso a Paso**: Tutorial completo para nuevos usuarios
+- ✅ **Activación Automática**: Se muestra en el primer uso de la aplicación
+- ✅ **Configuración Flexible**: Activar/desactivar tutorial y pistas
+- ✅ **Reinicio Manual**: Posibilidad de repetir tutorial cuando sea necesario
+
+#### Contenido del Tutorial:
+```
+1. Bienvenida al Sistema
+   ├── Introducción general
+   └── Beneficios principales
+
+2. Gestión de Estaciones
+   ├── Crear estaciones de trabajo
+   ├── Configurar capacidades
+   └── Estaciones prioritarias
+
+3. Gestión de Trabajadores
+   ├── Registrar personal
+   ├── Configurar disponibilidad
+   ├── Sistema de entrenamiento
+   └── Asignación de estaciones
+
+4. Sistema de Certificación
+   ├── Proceso de certificación
+   ├── Cuándo certificar
+   └── Efectos de la certificación
+
+5. Rotación Inteligente
+   ├── Generar rotaciones
+   ├── Interpretar resultados
+   └── Implementar asignaciones
+
+6. Consejos y Trucos
+   ├── Mejores prácticas
+   ├── Optimización del sistema
+   └── Navegación eficiente
+```
+
+#### Características del Tutorial:
+- 🎯 **Interactividad**: Resaltado visual de elementos importantes
+- 📱 **Navegación Guiada**: Direcciona al usuario a secciones específicas
+- 💡 **Pistas Contextuales**: Ayuda adicional durante el uso normal
+- ⚙️ **Configuración Personalizada**: Control total sobre la experiencia de tutorial
+
+---
+
 ## 🚀 FLUJO DE TRABAJO TÍPICO
 
 ### 1. Configuración Inicial
@@ -137,22 +225,33 @@ WorkerWorkstation (Relaciones)
    ├── Asignar roles de entrenamiento
    ├── Seleccionar estaciones compatibles
    └── Agregar restricciones si aplica
+
+3. Gestión de Entrenamiento
+   ├── Monitorear progreso de entrenados
+   ├── Evaluar competencias adquiridas
+   ├── Certificar trabajadores completados
+   └── Actualizar roles según necesidades
 ```
 
 ### 2. Operación Diaria
 ```
-1. Generar Rotación
+1. Revisar Estado del Personal
+   ├── Verificar trabajadores en entrenamiento
+   ├── Certificar trabajadores completados
+   └── Actualizar disponibilidades
+
+2. Generar Rotación
    ├── Clic en "Generar Rotación"
    ├── Algoritmo procesa automáticamente
    └── Resultados se muestran instantáneamente
 
-2. Revisar Asignaciones
+3. Revisar Asignaciones
    ├── Verificar parejas de entrenamiento
    ├── Confirmar estaciones prioritarias completas
    ├── Revisar distribución general
    └── Identificar trabajadores con restricciones
 
-3. Implementar Rotación
+4. Implementar Rotación
    ├── Comunicar asignaciones al personal
    ├── Supervisar transiciones
    └── Preparar siguiente rotación
@@ -168,11 +267,13 @@ WorkerWorkstation (Relaciones)
 - 📊 **Visibilidad Total**: Estado completo del personal y estaciones
 - 🔄 **Flexibilidad Operativa**: Adaptación rápida a cambios
 
-### Entrenamiento
+### Entrenamiento y Desarrollo
 - 🎓 **Continuidad Garantizada**: Parejas entrenador-entrenado siempre juntas
 - 📈 **Desarrollo de Personal**: Sistema estructurado de capacitación
 - 🎯 **Estaciones Específicas**: Entrenamiento en áreas solicitadas
+- 🏆 **Proceso de Certificación**: Transición clara de entrenado a trabajador certificado
 - 👥 **Seguimiento Visual**: Identificación clara de procesos de entrenamiento
+- 📚 **Tutorial Integrado**: Guía completa para usuarios nuevos
 
 ### Gestión
 - 📊 **Reportes Visuales**: Información clara y organizada

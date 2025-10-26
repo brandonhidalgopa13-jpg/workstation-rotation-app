@@ -122,6 +122,18 @@ class WorkerActivity : AppCompatActivity() {
         binding.fabAddWorker.setOnClickListener {
             showAddDialog()
         }
+        
+        // Agregar botón para certificar trabajadores
+        binding.toolbar.inflateMenu(R.menu.worker_menu)
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_certify_workers -> {
+                    showCertificationDialog()
+                    true
+                }
+                else -> false
+            }
+        }
     }
     
     private fun observeWorkers() {
@@ -349,5 +361,57 @@ class WorkerActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+    
+    /**
+     * Muestra el diálogo para certificar trabajadores (remover estado de entrenamiento).
+     */
+    private fun showCertificationDialog() {
+        lifecycleScope.launch {
+            val workersInTraining = viewModel.getWorkersInTraining()
+            
+            if (workersInTraining.isEmpty()) {
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("🎓 Certificación de Trabajadores")
+                    .setMessage("No hay trabajadores en entrenamiento para certificar.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return@launch
+            }
+            
+            val workerNames = workersInTraining.map { worker ->
+                "${worker.name} - ${worker.email}"
+            }.toTypedArray()
+            
+            val selectedWorkers = BooleanArray(workersInTraining.size) { false }
+            
+            AlertDialog.Builder(this@WorkerActivity)
+                .setTitle("🎓 Certificar Trabajadores")
+                .setMessage("Selecciona los trabajadores que han completado su entrenamiento y están listos para ser certificados:")
+                .setMultiChoiceItems(workerNames, selectedWorkers) { _, which, isChecked ->
+                    selectedWorkers[which] = isChecked
+                }
+                .setPositiveButton("Certificar Seleccionados") { _, _ ->
+                    lifecycleScope.launch {
+                        var certifiedCount = 0
+                        selectedWorkers.forEachIndexed { index, isSelected ->
+                            if (isSelected) {
+                                viewModel.certifyWorker(workersInTraining[index].id)
+                                certifiedCount++
+                            }
+                        }
+                        
+                        if (certifiedCount > 0) {
+                            AlertDialog.Builder(this@WorkerActivity)
+                                .setTitle("✅ Certificación Completada")
+                                .setMessage("Se han certificado $certifiedCount trabajador(es). Ya no están en entrenamiento y pueden participar normalmente en las rotaciones.")
+                                .setPositiveButton("Entendido", null)
+                                .show()
+                        }
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
     }
 }

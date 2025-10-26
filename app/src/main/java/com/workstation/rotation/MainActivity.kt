@@ -2,8 +2,12 @@ package com.workstation.rotation
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import com.workstation.rotation.databinding.ActivityMainBinding
+import com.workstation.rotation.tutorial.TutorialManager
+import com.workstation.rotation.tutorial.TutorialStep
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -46,6 +50,7 @@ import com.workstation.rotation.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityMainBinding
+    private lateinit var tutorialManager: TutorialManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +58,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         
         setupUI()
+        setupTutorial()
     }
     
     /**
@@ -60,6 +66,98 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupUI() {
         setupClickListeners()
+        setupToolbar()
+    }
+    
+    /**
+     * Configura la toolbar con el menú de tutorial.
+     */
+    private fun setupToolbar() {
+        setSupportActionBar(findViewById(androidx.appcompat.R.id.action_bar))
+        supportActionBar?.title = "Sistema de Rotación"
+    }
+    
+    /**
+     * Configura el sistema de tutorial.
+     */
+    private fun setupTutorial() {
+        tutorialManager = TutorialManager(this)
+        
+        // Mostrar tutorial automáticamente si es la primera vez
+        if (tutorialManager.shouldShowTutorial()) {
+            // Pequeño delay para que la UI se cargue completamente
+            binding.root.postDelayed({
+                startInteractiveTutorial()
+            }, 500)
+        }
+    }
+    
+    /**
+     * Inicia el tutorial interactivo.
+     */
+    private fun startInteractiveTutorial() {
+        tutorialManager.startTutorial { step ->
+            handleTutorialStep(step)
+        }
+    }
+    
+    /**
+     * Maneja cada paso del tutorial.
+     */
+    private fun handleTutorialStep(step: TutorialStep) {
+        when (step) {
+            TutorialStep.MAIN_SCREEN -> {
+                // Resaltar las tarjetas principales
+                highlightMainCards()
+            }
+            TutorialStep.WORKSTATIONS_INTRO -> {
+                // Resaltar botón de estaciones
+                tutorialManager.highlightView(binding.btnWorkstations)
+            }
+            TutorialStep.WORKERS_INTRO -> {
+                // Resaltar botón de trabajadores
+                tutorialManager.highlightView(binding.btnWorkers)
+            }
+            TutorialStep.ROTATION_INTRO -> {
+                // Resaltar botón de rotación
+                tutorialManager.highlightView(binding.btnRotation)
+            }
+            else -> {
+                // Quitar todos los resaltados
+                clearHighlights()
+            }
+        }
+    }
+    
+    /**
+     * Resalta las tarjetas principales.
+     */
+    private fun highlightMainCards() {
+        // Encontrar las tarjetas en el layout
+        val cardViews = listOf(
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkstations),
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkers),
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRotation)
+        )
+        
+        cardViews.filterNotNull().forEach { card ->
+            tutorialManager.highlightView(card)
+        }
+    }
+    
+    /**
+     * Quita todos los resaltados.
+     */
+    private fun clearHighlights() {
+        val cardViews = listOf(
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkstations),
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardWorkers),
+            findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRotation)
+        )
+        
+        cardViews.filterNotNull().forEach { card ->
+            tutorialManager.highlightView(card, false)
+        }
     }
     
     /**
@@ -89,8 +187,28 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, activityClass))
     }
     
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_tutorial -> {
+                tutorialManager.showTutorialSettings()
+                true
+            }
+            R.id.action_start_tutorial -> {
+                startInteractiveTutorial()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
     override fun onDestroy() {
         super.onDestroy()
+        clearHighlights()
         // Clean up binding reference to prevent memory leaks
     }
 }
