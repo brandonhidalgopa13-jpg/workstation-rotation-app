@@ -79,9 +79,16 @@ class RotationViewModel(
     /**
      * Generates an intelligent rotation considering priorities, availability, and training relationships.
      * 
+     * PRIORITY HIERARCHY (from highest to lowest):
+     * 1. MAXIMUM PRIORITY: Trainer-trainee pairs in PRIORITY workstations
+     * 2. HIGH PRIORITY: Trainer-trainee pairs in normal workstations  
+     * 3. MEDIUM PRIORITY: Individual workers in priority workstations
+     * 4. NORMAL PRIORITY: Individual workers in normal workstations
+     * 
      * Key Features:
      * - ABSOLUTE PRIORITY for trainer-trainee pairs: When a trainee has an assigned trainer, 
      *   both are ALWAYS placed together at the trainee's requested training workstation
+     * - SPECIAL PRIORITY for training in priority workstations: These get assigned FIRST
      * - Training relationships override ALL other constraints (capacity, availability, workstation restrictions)
      * - Maintains priority workstation capacity requirements for non-training assignments
      * - Considers worker availability percentages and restrictions for individual assignments
@@ -148,7 +155,12 @@ class RotationViewModel(
     }
 
     /**
-     * Forces assignment of trainer-trainee pairs to training workstations.
+     * Assigns trainer-trainee pairs with ABSOLUTE PRIORITY, especially for priority workstations.
+     * 
+     * PRIORITY HIERARCHY:
+     * 1. MAXIMUM PRIORITY: Trainer-trainee pairs in PRIORITY workstations
+     * 2. HIGH PRIORITY: Trainer-trainee pairs in normal workstations
+     * 3. All other assignments come after training relationships
      * 
      * This method ensures that training relationships ALWAYS take absolute priority over ALL other constraints:
      * - Ignores workstation capacity limits (will exceed if necessary for training)
@@ -158,7 +170,7 @@ class RotationViewModel(
      * 
      * Training continuity is considered more important than operational efficiency constraints.
      */
-    private fun assignTrainerTraineePairs(
+    private fun assignTrainerTraineePairsWithPriority(
         eligibleWorkers: List<Worker>,
         assignments: MutableMap<Long, MutableList<Worker>>,
         allWorkstations: List<Workstation>,
@@ -168,7 +180,13 @@ class RotationViewModel(
             worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null
         }
         
-        for (trainee in traineesWithTrainers) {
+        // Sort trainees by priority: priority workstations first, then normal workstations
+        val sortedTrainees = traineesWithTrainers.sortedByDescending { trainee ->
+            val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+            trainingStation?.isPriority ?: false
+        }
+        
+        for (trainee in sortedTrainees) {
             val trainer = eligibleWorkers.find { it.id == trainee.trainerId }
             
             if (trainer != null && 
@@ -178,16 +196,35 @@ class RotationViewModel(
                 val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
                 
                 trainingStation?.let { station ->
-                    // FORCE assignment regardless of constraints
+                    // FORCE assignment regardless of ALL constraints
+                    // Priority workstations with training get ABSOLUTE priority
                     assignments[station.id]?.addAll(listOf(trainee, trainer))
                     unassignedWorkers.removeAll(listOf(trainee, trainer))
+                    
+                    // Log priority assignment for debugging
+                    if (station.isPriority) {
+                        // This is the HIGHEST priority assignment in the entire system
+                    }
                 }
             }
         }
     }
 
     /**
+     * Legacy method for backward compatibility - now calls the priority-aware version.
+     */
+    private fun assignTrainerTraineePairs(
+        eligibleWorkers: List<Worker>,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>,
+        unassignedWorkers: MutableList<Worker>
+    ) {
+        assignTrainerTraineePairsWithPriority(eligibleWorkers, assignments, allWorkstations, unassignedWorkers)
+    }
+
+    /**
      * Assigns workers to priority workstations ensuring full capacity.
+     * Respects trainer-trainee pairs that may already be assigned.
      */
     private suspend fun assignPriorityWorkstations(
         priorityWorkstations: List<Workstation>,
@@ -195,18 +232,23 @@ class RotationViewModel(
         assignments: MutableMap<Long, MutableList<Worker>>
     ) {
         for (station in priorityWorkstations) {
-            val availableWorkers = eligibleWorkers.filter { worker ->
-                workerDao.getWorkerWorkstationIds(worker.id).contains(station.id) &&
-                assignments.values.none { it.contains(worker) }
+            val currentlyAssigned = assignments[station.id]?.size ?: 0
+            val remainingCapacity = station.requiredWorkers - currentlyAssigned
+            
+            if (remainingCapacity > 0) {
+                val availableWorkers = eligibleWorkers.filter { worker ->
+                    workerDao.getWorkerWorkstationIds(worker.id).contains(station.id) &&
+                    assignments.values.none { it.contains(worker) }
+                }
+                
+                val sortedWorkers = availableWorkers.sortedWith(
+                    compareByDescending<Worker> { it.isTrainer }
+                        .thenByDescending { it.availabilityPercentage }
+                )
+                
+                val workersToAssign = minOf(remainingCapacity, sortedWorkers.size)
+                assignments[station.id]?.addAll(sortedWorkers.take(workersToAssign))
             }
-            
-            val sortedWorkers = availableWorkers.sortedWith(
-                compareByDescending<Worker> { it.isTrainer }
-                    .thenByDescending { it.availabilityPercentage }
-            )
-            
-            val workersToAssign = minOf(station.requiredWorkers, sortedWorkers.size)
-            assignments[station.id]?.addAll(sortedWorkers.take(workersToAssign))
         }
     }
 
@@ -280,19 +322,27 @@ class RotationViewModel(
         
         // Separate workstation types
         val (priorityWorkstations, normalWorkstations) = allWorkstations.partition { it.isPriority }
+        
+        // PHASE 0: ABSOLUTE PRIORITY - Assign ALL trainer-trainee pairs FIRST
+        // This happens BEFORE any other assignment, including priority workstations
+        val allUnassignedWorkers = eligibleWorkers.toMutableList()
+        assignTrainerTraineePairsWithPriority(eligibleWorkers, currentAssignments, allWorkstations, allUnassignedWorkers)
             
-        // Phase 1: Assign workers to PRIORITY workstations first (current positions)
+        // Phase 1: Assign remaining workers to PRIORITY workstations (current positions)
         assignPriorityWorkstations(priorityWorkstations, eligibleWorkers, currentAssignments)
         
         // Phase 2: Assign remaining workers to NORMAL workstations (current positions)
-        // This includes trainer-trainee pairs with highest priority
         assignNormalWorkstations(normalWorkstations, eligibleWorkers, currentAssignments)
         
         // Phase 3: Generate next rotation positions
-        // Priority stations must maintain full capacity
+        // PHASE 3.0: ABSOLUTE PRIORITY - Assign ALL trainer-trainee pairs FIRST for next rotation
+        val allUnassignedWorkersNext = eligibleWorkers.toMutableList()
+        assignTrainerTraineePairsWithPriority(eligibleWorkers, nextAssignments, allWorkstations, allUnassignedWorkersNext)
+        
+        // Phase 3.1: Priority stations must maintain full capacity
         assignPriorityWorkstations(priorityWorkstations, eligibleWorkers, nextAssignments)
         
-        // Assign remaining workers to normal stations for next rotation
+        // Phase 3.2: Assign remaining workers to normal stations for next rotation
         val remainingWorkers = eligibleWorkers.filter { worker ->
             nextAssignments.values.none { it.contains(worker) }
         }
