@@ -157,6 +157,7 @@ class WorkstationActivity : AppCompatActivity() {
             }
         }
         
+        // Launch coroutine for database operation
         lifecycleScope.launch {
             try {
                 if (existingWorkstation != null) {
@@ -176,6 +177,7 @@ class WorkstationActivity : AppCompatActivity() {
                         )
                     )
                 }
+                // Success - no need to show message, the list will update automatically
             } catch (e: Exception) {
                 // Show error message to user
                 androidx.appcompat.app.AlertDialog.Builder(this@WorkstationActivity)
@@ -183,10 +185,10 @@ class WorkstationActivity : AppCompatActivity() {
                     .setMessage("No se pudo guardar la estación: ${e.message}")
                     .setPositiveButton("OK", null)
                     .show()
-                return false
             }
         }
         
+        // Return true to indicate validation passed (database operation is async)
         return true
     }
     
