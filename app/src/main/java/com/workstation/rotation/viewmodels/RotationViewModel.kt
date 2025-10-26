@@ -81,23 +81,25 @@ class RotationViewModel(
      * Executes the main rotation algorithm with all business logic.
      */
     private suspend fun executeRotationAlgorithm(data: RotationData): List<RotationItem> {
+        val eligibleWorkers = data.eligibleWorkers
+        val allWorkstations = data.allWorkstations
             
-            // Generate intelligent rotation with capacity control
-            val rotationItems = mutableListOf<RotationItem>()
-            
-            // Track current assignments per workstation
-            val currentAssignments = mutableMapOf<Long, MutableList<Worker>>()
-            val nextAssignments = mutableMapOf<Long, MutableList<Worker>>()
-            
-            // Initialize assignment tracking
-            allWorkstations.forEach { station ->
-                currentAssignments[station.id] = mutableListOf()
-                nextAssignments[station.id] = mutableListOf()
-            }
-            
-            // Separate priority and normal workstations
-            val priorityWorkstations = allWorkstations.filter { it.isPriority }
-            val normalWorkstations = allWorkstations.filter { !it.isPriority }
+        // Generate intelligent rotation with capacity control
+        val rotationItems = mutableListOf<RotationItem>()
+        
+        // Track current assignments per workstation
+        val currentAssignments = mutableMapOf<Long, MutableList<Worker>>()
+        val nextAssignments = mutableMapOf<Long, MutableList<Worker>>()
+        
+        // Initialize assignment tracking
+        allWorkstations.forEach { station ->
+            currentAssignments[station.id] = mutableListOf()
+            nextAssignments[station.id] = mutableListOf()
+        }
+        
+        // Separate priority and normal workstations
+        val priorityWorkstations = allWorkstations.filter { it.isPriority }
+        val normalWorkstations = allWorkstations.filter { !it.isPriority }
             
             // Phase 1: Assign workers to PRIORITY workstations first (current positions)
             for (priorityStation in priorityWorkstations) {
@@ -263,14 +265,7 @@ class RotationViewModel(
                 }
             }
             
-            _rotationItems.value = rotationItems.sortedBy { it.rotationOrder }
-            rotationItems.isNotEmpty()
-            
-        } catch (e: Exception) {
-            _rotationItems.value = emptyList()
-            eligibleWorkersCount = 0
-            false
-        }
+            return rotationItems
     }
     
     fun updateEligibleWorkersCount() {
