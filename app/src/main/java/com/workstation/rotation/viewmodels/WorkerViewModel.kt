@@ -10,6 +10,7 @@ import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.WorkerWorkstation
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 class WorkerViewModel(
     private val workerDao: WorkerDao,
