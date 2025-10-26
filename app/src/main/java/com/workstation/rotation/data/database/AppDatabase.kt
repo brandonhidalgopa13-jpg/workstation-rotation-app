@@ -59,7 +59,7 @@ import com.workstation.rotation.data.entities.WorkerWorkstation
 
 @Database(
     entities = [Worker::class, Workstation::class, WorkerWorkstation::class],
-    version = 6,
+    version = Constants.DATABASE_VERSION,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

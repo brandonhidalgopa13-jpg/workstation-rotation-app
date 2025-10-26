@@ -193,7 +193,7 @@ class TutorialManager(private val context: Context) {
             // Agregar borde si es una CardView
             if (view is MaterialCardView) {
                 view.strokeWidth = 4
-                view.strokeColor = context.getColor(R.color.accent_orange)
+                view.strokeColor = androidx.core.content.ContextCompat.getColor(context, R.color.accent_orange)
             }
         } else {
             view.elevation = 0f

@@ -73,22 +73,32 @@ class MainActivity : AppCompatActivity() {
      * Configura la toolbar con el menú de tutorial.
      */
     private fun setupToolbar() {
-        setSupportActionBar(findViewById(androidx.appcompat.R.id.action_bar))
-        supportActionBar?.title = "Sistema de Rotación"
+        // Material3 no usa ActionBar por defecto, el título se maneja en el layout
+        // Si necesitamos una toolbar, se debe agregar al layout
     }
     
     /**
      * Configura el sistema de tutorial.
      */
     private fun setupTutorial() {
-        tutorialManager = TutorialManager(this)
-        
-        // Mostrar tutorial automáticamente si es la primera vez
-        if (tutorialManager.shouldShowTutorial()) {
-            // Pequeño delay para que la UI se cargue completamente
-            binding.root.postDelayed({
-                startInteractiveTutorial()
-            }, 500)
+        try {
+            tutorialManager = TutorialManager(this)
+            
+            // Mostrar tutorial automáticamente si es la primera vez
+            if (tutorialManager.shouldShowTutorial()) {
+                // Pequeño delay para que la UI se cargue completamente
+                binding.root.postDelayed({
+                    try {
+                        startInteractiveTutorial()
+                    } catch (e: Exception) {
+                        // Si hay error en el tutorial, continuar sin él
+                        e.printStackTrace()
+                    }
+                }, 500)
+            }
+        } catch (e: Exception) {
+            // Si hay error inicializando el tutorial, continuar sin él
+            e.printStackTrace()
         }
     }
     
@@ -177,18 +187,31 @@ class MainActivity : AppCompatActivity() {
     }
     
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main_menu, menu)
-        return true
+        // Solo inflar menú si tenemos ActionBar
+        return if (supportActionBar != null) {
+            menuInflater.inflate(R.menu.main_menu, menu)
+            true
+        } else {
+            false
+        }
     }
     
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_tutorial -> {
-                tutorialManager.showTutorialSettings()
+                try {
+                    tutorialManager.showTutorialSettings()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 true
             }
             R.id.action_start_tutorial -> {
-                startInteractiveTutorial()
+                try {
+                    startInteractiveTutorial()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)

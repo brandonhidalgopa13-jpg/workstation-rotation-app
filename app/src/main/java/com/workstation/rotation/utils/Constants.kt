@@ -7,7 +7,7 @@ object Constants {
     
     // Database
     const val DATABASE_NAME = "workstation_rotation_database"
-    const val DATABASE_VERSION = 5
+    const val DATABASE_VERSION = 6
     
     // Worker constraints
     const val MIN_AVAILABILITY_PERCENTAGE = 0
