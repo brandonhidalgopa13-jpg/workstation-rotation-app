@@ -1,15 +1,21 @@
 package com.workstation.rotation
 
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
-import com.workstation.rotation.adapters.RotationAdapter
+import com.workstation.rotation.R
 import com.workstation.rotation.data.database.AppDatabase
+import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.databinding.ActivityRotationBinding
-import com.workstation.rotation.models.RotationItem
+import com.workstation.rotation.models.RotationTable
+import com.workstation.rotation.models.WorkstationColumn
+import com.workstation.rotation.utils.UIUtils
 import com.workstation.rotation.viewmodels.RotationViewModel
 import com.workstation.rotation.viewmodels.RotationViewModelFactory
 import kotlinx.coroutines.launch
@@ -17,7 +23,6 @@ import kotlinx.coroutines.launch
 class RotationActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityRotationBinding
-    private lateinit var adapter: RotationAdapter
     
     private val viewModel: RotationViewModel by viewModels {
         RotationViewModelFactory(
@@ -32,7 +37,6 @@ class RotationActivity : AppCompatActivity() {
         setContentView(binding.root)
         
         setupToolbar()
-        setupRecyclerView()
         setupButtons()
         observeRotation()
     }
@@ -43,12 +47,132 @@ class RotationActivity : AppCompatActivity() {
         }
     }
     
-    private fun setupRecyclerView() {
-        adapter = RotationAdapter()
+    /**
+     * Sets up the rotation table view with workstations as columns.
+     */
+    private fun setupRotationTable(rotationTable: RotationTable) {
+        // Clear existing views
+        binding.layoutWorkstationHeaders.removeAllViews()
+        binding.layoutCapacityRequirements.removeAllViews()
+        binding.layoutCurrentPhase.removeAllViews()
+        binding.layoutNextPhase.removeAllViews()
         
-        binding.recyclerViewRotation.apply {
-            layoutManager = LinearLayoutManager(this@RotationActivity)
-            adapter = this@RotationActivity.adapter
+        val workstationColumns = rotationTable.workstations.map { workstation ->
+            WorkstationColumn(
+                workstation = workstation,
+                currentWorkers = rotationTable.currentPhase[workstation.id] ?: emptyList(),
+                nextWorkers = rotationTable.nextPhase[workstation.id] ?: emptyList()
+            )
+        }
+        
+        // Create columns for each workstation
+        workstationColumns.forEach { column ->
+            createWorkstationColumn(column)
+        }
+    }
+    
+    /**
+     * Creates a column for a workstation in the rotation table.
+     */
+    private fun createWorkstationColumn(column: WorkstationColumn) {
+        val columnWidth = 160 // dp
+        val layoutParams = LinearLayout.LayoutParams(
+            (columnWidth * resources.displayMetrics.density).toInt(),
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(8, 0, 8, 0)
+        }
+        
+        // Header
+        createWorkstationHeader(column, layoutParams)
+        
+        // Capacity requirement
+        createCapacityRequirement(column, layoutParams)
+        
+        // Current phase workers
+        createWorkerColumn(column.currentWorkers, binding.layoutCurrentPhase, layoutParams, true)
+        
+        // Next phase workers
+        createWorkerColumn(column.nextWorkers, binding.layoutNextPhase, layoutParams, false)
+    }
+    
+    /**
+     * Creates the header for a workstation column.
+     */
+    private fun createWorkstationHeader(column: WorkstationColumn, layoutParams: LinearLayout.LayoutParams) {
+        val headerView = TextView(this).apply {
+            text = column.workstation.getDisplayName()
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
+            gravity = android.view.Gravity.CENTER
+            setPadding(12, 12, 12, 12)
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.icon_background_blue)
+            this.layoutParams = layoutParams
+        }
+        binding.layoutWorkstationHeaders.addView(headerView)
+    }
+    
+    /**
+     * Creates the capacity requirement display for a workstation.
+     */
+    private fun createCapacityRequirement(column: WorkstationColumn, layoutParams: LinearLayout.LayoutParams) {
+        val capacityView = TextView(this).apply {
+            text = "Requiere: ${column.workstation.requiredWorkers}"
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
+            gravity = android.view.Gravity.CENTER
+            setPadding(8, 8, 8, 8)
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_orange)
+            this.layoutParams = layoutParams
+        }
+        binding.layoutCapacityRequirements.addView(capacityView)
+    }
+    
+    /**
+     * Creates a column of workers for current or next phase.
+     */
+    private fun createWorkerColumn(
+        workers: List<Worker>, 
+        parentLayout: LinearLayout, 
+        layoutParams: LinearLayout.LayoutParams,
+        isCurrentPhase: Boolean
+    ) {
+        val columnLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(4, 4, 4, 4)
+            this.layoutParams = layoutParams
+        }
+        
+        workers.forEach { worker ->
+            val workerView = createWorkerView(worker, isCurrentPhase)
+            columnLayout.addView(workerView)
+        }
+        
+        parentLayout.addView(columnLayout)
+    }
+    
+    /**
+     * Creates a view for an individual worker.
+     */
+    private fun createWorkerView(worker: Worker, isCurrentPhase: Boolean): TextView {
+        return TextView(this).apply {
+            text = worker.getDisplayName()
+            textSize = 11f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
+            gravity = android.view.Gravity.CENTER
+            setPadding(8, 6, 8, 6)
+            
+            val bgColor = if (isCurrentPhase) R.color.primary_blue_light else R.color.accent_orange
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_green)
+            backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
+            
+            val params = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(2, 2, 2, 2)
+            }
+            layoutParams = params
         }
     }
     
@@ -83,13 +207,27 @@ class RotationActivity : AppCompatActivity() {
     }
     
     private fun observeRotation() {
-        viewModel.rotationItems.observe(this) { items ->
-            adapter.submitList(items)
+        viewModel.rotationTable.observe(this) { rotationTable ->
+            if (rotationTable != null) {
+                setupRotationTable(rotationTable)
+            } else {
+                clearRotationTable()
+            }
             updateWorkerCount()
         }
         
         // Initial count update
         updateWorkerCount()
+    }
+    
+    /**
+     * Clears the rotation table display.
+     */
+    private fun clearRotationTable() {
+        binding.layoutWorkstationHeaders.removeAllViews()
+        binding.layoutCapacityRequirements.removeAllViews()
+        binding.layoutCurrentPhase.removeAllViews()
+        binding.layoutNextPhase.removeAllViews()
     }
     
     private fun updateWorkerCount() {

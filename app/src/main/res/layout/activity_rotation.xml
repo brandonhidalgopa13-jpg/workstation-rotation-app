@@ -50,11 +50,94 @@
         android:padding="16dp"
         android:background="@color/light_gray" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewRotation"
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp" />
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/layoutRotationTable"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Header with workstation names -->
+            <LinearLayout
+                android:id="@+id/layoutWorkstationHeaders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@color/primary_blue"
+                android:padding="8dp" />
+
+            <!-- Capacity requirements row -->
+            <LinearLayout
+                android:id="@+id/layoutCapacityRequirements"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@color/background_surface"
+                android:padding="8dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="@color/primary_blue"
+                android:layout_marginVertical="8dp" />
+
+            <!-- Current Phase Label -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📍 ROTACIÓN ACTUAL"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="@color/background_surface" />
+
+            <!-- Current phase workers -->
+            <LinearLayout
+                android:id="@+id/layoutCurrentPhase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:minHeight="120dp"
+                android:background="@color/background_light" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:background="@color/accent_orange"
+                android:layout_marginVertical="8dp" />
+
+            <!-- Next Phase Label -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🔄 PRÓXIMA ROTACIÓN"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/accent_orange"
+                android:gravity="center"
+                android:padding="8dp"
+                android:background="@color/background_surface" />
+
+            <!-- Next phase workers -->
+            <LinearLayout
+                android:id="@+id/layoutNextPhase"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:minHeight="120dp"
+                android:background="@color/background_light" />
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
 
 </LinearLayout>

@@ -10,6 +10,8 @@ import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.models.RotationItem
+import com.workstation.rotation.models.RotationTable
+import com.workstation.rotation.models.WorkstationColumn
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -20,6 +22,9 @@ class RotationViewModel(
     
     private val _rotationItems = MutableLiveData<List<RotationItem>>()
     val rotationItems: LiveData<List<RotationItem>> = _rotationItems
+    
+    private val _rotationTable = MutableLiveData<RotationTable?>()
+    val rotationTable: LiveData<RotationTable?> = _rotationTable
     
     private var eligibleWorkersCount = 0
     
@@ -35,8 +40,9 @@ class RotationViewModel(
                 return false
             }
             
-            val rotationItems = executeRotationAlgorithm(rotationData)
+            val (rotationItems, rotationTable) = executeRotationAlgorithm(rotationData)
             _rotationItems.value = rotationItems.sortedBy { it.rotationOrder }
+            _rotationTable.value = rotationTable
             
             rotationItems.isNotEmpty()
             
@@ -79,8 +85,9 @@ class RotationViewModel(
     
     /**
      * Executes the main rotation algorithm with all business logic.
+     * Returns both the rotation items list and the rotation table.
      */
-    private suspend fun executeRotationAlgorithm(data: RotationData): List<RotationItem> {
+    private suspend fun executeRotationAlgorithm(data: RotationData): Pair<List<RotationItem>, RotationTable> {
         val eligibleWorkers = data.eligibleWorkers
         val allWorkstations = data.allWorkstations
             
@@ -265,7 +272,14 @@ class RotationViewModel(
                 }
             }
             
-            return rotationItems
+            // Create rotation table
+            val rotationTable = RotationTable(
+                workstations = allWorkstations,
+                currentPhase = currentAssignments.mapValues { it.value.toList() },
+                nextPhase = nextAssignments.mapValues { it.value.toList() }
+            )
+            
+            return Pair(rotationItems, rotationTable)
     }
     
     fun updateEligibleWorkersCount() {
@@ -298,6 +312,7 @@ class RotationViewModel(
     
     fun clearRotation() {
         _rotationItems.value = emptyList()
+        _rotationTable.value = null
     }
     
     fun getEligibleWorkersCount(): Int {
