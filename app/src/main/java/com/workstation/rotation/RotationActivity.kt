@@ -55,17 +55,29 @@ class RotationActivity : AppCompatActivity() {
     private fun setupButtons() {
         binding.btnGenerateRotation.setOnClickListener {
             lifecycleScope.launch {
-                val rotationGenerated = viewModel.generateRotation()
-                if (rotationGenerated) {
-                    Snackbar.make(binding.root, "Rotación generada exitosamente", Snackbar.LENGTH_SHORT).show()
-                } else {
-                    Snackbar.make(binding.root, "No hay trabajadores elegibles para rotación", Snackbar.LENGTH_LONG).show()
+                try {
+                    val rotationGenerated = viewModel.generateRotation()
+                    if (rotationGenerated) {
+                        Snackbar.make(binding.root, "Rotación generada exitosamente", Snackbar.LENGTH_SHORT).show()
+                        updateWorkerCount()
+                    } else {
+                        val count = viewModel.getEligibleWorkersCount()
+                        val message = if (count == 0) {
+                            "No hay trabajadores con estaciones asignadas. Agrega trabajadores y asigna estaciones primero."
+                        } else {
+                            "No se pudo generar la rotación. Verifica que haya estaciones activas."
+                        }
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Snackbar.make(binding.root, "Error al generar rotación: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
         
         binding.btnClearRotation.setOnClickListener {
             viewModel.clearRotation()
+            updateWorkerCount()
             Snackbar.make(binding.root, "Rotación limpiada", Snackbar.LENGTH_SHORT).show()
         }
     }
@@ -73,16 +85,23 @@ class RotationActivity : AppCompatActivity() {
     private fun observeRotation() {
         viewModel.rotationItems.observe(this) { items ->
             adapter.submitList(items)
-            
-            val eligibleCount = viewModel.getEligibleWorkersCount()
-            binding.tvRotationInfo.text = "Trabajadores elegibles para rotación: $eligibleCount " +
-                    "(Solo aquellos con estaciones asignadas)"
+            updateWorkerCount()
         }
         
+        // Initial count update
+        updateWorkerCount()
+    }
+    
+    private fun updateWorkerCount() {
         lifecycleScope.launch {
-            val count = viewModel.getEligibleWorkersCount()
-            binding.tvRotationInfo.text = "Trabajadores elegibles para rotación: $count " +
-                    "(Solo aquellos con estaciones asignadas)"
+            try {
+                viewModel.updateEligibleWorkersCount()
+                val count = viewModel.getEligibleWorkersCount()
+                binding.tvRotationInfo.text = "Trabajadores elegibles para rotación: $count " +
+                        "(Solo aquellos con estaciones asignadas)"
+            } catch (e: Exception) {
+                binding.tvRotationInfo.text = "Error al contar trabajadores elegibles"
+            }
         }
     }
 }

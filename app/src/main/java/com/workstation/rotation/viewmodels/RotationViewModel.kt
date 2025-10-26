@@ -4,11 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.models.RotationItem
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class RotationViewModel(
     private val workerDao: WorkerDao,
@@ -21,65 +24,86 @@ class RotationViewModel(
     private var eligibleWorkersCount = 0
     
     suspend fun generateRotation(): Boolean {
-        // Get workers that have workstations assigned
-        val eligibleWorkers = mutableListOf<Worker>()
-        val allWorkers = workerDao.getAllWorkers()
-        
-        allWorkers.collect { workers ->
-            for (worker in workers.filter { it.isActive }) {
+        return try {
+            // Get all active workers using first() to get single emission
+            val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
+            
+            // Get workers that have workstations assigned
+            val eligibleWorkers = mutableListOf<Worker>()
+            for (worker in allWorkers) {
                 val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
                 if (workstationIds.isNotEmpty()) {
                     eligibleWorkers.add(worker)
                 }
             }
-        }
-        
-        eligibleWorkersCount = eligibleWorkers.size
-        
-        if (eligibleWorkers.isEmpty()) {
-            _rotationItems.value = emptyList()
-            return false
-        }
-        
-        // Get all active workstations
-        val workstations = mutableListOf<Workstation>()
-        workstationDao.getAllActiveWorkstations().collect { stations ->
-            workstations.addAll(stations)
-        }
-        
-        if (workstations.isEmpty()) {
-            _rotationItems.value = emptyList()
-            return false
-        }
-        
-        // Generate rotation
-        val rotationItems = mutableListOf<RotationItem>()
-        
-        for ((index, worker) in eligibleWorkers.withIndex()) {
-            val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
-            val workerWorkstations = workstations.filter { it.id in workerWorkstationIds }
             
-            if (workerWorkstations.isNotEmpty()) {
-                // Simple rotation: assign next workstation in the list
-                val currentIndex = index % workerWorkstations.size
-                val nextIndex = (currentIndex + 1) % workerWorkstations.size
+            eligibleWorkersCount = eligibleWorkers.size
+            
+            if (eligibleWorkers.isEmpty()) {
+                _rotationItems.value = emptyList()
+                return false
+            }
+            
+            // Get all active workstations
+            val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+            
+            if (allWorkstations.isEmpty()) {
+                _rotationItems.value = emptyList()
+                return false
+            }
+            
+            // Generate rotation
+            val rotationItems = mutableListOf<RotationItem>()
+            
+            for ((index, worker) in eligibleWorkers.withIndex()) {
+                val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                val workerWorkstations = allWorkstations.filter { it.id in workerWorkstationIds }
                 
-                val currentWorkstation = workerWorkstations[currentIndex]
-                val nextWorkstation = workerWorkstations[nextIndex]
-                
-                rotationItems.add(
-                    RotationItem(
-                        workerName = worker.name,
-                        currentWorkstation = currentWorkstation.name,
-                        nextWorkstation = nextWorkstation.name,
-                        rotationOrder = index + 1
+                if (workerWorkstations.isNotEmpty()) {
+                    // Improved rotation logic
+                    val currentIndex = index % workerWorkstations.size
+                    val nextIndex = (currentIndex + 1) % workerWorkstations.size
+                    
+                    val currentWorkstation = workerWorkstations[currentIndex]
+                    val nextWorkstation = workerWorkstations[nextIndex]
+                    
+                    rotationItems.add(
+                        RotationItem(
+                            workerName = worker.name,
+                            currentWorkstation = currentWorkstation.name,
+                            nextWorkstation = nextWorkstation.name,
+                            rotationOrder = index + 1
+                        )
                     )
-                )
+                }
+            }
+            
+            _rotationItems.value = rotationItems
+            rotationItems.isNotEmpty()
+            
+        } catch (e: Exception) {
+            _rotationItems.value = emptyList()
+            eligibleWorkersCount = 0
+            false
+        }
+    }
+    
+    fun updateEligibleWorkersCount() {
+        viewModelScope.launch {
+            try {
+                val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
+                var count = 0
+                for (worker in allWorkers) {
+                    val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    if (workstationIds.isNotEmpty()) {
+                        count++
+                    }
+                }
+                eligibleWorkersCount = count
+            } catch (e: Exception) {
+                eligibleWorkersCount = 0
             }
         }
-        
-        _rotationItems.value = rotationItems
-        return true
     }
     
     fun clearRotation() {
