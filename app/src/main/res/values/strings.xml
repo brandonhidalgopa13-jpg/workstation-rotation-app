@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rotación de Estaciones</string>
+    <string name="workstations">Estaciones de Trabajo</string>
+    <string name="workers">Trabajadores</string>
+    <string name="rotation">Sistema de Rotación</string>
+    <string name="add_workstation">Agregar Estación</string>
+    <string name="add_worker">Agregar Trabajador</string>
+    <string name="edit_workstation">Editar Estación</string>
+    <string name="edit_worker">Editar Trabajador</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Eliminar</string>
+    <string name="name">Nombre</string>
+    <string name="description">Descripción</string>
+    <string name="email">Email</string>
+    <string name="active">Activo</string>
+    <string name="inactive">Inactivo</string>
+    <string name="assigned_workstations">Estaciones Asignadas</string>
+    <string name="no_workstations_assigned">Sin estaciones asignadas</string>
+    <string name="generate_rotation">Generar Rotación</string>
+    <string name="clear_rotation">Limpiar</string>
+    <string name="rotation_generated">Rotación generada exitosamente</string>
+    <string name="no_eligible_workers">No hay trabajadores elegibles para rotación</string>
+</resources>
