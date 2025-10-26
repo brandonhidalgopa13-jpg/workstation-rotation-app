@@ -293,7 +293,7 @@ class RotationActivity : AppCompatActivity() {
                 viewModel.updateEligibleWorkersCount()
                 val count = viewModel.getEligibleWorkersCount()
                 binding.tvRotationInfo.text = "Trabajadores elegibles: $count | " +
-                        "🔒 Estaciones prioritarias mantienen capacidad completa en ambas fases"
+                        "💡 Presiona 'Generar Rotación' para crear asignaciones automáticas"
             } catch (e: Exception) {
                 binding.tvRotationInfo.text = "Error al contar trabajadores elegibles"
             }

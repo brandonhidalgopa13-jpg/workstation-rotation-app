@@ -132,7 +132,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Trabajadores elegibles para rotación: Solo aquellos con estaciones asignadas"
+                        android:text="El sistema genera rotaciones automáticas considerando entrenamiento, disponibilidad y prioridades. Solo trabajadores con estaciones asignadas participan."
                         android:textSize="14sp"
                         android:textColor="@color/text_primary"
                         android:lineSpacingExtra="2dp" />

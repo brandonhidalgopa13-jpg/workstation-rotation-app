@@ -70,7 +70,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Si está marcada, se asignará automáticamente la cantidad exacta de trabajadores requeridos a esta estación"
+                android:text="⭐ Las estaciones prioritarias siempre se llenan primero con la cantidad exacta de trabajadores requeridos. Úsalo para áreas críticas."
                 android:textSize="12sp"
                 android:textColor="@android:color/darker_gray"
                 android:layout_marginTop="4dp" />

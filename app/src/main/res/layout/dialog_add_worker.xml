@@ -115,7 +115,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="💡 La disponibilidad afecta la probabilidad de asignación en rotaciones"
+                    android:text="💡 Disponibilidad: 100% = siempre disponible, 80% = disponibilidad reducida. Afecta la probabilidad de asignación."
                     android:textSize="12sp"
                     android:textColor="@color/text_secondary"
                     android:layout_marginTop="8dp" />
@@ -387,7 +387,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="💡 Debe seleccionar al menos una estación para participar en rotaciones"
+                    android:text="💡 IMPORTANTE: Debe seleccionar al menos una estación para que el trabajador aparezca en las rotaciones automáticas."
                     android:textSize="12sp"
                     android:textColor="@color/text_secondary"
                     android:layout_marginTop="8dp" />
