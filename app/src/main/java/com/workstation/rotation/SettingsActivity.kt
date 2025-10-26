@@ -127,10 +127,7 @@ class SettingsActivity : AppCompatActivity() {
             importBackupLauncher.launch("application/json")
         }
         
-        // Tutorial
-        binding.btnResetTutorial.setOnClickListener {
-            resetTutorial()
-        }
+        // Tutorial eliminado - funcionalidad no disponible
         
         binding.btnCertifyWorkers.setOnClickListener {
             showCertificationDialog()
@@ -410,18 +407,7 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Reinicia el tutorial.
-     */
-    private fun resetTutorial() {
-        val tutorialPrefs = getSharedPreferences("tutorial_prefs", Context.MODE_PRIVATE)
-        tutorialPrefs.edit()
-            .putBoolean("tutorial_completed", false)
-            .putBoolean("tutorial_enabled", true)
-            .apply()
-        
-        Toast.makeText(this, "Tutorial reiniciado. Se mostrará en la próxima apertura.", Toast.LENGTH_SHORT).show()
-    }
+    // Función resetTutorial eliminada - funcionalidad no disponible
     
     override fun onRequestPermissionsResult(
         requestCode: Int,

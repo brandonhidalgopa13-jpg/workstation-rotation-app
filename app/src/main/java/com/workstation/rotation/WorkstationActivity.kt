@@ -14,18 +14,14 @@ import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.databinding.ActivityWorkstationBinding
 import com.workstation.rotation.viewmodels.WorkstationViewModel
 import com.workstation.rotation.viewmodels.WorkstationViewModelFactory
-import com.workstation.rotation.tutorial.TutorialManager
-import com.workstation.rotation.tutorial.TutorialStep
-import com.workstation.rotation.tutorial.GuideOverlay
+// Tutorial imports removed - functionality not available
 import kotlinx.coroutines.launch
 
 class WorkstationActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityWorkstationBinding
     private lateinit var adapter: WorkstationAdapter
-    private var tutorialManager: TutorialManager? = null
-    private var guideOverlay: GuideOverlay? = null
-    private var isTutorialActive = false
+    // Tutorial variables removed - functionality not available
     
     private val viewModel: WorkstationViewModel by viewModels {
         WorkstationViewModelFactory(AppDatabase.getDatabase(this).workstationDao())
@@ -40,7 +36,7 @@ class WorkstationActivity : AppCompatActivity() {
         setupRecyclerView()
         setupFab()
         observeWorkstations()
-        checkTutorialMode()
+        // Tutorial mode check removed - functionality not available
     }
     
     private fun setupToolbar() {
@@ -273,115 +269,5 @@ class WorkstationActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Verifica si el tutorial está activo y configura la guía.
-     */
-    private fun checkTutorialMode() {
-        isTutorialActive = intent.getBooleanExtra("tutorial_active", false)
-        val tutorialStep = intent.getStringExtra("tutorial_step")
-        
-        if (isTutorialActive && tutorialStep != null) {
-            tutorialManager = TutorialManager(this)
-            
-            // Pequeño delay para que la UI se cargue
-            binding.root.postDelayed({
-                startGuidedTutorial(tutorialStep)
-            }, 500)
-        }
-    }
-    
-    /**
-     * Inicia el tutorial guiado específico para esta actividad.
-     */
-    private fun startGuidedTutorial(stepName: String) {
-        when (stepName) {
-            "WORKSTATIONS_INTRO" -> {
-                showWorkstationIntroGuide()
-            }
-        }
-    }
-    
-    /**
-     * Muestra la guía de introducción a estaciones.
-     */
-    private fun showWorkstationIntroGuide() {
-        // Resaltar el botón FAB
-        guideOverlay = GuideOverlay.addToActivity(this, binding.fabAddWorkstation)
-        
-        // Mostrar diálogo explicativo
-        AlertDialog.Builder(this)
-            .setTitle("🏭 ¡Bienvenido a Estaciones!")
-            .setMessage(
-                "Aquí puedes gestionar todas las estaciones de trabajo.\n\n" +
-                "👆 Toca el botón + (resaltado) para crear tu primera estación.\n\n" +
-                "💡 Consejo: Crea al menos 3 estaciones diferentes para tener variedad en las rotaciones."
-            )
-            .setPositiveButton("Crear Estación") { _, _ ->
-                removeGuideOverlay()
-                // Abrir diálogo de creación automáticamente
-                showAddDialog()
-                showCreateStationGuide()
-            }
-            .setNegativeButton("Continuar Tutorial") { _, _ ->
-                removeGuideOverlay()
-                continueTutorial()
-            }
-            .setCancelable(false)
-            .show()
-    }
-    
-    /**
-     * Muestra la guía para crear estación.
-     */
-    private fun showCreateStationGuide() {
-        AlertDialog.Builder(this)
-            .setTitle("📝 Creando tu Primera Estación")
-            .setMessage(
-                "Completa la información:\n\n" +
-                "• Nombre: Ej. 'Control de Calidad'\n" +
-                "• Trabajadores: Ej. 2\n" +
-                "• Prioritaria: ✓ si es crítica\n\n" +
-                "Después de crear esta estación, crea 2 más para tener variedad."
-            )
-            .setPositiveButton("Entendido") { _, _ ->
-                // El usuario continuará creando la estación
-            }
-            .show()
-    }
-    
-    /**
-     * Continúa el tutorial a la siguiente actividad.
-     */
-    private fun continueTutorial() {
-        tutorialManager?.continueAfterNavigation(
-            TutorialStep.WORKSTATIONS_INTRO,
-            onStepComplete = { },
-            onNavigate = { step ->
-                // Navegar a la siguiente actividad del tutorial
-                val targetActivity = step.getTargetActivity()
-                if (targetActivity != null) {
-                    val intent = android.content.Intent(this, targetActivity)
-                    intent.putExtra("tutorial_active", true)
-                    intent.putExtra("tutorial_step", step.name)
-                    startActivity(intent)
-                    finish()
-                }
-            }
-        )
-    }
-    
-    /**
-     * Remueve el overlay de guía.
-     */
-    private fun removeGuideOverlay() {
-        guideOverlay?.let { overlay ->
-            GuideOverlay.removeFromActivity(this, overlay)
-            guideOverlay = null
-        }
-    }
-    
-    override fun onDestroy() {
-        super.onDestroy()
-        removeGuideOverlay()
-    }
+    // Tutorial methods removed - functionality not available
 }
