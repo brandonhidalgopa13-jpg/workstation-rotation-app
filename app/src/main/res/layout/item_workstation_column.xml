@@ -1,153 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="220dp"
+    android:layout_width="180dp"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:layout_margin="8dp">
 
-    <!-- Workstation Header with Enhanced Design -->
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
-        app:cardBackgroundColor="@color/primary_blue">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/gradient_workstation_header"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🏭"
-                    android:textSize="20sp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/tvWorkstationName"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Estación"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@android:color/white"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
-
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/tvPriorityIndicator"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="⭐ PRIORITARIA"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/priority_gold"
-                android:gravity="center"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/priority_badge_background"
-                android:padding="4dp"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Capacity Requirements with Enhanced Design -->
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp"
-        app:cardBackgroundColor="@color/capacity_card_background">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="👥"
-                android:textSize="16sp"
-                android:layout_marginEnd="8dp" />
-
-            <TextView
-                android:id="@+id/tvCapacityRequirement"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Requiere: 3"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:gravity="center" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Current Phase Section -->
+    <!-- Header Minimalista -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginTop="12dp">
+        android:background="@android:color/white"
+        android:padding="16dp">
 
-        <!-- Current Phase Header -->
         <TextView
+            android:id="@+id/tvWorkstationName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="📍 Actual"
-            android:textSize="12sp"
+            android:text="Estación"
+            android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/current_phase_color"
+            android:textColor="@color/text_primary"
             android:gravity="center"
-            android:background="@drawable/phase_label_current"
-            android:padding="6dp" />
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-        <!-- Current Phase Workers -->
-        <ScrollView
+        <TextView
+            android:id="@+id/tvPriorityIndicator"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="⭐"
+            android:textSize="12sp"
+            android:textColor="@color/accent_orange"
+            android:gravity="center"
             android:layout_marginTop="4dp"
-            android:scrollbars="vertical"
-            android:fadeScrollbars="false"
-            android:scrollbarStyle="outsideOverlay"
-            android:background="@drawable/workers_container_current">
-
-            <LinearLayout
-                android:id="@+id/layoutCurrentWorkers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp" />
-
-        </ScrollView>
+            android:visibility="gone" />
 
     </LinearLayout>
 
-    <!-- Next Phase Section -->
+    <!-- Capacidad Minimalista -->
+    <TextView
+        android:id="@+id/tvCapacityRequirement"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Requiere: 3"
+        android:textSize="12sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:paddingVertical="8dp" />
+
+    <!-- Trabajadores Actuales -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -155,37 +58,35 @@
         android:orientation="vertical"
         android:layout_marginTop="8dp">
 
-        <!-- Next Phase Header -->
-        <TextView
+        <LinearLayout
+            android:id="@+id/layoutCurrentWorkers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔄 Próxima"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/next_phase_color"
-            android:gravity="center"
-            android:background="@drawable/phase_label_next"
-            android:padding="6dp" />
+            android:orientation="vertical"
+            android:padding="4dp" />
 
-        <!-- Next Phase Workers -->
-        <ScrollView
+    </LinearLayout>
+
+    <!-- Separador Sutil -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border_light"
+        android:layout_marginVertical="8dp" />
+
+    <!-- Próximos Trabajadores -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/layoutNextWorkers"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_marginTop="4dp"
-            android:scrollbars="vertical"
-            android:fadeScrollbars="false"
-            android:scrollbarStyle="outsideOverlay"
-            android:background="@drawable/workers_container_next">
-
-            <LinearLayout
-                android:id="@+id/layoutNextWorkers"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp" />
-
-        </ScrollView>
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="4dp" />
 
     </LinearLayout>
 
