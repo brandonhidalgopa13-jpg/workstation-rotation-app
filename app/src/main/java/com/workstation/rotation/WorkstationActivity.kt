@@ -73,6 +73,7 @@ class WorkstationActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
         val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
+        val checkboxPriority = dialogView.findViewById<CheckBox>(R.id.checkboxPriority)
         
         AlertDialog.Builder(this)
             .setTitle("Agregar Estación de Trabajo")
@@ -81,11 +82,16 @@ class WorkstationActivity : AppCompatActivity() {
                 val name = etName.text.toString().trim()
                 val requiredWorkersText = etRequiredWorkers.text.toString().trim()
                 val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
+                val isPriority = checkboxPriority.isChecked
                 
                 if (name.isNotEmpty() && requiredWorkers > 0) {
                     lifecycleScope.launch {
                         viewModel.insertWorkstation(
-                            Workstation(name = name, requiredWorkers = requiredWorkers)
+                            Workstation(
+                                name = name, 
+                                requiredWorkers = requiredWorkers,
+                                isPriority = isPriority
+                            )
                         )
                     }
                 }
@@ -98,9 +104,11 @@ class WorkstationActivity : AppCompatActivity() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_workstation, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etWorkstationName)
         val etRequiredWorkers = dialogView.findViewById<TextInputEditText>(R.id.etRequiredWorkers)
+        val checkboxPriority = dialogView.findViewById<CheckBox>(R.id.checkboxPriority)
         
         etName.setText(workstation.name)
         etRequiredWorkers.setText(workstation.requiredWorkers.toString())
+        checkboxPriority.isChecked = workstation.isPriority
         
         AlertDialog.Builder(this)
             .setTitle("Editar Estación de Trabajo")
@@ -109,11 +117,16 @@ class WorkstationActivity : AppCompatActivity() {
                 val name = etName.text.toString().trim()
                 val requiredWorkersText = etRequiredWorkers.text.toString().trim()
                 val requiredWorkers = requiredWorkersText.toIntOrNull() ?: 1
+                val isPriority = checkboxPriority.isChecked
                 
                 if (name.isNotEmpty() && requiredWorkers > 0) {
                     lifecycleScope.launch {
                         viewModel.updateWorkstation(
-                            workstation.copy(name = name, requiredWorkers = requiredWorkers)
+                            workstation.copy(
+                                name = name, 
+                                requiredWorkers = requiredWorkers,
+                                isPriority = isPriority
+                            )
                         )
                     }
                 }

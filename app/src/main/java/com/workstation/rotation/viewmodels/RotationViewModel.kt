@@ -52,31 +52,67 @@ class RotationViewModel(
                 return false
             }
             
-            // Generate rotation
+            // Generate rotation with priority logic
             val rotationItems = mutableListOf<RotationItem>()
             
-            for ((index, worker) in eligibleWorkers.withIndex()) {
+            // First, handle priority workstations
+            val priorityWorkstations = allWorkstations.filter { it.isPriority }
+            val assignedToPriority = mutableSetOf<Long>() // Track workers assigned to priority stations
+            
+            // Assign exact number of workers to priority stations
+            for (priorityStation in priorityWorkstations) {
+                val availableWorkers = eligibleWorkers.filter { worker ->
+                    !assignedToPriority.contains(worker.id) &&
+                    workerDao.getWorkerWorkstationIds(worker.id).contains(priorityStation.id)
+                }
+                
+                val workersToAssign = minOf(priorityStation.requiredWorkers, availableWorkers.size)
+                
+                for (i in 0 until workersToAssign) {
+                    val worker = availableWorkers[i]
+                    assignedToPriority.add(worker.id)
+                    
+                    val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    val workerWorkstations = allWorkstations.filter { it.id in workerWorkstationIds }
+                    val nextStation = workerWorkstations.find { it.id != priorityStation.id } ?: priorityStation
+                    
+                    val currentInfo = "${priorityStation.name} (${priorityStation.requiredWorkers} req.) ⭐"
+                    val nextInfo = "${nextStation.name} (${nextStation.requiredWorkers} req.)"
+                    
+                    rotationItems.add(
+                        RotationItem(
+                            workerName = "${worker.name} [PRIORITARIO]",
+                            currentWorkstation = currentInfo,
+                            nextWorkstation = nextInfo,
+                            rotationOrder = rotationItems.size + 1
+                        )
+                    )
+                }
+            }
+            
+            // Then handle remaining workers normally
+            val remainingWorkers = eligibleWorkers.filter { !assignedToPriority.contains(it.id) }
+            
+            for ((index, worker) in remainingWorkers.withIndex()) {
                 val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
                 val workerWorkstations = allWorkstations.filter { it.id in workerWorkstationIds }
                 
                 if (workerWorkstations.isNotEmpty()) {
-                    // Improved rotation logic
                     val currentIndex = index % workerWorkstations.size
                     val nextIndex = (currentIndex + 1) % workerWorkstations.size
                     
                     val currentWorkstation = workerWorkstations[currentIndex]
                     val nextWorkstation = workerWorkstations[nextIndex]
                     
-                    // Create rotation info with worker requirements
-                    val currentInfo = "${currentWorkstation.name} (${currentWorkstation.requiredWorkers} trabajadores)"
-                    val nextInfo = "${nextWorkstation.name} (${nextWorkstation.requiredWorkers} trabajadores)"
+                    val currentInfo = "${currentWorkstation.name} (${currentWorkstation.requiredWorkers} req.)"
+                    val nextInfo = "${nextWorkstation.name} (${nextWorkstation.requiredWorkers} req.)"
                     
                     rotationItems.add(
                         RotationItem(
                             workerName = worker.name,
                             currentWorkstation = currentInfo,
                             nextWorkstation = nextInfo,
-                            rotationOrder = index + 1
+                            rotationOrder = rotationItems.size + 1
                         )
                     )
                 }

@@ -13,6 +13,8 @@
     <string name="delete">Eliminar</string>
     <string name="name">Nombre</string>
     <string name="required_workers">Trabajadores Necesarios</string>
+    <string name="priority_station">Estación Prioritaria</string>
+    <string name="priority_description">Si está marcada, se asignará automáticamente la cantidad exacta de trabajadores requeridos</string>
     <string name="email">Email</string>
     <string name="active">Activo</string>
     <string name="inactive">Inactivo</string>

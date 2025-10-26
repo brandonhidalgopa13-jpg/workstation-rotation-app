@@ -34,6 +34,14 @@ class WorkstationAdapter(
                 tvRequiredWorkers.text = "Trabajadores necesarios: ${workstation.requiredWorkers}"
                 switchActive.isChecked = workstation.isActive
                 
+                // Mostrar indicador de prioridad
+                if (workstation.isPriority) {
+                    tvPriorityStatus.visibility = android.view.View.VISIBLE
+                    tvPriorityStatus.text = "⭐ ESTACIÓN PRIORITARIA - Asignación automática"
+                } else {
+                    tvPriorityStatus.visibility = android.view.View.GONE
+                }
+                
                 switchActive.setOnCheckedChangeListener { _, isChecked ->
                     onStatusChange(workstation, isChecked)
                 }

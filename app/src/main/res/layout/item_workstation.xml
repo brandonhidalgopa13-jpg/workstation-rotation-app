@@ -36,6 +36,17 @@
                 android:textColor="@color/teal_700"
                 android:layout_marginTop="4dp" />
 
+            <TextView
+                android:id="@+id/tvPriorityStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⭐ ESTACIÓN PRIORITARIA"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="@color/purple_700"
+                android:layout_marginTop="4dp"
+                android:visibility="gone" />
+
         </LinearLayout>
 
         <LinearLayout
