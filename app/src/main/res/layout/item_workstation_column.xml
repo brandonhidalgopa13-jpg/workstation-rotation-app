@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="160dp"
+    android:layout_width="200dp"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:layout_margin="4dp">
@@ -68,23 +68,45 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Current Phase Workers -->
-    <LinearLayout
-        android:id="@+id/layoutCurrentWorkers"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="4dp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="outsideOverlay"
+        android:scrollbarThumbVertical="@drawable/scrollbar_thumb"
+        android:scrollbarTrackVertical="@drawable/scrollbar_track">
+
+        <LinearLayout
+            android:id="@+id/layoutCurrentWorkers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="4dp" />
+
+    </ScrollView>
 
     <!-- Next Phase Workers -->
-    <LinearLayout
-        android:id="@+id/layoutNextWorkers"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="4dp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:scrollbars="vertical"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="outsideOverlay"
+        android:scrollbarThumbVertical="@drawable/scrollbar_thumb"
+        android:scrollbarTrackVertical="@drawable/scrollbar_track">
+
+        <LinearLayout
+            android:id="@+id/layoutNextWorkers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="4dp" />
+
+    </ScrollView>
 
 </LinearLayout>

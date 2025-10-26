@@ -34,11 +34,39 @@ class WorkstationCheckboxAdapter(
 
         fun bind(item: WorkstationCheckItem) {
             binding.apply {
-                checkboxWorkstation.text = item.workstation.name
+                val workstation = item.workstation
+                val displayText = buildString {
+                    append(workstation.name)
+                    append(" (${workstation.requiredWorkers} trabajadores)")
+                    if (workstation.isPriority) {
+                        append(" ⭐")
+                    }
+                }
+                
+                checkboxWorkstation.text = displayText
                 checkboxWorkstation.isChecked = item.isChecked
+                
+                // Cambiar el color de fondo de la tarjeta según el estado
+                val cardView = binding.root as com.google.android.material.card.MaterialCardView
+                if (item.isChecked) {
+                    cardView.setCardBackgroundColor(
+                        binding.root.context.getColor(android.R.color.holo_blue_light)
+                    )
+                    cardView.alpha = 0.9f
+                } else {
+                    cardView.setCardBackgroundColor(
+                        binding.root.context.getColor(com.workstation.rotation.R.color.background_card)
+                    )
+                    cardView.alpha = 1.0f
+                }
                 
                 checkboxWorkstation.setOnCheckedChangeListener { _, isChecked ->
                     onCheckChanged(item, isChecked)
+                }
+                
+                // Hacer que toda la tarjeta sea clickeable
+                binding.root.setOnClickListener {
+                    checkboxWorkstation.isChecked = !checkboxWorkstation.isChecked
                 }
             }
         }

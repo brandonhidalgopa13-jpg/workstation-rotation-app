@@ -139,6 +139,31 @@ class WorkerActivity : AppCompatActivity() {
         dialogBinding.recyclerViewWorkstations.apply {
             layoutManager = LinearLayoutManager(this@WorkerActivity)
             adapter = workstationAdapter
+            // Optimizaciones para manejar muchas estaciones
+            isNestedScrollingEnabled = true
+            setHasFixedSize(true)  // Mejora rendimiento cuando el tamaño es fijo
+            setItemViewCacheSize(com.workstation.rotation.utils.Constants.RECYCLER_VIEW_CACHE_SIZE)
+            
+            // Mejorar el scroll suave
+            isVerticalScrollBarEnabled = true
+            scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
+            
+            // Agregar separadores sutiles entre elementos
+            val divider = androidx.recyclerview.widget.DividerItemDecoration(
+                this@WorkerActivity, 
+                androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+            )
+            // Personalizar el drawable del divisor para que sea más sutil
+            divider.setDrawable(
+                androidx.core.content.ContextCompat.getDrawable(
+                    this@WorkerActivity, 
+                    com.workstation.rotation.R.drawable.recycler_divider
+                ) ?: androidx.core.content.ContextCompat.getDrawable(
+                    this@WorkerActivity, 
+                    android.R.drawable.divider_horizontal_bright
+                )!!
+            )
+            addItemDecoration(divider)
         }
         
         // Setup training system

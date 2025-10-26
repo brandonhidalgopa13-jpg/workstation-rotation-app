@@ -54,7 +54,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp">
+        android:padding="8dp"
+        android:scrollbars="horizontal"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="outsideOverlay"
+        android:scrollbarThumbHorizontal="@drawable/scrollbar_thumb_horizontal"
+        android:scrollbarTrackHorizontal="@drawable/scrollbar_track_horizontal"
+        android:fillViewport="false"
+        android:smoothScrollbar="true">
 
         <LinearLayout
             android:id="@+id/layoutRotationTable"
