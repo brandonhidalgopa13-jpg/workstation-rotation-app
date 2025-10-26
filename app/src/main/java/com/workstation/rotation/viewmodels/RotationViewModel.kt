@@ -510,6 +510,8 @@ class RotationViewModel(
             // Check if worker can rotate (availability >= 50%, no restrictions, not trainer/trainee)
             if (!canWorkerRotate(worker)) {
                 // Worker cannot rotate - keep in current station for safety and continuity
+                var workerAssigned = false
+                
                 currentStationId?.let { stationId ->
                     val currentStation = allWorkstations.find { it.id == stationId }
                     currentStation?.let { station ->
@@ -517,51 +519,52 @@ class RotationViewModel(
                         if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
                             nextAssignments[station.id]?.add(worker)
                             updateWorkerRotationTracking(worker, station.id)
-                            continue // Skip to next worker
+                            workerAssigned = true
                         }
                     }
                 }
                 
                 // If current station is full, try to find any available station
+                if (!workerAssigned) {
+                    val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    val availableStation = allWorkstations.find { station ->
+                        station.id in qualifiedStationIds &&
+                        (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                    }
+                    
+                    availableStation?.let { station ->
+                        nextAssignments[station.id]?.add(worker)
+                        updateWorkerRotationTracking(worker, station.id)
+                    }
+                }
+            } else {
+                // Worker can rotate - proceed with normal rotation logic
                 val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
-                val availableStation = allWorkstations.find { station ->
-                    station.id in qualifiedStationIds &&
+                val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
+                
+                // Find alternative stations (different from current)
+                val alternativeStations = qualifiedStations.filter { station ->
+                    station.id != currentStationId &&
                     (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
                 }
                 
-                availableStation?.let { station ->
+                // Assign to best alternative station
+                val targetStation = if (alternativeStations.isNotEmpty()) {
+                    // Prefer stations with fewer assigned workers
+                    alternativeStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
+                } else {
+                    // Fallback: if no alternatives, find any available station (including current)
+                    qualifiedStations.find { station ->
+                        (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                    }
+                }
+                
+                targetStation?.let { station ->
                     nextAssignments[station.id]?.add(worker)
+                    
+                    // Update rotation tracking
                     updateWorkerRotationTracking(worker, station.id)
                 }
-                continue
-            }
-            
-            // Worker can rotate - proceed with normal rotation logic
-            val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
-            val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
-            
-            // Find alternative stations (different from current)
-            val alternativeStations = qualifiedStations.filter { station ->
-                station.id != currentStationId &&
-                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
-            }
-            
-            // Assign to best alternative station
-            val targetStation = if (alternativeStations.isNotEmpty()) {
-                // Prefer stations with fewer assigned workers
-                alternativeStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
-            } else {
-                // Fallback: if no alternatives, find any available station (including current)
-                qualifiedStations.find { station ->
-                    (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
-                }
-            }
-            
-            targetStation?.let { station ->
-                nextAssignments[station.id]?.add(worker)
-                
-                // Update rotation tracking
-                updateWorkerRotationTracking(worker, station.id)
             }
         }
     }
