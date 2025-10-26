@@ -471,7 +471,26 @@ class RotationViewModel(
     }
     
     /**
+     * Determines if a worker can rotate based on availability and restrictions.
+     * Workers who cannot rotate will stay in their current station.
+     */
+    private fun canWorkerRotate(worker: Worker): Boolean {
+        // Workers with very low availability (below 50%) should stay in place for safety
+        if (worker.availabilityPercentage < 50) return false
+        
+        // Workers with any restriction notes should stay in place for safety
+        if (worker.restrictionNotes.isNotEmpty()) return false
+        
+        // Trainees and trainers have special constraints and are handled separately
+        if (worker.isTrainee || worker.isTrainer) return false
+        
+        // Certified workers can rotate freely
+        return true
+    }
+
+    /**
      * Assigns remaining workers ensuring they rotate to different stations.
+     * Workers who cannot rotate stay in their current station.
      */
     private suspend fun assignRemainingWorkersWithRotation(
         regularWorkers: List<Worker>,
@@ -488,7 +507,36 @@ class RotationViewModel(
             // Find current station of this worker
             val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
             
-            // Get all stations this worker can work at
+            // Check if worker can rotate (availability >= 50%, no restrictions, not trainer/trainee)
+            if (!canWorkerRotate(worker)) {
+                // Worker cannot rotate - keep in current station for safety and continuity
+                currentStationId?.let { stationId ->
+                    val currentStation = allWorkstations.find { it.id == stationId }
+                    currentStation?.let { station ->
+                        // Check if current station has capacity
+                        if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
+                            nextAssignments[station.id]?.add(worker)
+                            updateWorkerRotationTracking(worker, station.id)
+                            continue // Skip to next worker
+                        }
+                    }
+                }
+                
+                // If current station is full, try to find any available station
+                val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                val availableStation = allWorkstations.find { station ->
+                    station.id in qualifiedStationIds &&
+                    (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                }
+                
+                availableStation?.let { station ->
+                    nextAssignments[station.id]?.add(worker)
+                    updateWorkerRotationTracking(worker, station.id)
+                }
+                continue
+            }
+            
+            // Worker can rotate - proceed with normal rotation logic
             val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
             val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
             

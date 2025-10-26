@@ -61,6 +61,8 @@ class WorkerViewModel(
         return workerDao.getWorkerById(workerId)
     }
     
+    suspend fun getWorkstationById(workstationId: Long) = workstationDao.getWorkstationById(workstationId)
+    
     /**
      * Certifica a un trabajador (remueve el estado de entrenamiento).
      * El trabajador pasa de "en entrenamiento" a "trabajador normal".

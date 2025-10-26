@@ -286,11 +286,23 @@
                     android:layout_marginBottom="8dp" />
 
                 <TextView
+                    android:id="@+id/tvCertificationInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="💡 Al certificar, el trabajador dejará de estar en entrenamiento y podrá rotar libremente"
                     android:textSize="12sp"
-                    android:textColor="@color/text_secondary" />
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvTrainingStationInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="12sp"
+                    android:textColor="@color/primary"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
             </LinearLayout>
 

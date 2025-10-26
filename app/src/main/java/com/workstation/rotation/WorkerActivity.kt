@@ -315,6 +315,17 @@ class WorkerActivity : AppCompatActivity() {
             // Show certification option if worker can be certified
             if (worker.canBeCertified()) {
                 cardCertification.visibility = View.VISIBLE
+                
+                // Show training station info
+                worker.trainingWorkstationId?.let { trainingStationId ->
+                    lifecycleScope.launch {
+                        val trainingStation = viewModel.getWorkstationById(trainingStationId)
+                        trainingStation?.let { station ->
+                            tvTrainingStationInfo.text = "🏭 Se activará automáticamente la estación: ${station.name}"
+                            tvTrainingStationInfo.visibility = View.VISIBLE
+                        }
+                    }
+                }
             } else {
                 cardCertification.visibility = View.GONE
             }
@@ -325,6 +336,26 @@ class WorkerActivity : AppCompatActivity() {
                     // When certifying, remove trainee status
                     checkboxIsTrainee.isChecked = false
                     layoutTrainingDetails.visibility = View.GONE
+                    
+                    // Automatically activate the training workstation
+                    worker.trainingWorkstationId?.let { trainingStationId ->
+                        val currentList = workstationAdapter.currentList.toMutableList()
+                        val trainingStationIndex = currentList.indexOfFirst { 
+                            it.workstation.id == trainingStationId 
+                        }
+                        if (trainingStationIndex >= 0) {
+                            currentList[trainingStationIndex].isChecked = true
+                            workstationAdapter.submitList(currentList)
+                            
+                            // Show confirmation message
+                            val stationName = currentList[trainingStationIndex].workstation.name
+                            android.widget.Toast.makeText(
+                                this@WorkerActivity,
+                                "✅ Estación '$stationName' activada automáticamente",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 }
             }
             

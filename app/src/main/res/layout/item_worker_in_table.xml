@@ -3,35 +3,57 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="2dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="3dp"
-    app:cardBackgroundColor="@color/background_card">
+    android:layout_margin="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="6dp"
+    app:cardBackgroundColor="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:background="@drawable/worker_card_background"
+        android:padding="12dp">
 
-        <TextView
-            android:id="@+id/tvWorkerName"
+        <!-- Worker Avatar and Name -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Juan Pérez"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_primary"
-            android:gravity="center"
-            android:maxLines="2"
-            android:ellipsize="end" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <!-- Avatar Circle -->
+            <TextView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:text="👤"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:background="@drawable/worker_avatar_background"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvWorkerName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Juan Pérez"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:lineSpacingExtra="1dp" />
+
+        </LinearLayout>
+
+        <!-- Status Badges -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginTop="4dp">
+            android:layout_marginTop="8dp">
 
             <TextView
                 android:id="@+id/tvAvailabilityBadge"
@@ -40,9 +62,10 @@
                 android:text="90%"
                 android:textSize="10sp"
                 android:textStyle="bold"
-                android:textColor="@color/white"
-                android:background="@drawable/status_badge_green"
-                android:padding="2dp"
+                android:textColor="@android:color/white"
+                android:background="@drawable/availability_badge_high"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
                 android:layout_marginEnd="4dp" />
 
             <TextView
@@ -50,10 +73,31 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="👨‍🏫"
+                android:textSize="12sp"
+                android:background="@drawable/training_badge_background"
+                android:padding="4dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvRestrictionBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔒"
                 android:textSize="10sp"
+                android:background="@drawable/restriction_badge_background"
+                android:padding="2dp"
+                android:layout_marginStart="2dp"
                 android:visibility="gone" />
 
         </LinearLayout>
+
+        <!-- Rotation Status Indicator -->
+        <View
+            android:id="@+id/viewRotationStatus"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:background="@drawable/rotation_status_indicator"
+            android:layout_marginTop="8dp" />
 
     </LinearLayout>
 
