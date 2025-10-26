@@ -30,6 +30,14 @@ class RotationViewModel(
     
     /**
      * Generates an intelligent rotation considering priorities, availability, and training relationships.
+     * 
+     * Key Features:
+     * - Prioritizes trainer-trainee pairs: When a trainee has an assigned trainer, both are placed
+     *   together at the trainee's requested training workstation
+     * - Maintains priority workstation capacity requirements
+     * - Considers worker availability percentages and restrictions
+     * - Ensures proper rotation variety while respecting training needs
+     * 
      * @return Boolean indicating if rotation was successfully generated
      */
     suspend fun generateRotation(): Boolean {
@@ -126,11 +134,48 @@ class RotationViewModel(
                 }
             }
             
-            // Phase 2: Assign remaining workers to normal workstations (current positions)
+            // Phase 2: Handle trainer-trainee pairs first
+            // This ensures that when a trainee has an assigned trainer, both are placed
+            // together at the trainee's requested training workstation
             val unassignedWorkers = eligibleWorkers.filter { worker ->
                 currentAssignments.values.none { it.contains(worker) }
+            }.toMutableList()
+            
+            // First, handle trainees with assigned trainers
+            val traineesWithTrainers = unassignedWorkers.filter { worker ->
+                worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null
             }
             
+            for (trainee in traineesWithTrainers) {
+                val trainer = unassignedWorkers.find { it.id == trainee.trainerId }
+                
+                if (trainer != null) {
+                    // Check if both can be assigned to the training workstation
+                    val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                    
+                    if (trainingStation != null) {
+                        val traineeCanWork = workerDao.getWorkerWorkstationIds(trainee.id).contains(trainingStation.id)
+                        val trainerCanWork = workerDao.getWorkerWorkstationIds(trainer.id).contains(trainingStation.id)
+                        val hasCapacity = (currentAssignments[trainingStation.id]?.size ?: 0) + 2 <= trainingStation.requiredWorkers
+                        
+                        if (traineeCanWork && trainerCanWork && hasCapacity) {
+                            // Apply availability check for both
+                            val traineeAvailable = kotlin.random.Random.nextInt(1, 101) <= trainee.availabilityPercentage
+                            val trainerAvailable = kotlin.random.Random.nextInt(1, 101) <= trainer.availabilityPercentage
+                            
+                            if (traineeAvailable && trainerAvailable) {
+                                // Assign both to the training station
+                                currentAssignments[trainingStation.id]?.add(trainee)
+                                currentAssignments[trainingStation.id]?.add(trainer)
+                                unassignedWorkers.remove(trainee)
+                                unassignedWorkers.remove(trainer)
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Phase 3: Assign remaining workers to normal workstations (current positions)
             // Sort unassigned workers by training status and availability
             val sortedUnassignedWorkers = unassignedWorkers.sortedWith(
                 compareByDescending<Worker> { it.isTrainer }
@@ -170,7 +215,7 @@ class RotationViewModel(
                 }
             }
             
-            // Phase 3: Generate next rotation positions
+            // Phase 4: Generate next rotation positions
             // PRIORITY STATIONS: Must maintain FULL capacity in BOTH current and next positions
             
             // First, ensure ALL priority stations have their required workers in NEXT position
@@ -201,6 +246,34 @@ class RotationViewModel(
             
             val remainingWorkersForNext = eligibleWorkers.filter { worker ->
                 !workersInNextPriority.contains(worker)
+            }.toMutableList()
+            
+            // Handle trainer-trainee pairs for next rotation
+            val traineesWithTrainersNext = remainingWorkersForNext.filter { worker ->
+                worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null
+            }
+            
+            for (trainee in traineesWithTrainersNext) {
+                val trainer = remainingWorkersForNext.find { it.id == trainee.trainerId }
+                
+                if (trainer != null) {
+                    // Check if both can be assigned to the training workstation for next rotation
+                    val trainingStation = normalWorkstations.find { it.id == trainee.trainingWorkstationId }
+                    
+                    if (trainingStation != null) {
+                        val traineeCanWork = workerDao.getWorkerWorkstationIds(trainee.id).contains(trainingStation.id)
+                        val trainerCanWork = workerDao.getWorkerWorkstationIds(trainer.id).contains(trainingStation.id)
+                        val hasCapacity = (nextAssignments[trainingStation.id]?.size ?: 0) + 2 <= trainingStation.requiredWorkers
+                        
+                        if (traineeCanWork && trainerCanWork && hasCapacity) {
+                            // Assign both to the training station for next rotation
+                            nextAssignments[trainingStation.id]?.add(trainee)
+                            nextAssignments[trainingStation.id]?.add(trainer)
+                            remainingWorkersForNext.remove(trainee)
+                            remainingWorkersForNext.remove(trainer)
+                        }
+                    }
+                }
             }
             
             // Assign remaining workers to normal stations for next round
@@ -212,9 +285,15 @@ class RotationViewModel(
                 }
                 
                 if (availableNormalStations.isNotEmpty()) {
-                    // Assign to station with least workers
-                    val targetStation = availableNormalStations.minByOrNull { 
-                        nextAssignments[it.id]?.size ?: 0 
+                    // For trainees, prioritize their training workstation
+                    val targetStation = if (worker.isTrainee && worker.trainingWorkstationId != null) {
+                        availableNormalStations.find { it.id == worker.trainingWorkstationId }
+                            ?: availableNormalStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
+                    } else {
+                        // Assign to station with least workers
+                        availableNormalStations.minByOrNull { 
+                            nextAssignments[it.id]?.size ?: 0 
+                        }
                     }
                     targetStation?.let { station ->
                         nextAssignments[station.id]?.add(worker)
@@ -222,7 +301,7 @@ class RotationViewModel(
                 }
             }
             
-            // Phase 4: Create rotation items
+            // Phase 5: Create rotation items
             for (station in allWorkstations) {
                 val currentWorkers = currentAssignments[station.id] ?: emptyList()
                 
@@ -243,8 +322,19 @@ class RotationViewModel(
                     
                     val restrictionStatus = if (worker.restrictionNotes.isNotEmpty()) " 🔒" else ""
                     val trainingStatus = when {
-                        worker.isTrainer -> " 👨‍🏫"
-                        worker.isTrainee -> " 🎯"
+                        worker.isTrainer -> {
+                            // Check if this trainer is assigned with their trainee
+                            val hasTraineeInSameStation = currentWorkers.any { otherWorker ->
+                                otherWorker.isTrainee && otherWorker.trainerId == worker.id
+                            }
+                            if (hasTraineeInSameStation) " 👨‍🏫🤝" else " 👨‍🏫"
+                        }
+                        worker.isTrainee -> {
+                            // Check if this trainee is with their trainer
+                            val hasTrainerInSameStation = worker.trainerId != null && 
+                                currentWorkers.any { otherWorker -> otherWorker.id == worker.trainerId }
+                            if (hasTrainerInSameStation) " 🎯🤝" else " 🎯"
+                        }
                         else -> ""
                     }
                     
