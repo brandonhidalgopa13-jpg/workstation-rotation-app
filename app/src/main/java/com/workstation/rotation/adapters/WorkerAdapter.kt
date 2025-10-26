@@ -41,6 +41,22 @@ class WorkerAdapter(
                 tvAssignedWorkstations.text = "Estaciones: ${workerWithCount.workstationCount} asignadas"
                 switchActive.isChecked = worker.isActive
                 
+                // Mostrar disponibilidad con color según porcentaje
+                tvAvailability.text = "📊 Disponibilidad: ${worker.availabilityPercentage}%"
+                tvAvailability.setTextColor(when {
+                    worker.availabilityPercentage >= 80 -> android.graphics.Color.parseColor("#FF018786")
+                    worker.availabilityPercentage >= 50 -> android.graphics.Color.parseColor("#FFFF9800")
+                    else -> android.graphics.Color.parseColor("#FFF44336")
+                })
+                
+                // Mostrar restricciones si existen
+                if (worker.restrictionNotes.isNotEmpty()) {
+                    tvRestrictionStatus.visibility = android.view.View.VISIBLE
+                    tvRestrictionStatus.text = "⚠️ ${worker.restrictionNotes}"
+                } else {
+                    tvRestrictionStatus.visibility = android.view.View.GONE
+                }
+                
                 switchActive.setOnCheckedChangeListener { _, isChecked ->
                     onStatusChange(worker, isChecked)
                 }

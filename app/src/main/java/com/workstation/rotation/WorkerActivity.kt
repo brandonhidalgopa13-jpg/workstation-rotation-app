@@ -98,6 +98,9 @@ class WorkerActivity : AppCompatActivity() {
             .setPositiveButton("Guardar") { _, _ ->
                 val name = dialogBinding.etWorkerName.text.toString().trim()
                 val email = dialogBinding.etWorkerEmail.text.toString().trim()
+                val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
+                val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
+                val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
                 
                 if (name.isNotEmpty()) {
                     val selectedWorkstations = workstationAdapter.currentList
@@ -106,7 +109,12 @@ class WorkerActivity : AppCompatActivity() {
                     
                     lifecycleScope.launch {
                         viewModel.insertWorkerWithWorkstations(
-                            Worker(name = name, email = email),
+                            Worker(
+                                name = name, 
+                                email = email,
+                                availabilityPercentage = availability,
+                                restrictionNotes = restrictionNotes
+                            ),
                             selectedWorkstations
                         )
                     }
@@ -125,6 +133,8 @@ class WorkerActivity : AppCompatActivity() {
         dialogBinding.apply {
             etWorkerName.setText(worker.name)
             etWorkerEmail.setText(worker.email)
+            etAvailabilityPercentage.setText(worker.availabilityPercentage.toString())
+            etRestrictionNotes.setText(worker.restrictionNotes)
             
             recyclerViewWorkstations.apply {
                 layoutManager = LinearLayoutManager(this@WorkerActivity)
@@ -149,6 +159,9 @@ class WorkerActivity : AppCompatActivity() {
             .setPositiveButton("Guardar") { _, _ ->
                 val name = dialogBinding.etWorkerName.text.toString().trim()
                 val email = dialogBinding.etWorkerEmail.text.toString().trim()
+                val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
+                val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
+                val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
                 
                 if (name.isNotEmpty()) {
                     val selectedWorkstations = workstationAdapter.currentList
@@ -157,7 +170,12 @@ class WorkerActivity : AppCompatActivity() {
                     
                     lifecycleScope.launch {
                         viewModel.updateWorkerWithWorkstations(
-                            worker.copy(name = name, email = email),
+                            worker.copy(
+                                name = name, 
+                                email = email,
+                                availabilityPercentage = availability,
+                                restrictionNotes = restrictionNotes
+                            ),
                             selectedWorkstations
                         )
                     }

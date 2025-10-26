@@ -9,5 +9,7 @@ data class Worker(
     val id: Long = 0,
     val name: String,
     val email: String = "",
+    val availabilityPercentage: Int = 100, // 0-100% disponibilidad
+    val restrictionNotes: String = "", // Notas sobre restricciones
     val isActive: Boolean = true
 )

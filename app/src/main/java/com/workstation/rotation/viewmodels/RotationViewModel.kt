@@ -76,10 +76,13 @@ class RotationViewModel(
                     currentAssignments.values.none { it.contains(worker) }
                 }
                 
-                val workersToAssign = minOf(priorityStation.requiredWorkers, availableWorkers.size)
+                // Sort by availability percentage (higher availability first for priority stations)
+                val sortedWorkers = availableWorkers.sortedByDescending { it.availabilityPercentage }
+                
+                val workersToAssign = minOf(priorityStation.requiredWorkers, sortedWorkers.size)
                 
                 for (i in 0 until workersToAssign) {
-                    currentAssignments[priorityStation.id]?.add(availableWorkers[i])
+                    currentAssignments[priorityStation.id]?.add(sortedWorkers[i])
                 }
             }
             
@@ -88,20 +91,31 @@ class RotationViewModel(
                 currentAssignments.values.none { it.contains(worker) }
             }
             
-            for (worker in unassignedWorkers) {
-                val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
-                val availableStations = normalWorkstations.filter { station ->
-                    station.id in workerWorkstationIds &&
-                    (currentAssignments[station.id]?.size ?: 0) < station.requiredWorkers
-                }
+            // Sort unassigned workers by availability and apply probability-based assignment
+            val sortedUnassignedWorkers = unassignedWorkers.sortedByDescending { worker ->
+                // Create weighted score: availability + random factor for rotation variety
+                worker.availabilityPercentage + (kotlin.random.Random.nextInt(0, 30))
+            }
+            
+            for (worker in sortedUnassignedWorkers) {
+                // Apply availability probability check
+                val shouldAssign = kotlin.random.Random.nextInt(1, 101) <= worker.availabilityPercentage
                 
-                if (availableStations.isNotEmpty()) {
-                    // Assign to station with least workers
-                    val targetStation = availableStations.minByOrNull { 
-                        currentAssignments[it.id]?.size ?: 0 
+                if (shouldAssign) {
+                    val workerWorkstationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    val availableStations = normalWorkstations.filter { station ->
+                        station.id in workerWorkstationIds &&
+                        (currentAssignments[station.id]?.size ?: 0) < station.requiredWorkers
                     }
-                    targetStation?.let { station ->
-                        currentAssignments[station.id]?.add(worker)
+                    
+                    if (availableStations.isNotEmpty()) {
+                        // Assign to station with least workers
+                        val targetStation = availableStations.minByOrNull { 
+                            currentAssignments[it.id]?.size ?: 0 
+                        }
+                        targetStation?.let { station ->
+                            currentAssignments[station.id]?.add(worker)
+                        }
                     }
                 }
             }
@@ -115,15 +129,18 @@ class RotationViewModel(
                     workerDao.getWorkerWorkstationIds(worker.id).contains(priorityStation.id)
                 }
                 
+                // Sort by availability for priority assignments (best available workers first)
+                val sortedAvailableWorkers = availableWorkers.sortedByDescending { it.availabilityPercentage }
+                
                 // Assign EXACTLY the required number to maintain priority
-                val workersToAssign = minOf(priorityStation.requiredWorkers, availableWorkers.size)
+                val workersToAssign = minOf(priorityStation.requiredWorkers, sortedAvailableWorkers.size)
                 
                 // Clear any existing assignments to this priority station in next round
                 nextAssignments[priorityStation.id]?.clear()
                 
-                // Assign the required workers
+                // Assign the required workers (best availability first)
                 for (i in 0 until workersToAssign) {
-                    nextAssignments[priorityStation.id]?.add(availableWorkers[i])
+                    nextAssignments[priorityStation.id]?.add(sortedAvailableWorkers[i])
                 }
             }
             
@@ -168,7 +185,19 @@ class RotationViewModel(
                     } ?: station
                     
                     val isPriorityWorker = station.isPriority || nextStation.isPriority
-                    val workerLabel = if (isPriorityWorker) "${worker.name} [PRIORITARIO]" else worker.name
+                    val availabilityStatus = when {
+                        worker.availabilityPercentage >= 80 -> ""
+                        worker.availabilityPercentage >= 50 -> " [${worker.availabilityPercentage}%]"
+                        else -> " [${worker.availabilityPercentage}% ⚠️]"
+                    }
+                    
+                    val restrictionStatus = if (worker.restrictionNotes.isNotEmpty()) " 🔒" else ""
+                    
+                    val workerLabel = if (isPriorityWorker) {
+                        "${worker.name} [PRIORITARIO]$availabilityStatus$restrictionStatus"
+                    } else {
+                        "${worker.name}$availabilityStatus$restrictionStatus"
+                    }
                     
                     val currentInfo = "${station.name} (${currentWorkers.size}/${station.requiredWorkers})" + 
                                     if (station.isPriority) " ⭐ COMPLETA" else ""
