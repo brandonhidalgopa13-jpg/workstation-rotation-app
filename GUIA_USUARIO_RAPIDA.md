@@ -16,44 +16,100 @@
 
 **Navegación**: Usa la **flecha ←** o **botón "Atrás"** para regresar al menú principal desde cualquier pantalla.
 
-### 3. Configuración Básica (5 minutos)
+### 3. Flujo Visual de Configuración 📋
+
+```
+MENÚ PRINCIPAL
+    ↓ Toca "🏭 Estaciones"
+CREAR ESTACIONES (3-5 estaciones)
+    ↓ Flecha ← para regresar
+MENÚ PRINCIPAL
+    ↓ Toca "👥 Trabajadores"  
+CREAR TRABAJADORES (5+ trabajadores + asignar estaciones)
+    ↓ Flecha ← para regresar
+MENÚ PRINCIPAL
+    ↓ Toca "🔄 Sistema de Rotación"
+GENERAR ROTACIÓN
+    ↓ ¡Listo! Ver tabla de rotación
+```
+
+### 4. Configuración Básica (5 minutos)
 
 #### Paso 1: Crear Estaciones de Trabajo 🏭
-1. Toca **"🏭 Estaciones de Trabajo"**
-2. Presiona el botón **"+"** (agregar)
-3. Completa la información:
-   - **Nombre**: Ej. "Línea de Producción A"
-   - **Trabajadores Necesarios**: Ej. 3
-   - **Estación Prioritaria**: ✓ si es crítica
-4. Toca **"Guardar"** para crear la estación
-5. **Repite los pasos 2-4** para crear 3-5 estaciones
-6. Una vez creadas todas las estaciones, **regresa al menú principal** tocando la flecha ← o el botón "Atrás"
+
+**🎯 Objetivo**: Crear 3-5 estaciones donde trabajarán los empleados
+
+1. **Abrir sección**: Desde el menú principal, toca **"🏭 Estaciones de Trabajo"**
+2. **Agregar primera estación**: Presiona el botón **"+"** (flotante, esquina inferior derecha)
+3. **Llenar formulario**:
+   - **Nombre**: Ej. "Línea de Producción A", "Empaque", "Control de Calidad"
+   - **Trabajadores Necesarios**: Ej. 3 (cuántas personas necesita esta estación)
+   - **Estación Prioritaria**: ✓ marca si es crítica (siempre debe estar completa)
+4. **Guardar**: Toca **"Guardar"** - verás la estación en la lista
+5. **Crear más estaciones**: Repite pasos 2-4 para crear al menos 3 estaciones más
+6. **Verificar**: Deberías ver una lista con tus estaciones creadas
+7. **🔙 IMPORTANTE**: Toca la **flecha ←** (esquina superior izquierda) para regresar al menú principal
+
+> **✅ Resultado esperado**: Lista de 3-5 estaciones creadas y estar de vuelta en el menú principal
 
 #### Paso 2: Registrar Trabajadores 👥
-1. **Desde el menú principal**, toca **"👥 Trabajadores"**
-2. Presiona el botón **"+"** (agregar)
-3. Completa la información:
-   - **Nombre y Email**: Información básica del trabajador
+
+**🎯 Objetivo**: Crear 5-10 trabajadores y asignarles estaciones
+
+1. **Abrir sección**: Desde el menú principal, toca **"👥 Trabajadores"**
+2. **Agregar primer trabajador**: Presiona el botón **"+"** (flotante, esquina inferior derecha)
+3. **Información básica**:
+   - **Nombre**: Ej. "Juan Pérez", "María García"
+   - **Email**: Opcional, ej. "juan@empresa.com"
+4. **Configurar disponibilidad**:
    - **Disponibilidad**: 100% = siempre disponible, 80% = disponibilidad reducida
-   - **Rol de Entrenamiento**: 
-     - **Entrenador** 👨‍🏫: Puede capacitar a otros
-     - **En Entrenamiento** 🎯: Está aprendiendo (selecciona entrenador y estación)
-   - **Estaciones**: ✅ Marca las estaciones donde puede trabajar
-4. Toca **"Guardar"** para crear el trabajador
-5. **Repite los pasos 2-4** para crear 5-10 trabajadores
-6. **Regresa al menú principal** tocando la flecha ← o el botón "Atrás"
+   - **Notas de restricción**: Opcional, ej. "No puede levantar peso"
+5. **Rol de entrenamiento** (opcional):
+   - **👨‍🏫 Es Entrenador**: Marca si puede capacitar a otros
+   - **🎯 Está en Entrenamiento**: Marca si está aprendiendo (aparecerán más opciones)
+6. **🏭 CRÍTICO - Asignar estaciones**: En la sección "Estaciones de Trabajo Asignadas":
+   - ✅ **Marca al menos 2-3 estaciones** donde puede trabajar este empleado
+   - Sin estaciones asignadas, el trabajador NO aparecerá en rotaciones
+7. **Guardar**: Toca **"Guardar"** - verás el trabajador en la lista
+8. **Crear más trabajadores**: Repite pasos 2-7 para crear al menos 5 trabajadores más
+9. **🔙 IMPORTANTE**: Toca la **flecha ←** para regresar al menú principal
+
+> **✅ Resultado esperado**: Lista de 5+ trabajadores con estaciones asignadas y estar en el menú principal
 
 #### Paso 3: Generar Primera Rotación 🔄
-1. **Desde el menú principal**, toca **"🔄 Sistema de Rotación"**
-2. Presiona **"🔄 Generar Rotación"**
-3. **¡Listo!** El sistema asigna automáticamente a todos los trabajadores
-4. **Revisa la tabla de rotación** para ver las asignaciones actuales y próximas
-5. **Usa "🗑️ Limpiar"** si quieres generar una nueva rotación
 
-> **💡 Consejo**: Si no ves trabajadores en la rotación, verifica que:
-> - Tengas trabajadores activos creados
-> - Los trabajadores tengan estaciones asignadas
-> - Las estaciones estén activas
+**🎯 Objetivo**: Crear la primera rotación automática
+
+1. **Abrir sistema de rotación**: Desde el menú principal, toca **"🔄 Sistema de Rotación"**
+2. **Generar rotación**: Presiona el botón **"🔄 Generar Rotación"** (botón azul grande)
+3. **¡Éxito!** Deberías ver:
+   - **Tabla con columnas** (una por cada estación creada)
+   - **Trabajadores asignados** en cada columna
+   - **Dos filas**: "📍 ROTACIÓN ACTUAL" y "🔄 PRÓXIMA ROTACIÓN"
+4. **Revisar resultados**:
+   - Cada estación debe tener trabajadores asignados
+   - Los números deben coincidir con los requerimientos de cada estación
+5. **Opciones adicionales**:
+   - **"🗑️ Limpiar"**: Borra la rotación actual para generar una nueva
+   - **Scroll horizontal**: Desliza para ver todas las estaciones
+
+> **🚨 ¿No ves trabajadores?** Verifica:
+> - ✅ Creaste trabajadores en el Paso 2
+> - ✅ Los trabajadores tienen estaciones asignadas (✓ marcadas)
+> - ✅ Las estaciones están activas
+> - ✅ Regresaste al menú principal antes de este paso
+
+> **🎉 ¡FELICITACIONES!** Si ves trabajadores en la tabla, ¡tu sistema está funcionando!
+
+### ✅ Lista de Verificación - Configuración Básica
+
+**Antes de continuar, verifica que completaste:**
+
+- [ ] **Estaciones creadas**: Tienes 3-5 estaciones con nombres y capacidades definidas
+- [ ] **Trabajadores registrados**: Tienes 5+ trabajadores con información completa
+- [ ] **Estaciones asignadas**: Cada trabajador tiene al menos 2-3 estaciones marcadas ✓
+- [ ] **Primera rotación**: Generaste una rotación y ves trabajadores en la tabla
+- [ ] **Navegación**: Sabes usar la flecha ← para regresar al menú principal
 
 ### 🎯 Próximos Pasos
 Una vez completada la configuración básica:
@@ -137,6 +193,18 @@ El sistema asigna automáticamente considerando:
 - ✅ Usa la **flecha ←** para regresar al menú principal
 - ✅ Si no responde, **cierra y abre** la aplicación
 - ✅ Verifica que hayas **guardado** los cambios antes de navegar
+
+#### 📋 "No sé qué hacer después de crear estaciones"
+- ✅ **Toca la flecha ←** (esquina superior izquierda) para regresar al menú
+- ✅ Desde el menú principal, toca **"👥 Trabajadores"**
+- ✅ Sigue el **Paso 2** de la configuración básica
+- ✅ **NO cierres la app**, solo navega con la flecha ←
+
+#### 👥 "Creé trabajadores pero no aparecen en rotación"
+- ✅ Verifica que **marcaste estaciones** ✓ en cada trabajador
+- ✅ Regresa a **"👥 Trabajadores"** y edita cada uno
+- ✅ En la sección **"Estaciones de Trabajo Asignadas"** marca al menos 2-3 estaciones
+- ✅ **Guarda** cada trabajador después de marcar estaciones
 
 ---
 
