@@ -282,4 +282,28 @@ enum class TutorialStep(
             TIPS_AND_TRICKS -> null
         }
     }
+    
+    /**
+     * Indica si este paso requiere navegación a otra actividad.
+     */
+    fun requiresNavigation(): Boolean {
+        return when (this) {
+            WORKSTATIONS_INTRO -> true
+            WORKERS_INTRO -> true
+            ROTATION_INTRO -> true
+            else -> false
+        }
+    }
+    
+    /**
+     * Obtiene la actividad de destino para la navegación.
+     */
+    fun getTargetActivity(): Class<*>? {
+        return when (this) {
+            WORKSTATIONS_INTRO -> com.workstation.rotation.WorkstationActivity::class.java
+            WORKERS_INTRO -> com.workstation.rotation.WorkerActivity::class.java
+            ROTATION_INTRO -> com.workstation.rotation.RotationActivity::class.java
+            else -> null
+        }
+    }
 }

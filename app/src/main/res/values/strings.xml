@@ -32,7 +32,7 @@
     <string name="watermark_icon_gear">⚙️</string>
     
     <!-- Información de versión -->
-    <string name="app_version">v2.0.0</string>
-    <string name="app_version_full">Sistema de Rotación Inteligente v2.0.0</string>
-    <string name="version_info">Versión 2.0.0 - Octubre 2024</string>
+    <string name="app_version">v2.1.0</string>
+    <string name="app_version_full">Sistema de Rotación Inteligente v2.1.0</string>
+    <string name="version_info">Versión 2.1.0 - Octubre 2024</string>
 </resources>

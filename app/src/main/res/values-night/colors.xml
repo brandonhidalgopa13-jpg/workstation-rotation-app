@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme colors -->
+    
+    <!-- Primary Colors for Dark Theme -->
+    <color name="primary_blue_light">#FF64B5F6</color>
+    <color name="accent_orange_light">#FFFFB74D</color>
+    <color name="accent_green_light">#FF81C784</color>
+    
+    <!-- Background Colors for Dark Theme -->
+    <color name="background_dark">#FF121212</color>
+    <color name="background_card_dark">#FF1E1E1E</color>
+    <color name="background_surface_dark">#FF2C2C2C</color>
+    
+    <!-- Text Colors for Dark Theme -->
+    <color name="text_primary_dark">#FFFFFFFF</color>
+    <color name="text_secondary_dark">#FFB3B3B3</color>
+    <color name="text_hint_dark">#FF666666</color>
+    
+    <!-- Border Colors for Dark Theme -->
+    <color name="border_light_dark">#FF404040</color>
+    <color name="border_medium_dark">#FF666666</color>
+</resources>

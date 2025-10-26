@@ -46,9 +46,9 @@
         android:layout_height="wrap_content"
         android:text="Trabajadores elegibles para rotación: Solo aquellos con estaciones asignadas"
         android:textSize="14sp"
-        android:textColor="@android:color/darker_gray"
+        android:textColor="@color/text_secondary"
         android:padding="16dp"
-        android:background="@color/light_gray" />
+        android:background="@color/background_surface" />
 
     <HorizontalScrollView
         android:layout_width="match_parent"

@@ -95,37 +95,83 @@ class TutorialManager(private val context: Context) {
     /**
      * Inicia el tutorial interactivo.
      */
-    fun startTutorial(onStepComplete: (TutorialStep) -> Unit) {
+    fun startTutorial(onStepComplete: (TutorialStep) -> Unit, onNavigate: (TutorialStep) -> Unit = {}) {
         if (!isTutorialEnabled()) return
         
         isActive = true
         currentStep = 0
-        showTutorialStep(TutorialStep.WELCOME, onStepComplete)
+        showTutorialStep(TutorialStep.WELCOME, onStepComplete, onNavigate)
     }
     
     /**
      * Muestra un paso específico del tutorial.
      */
-    private fun showTutorialStep(step: TutorialStep, onStepComplete: (TutorialStep) -> Unit) {
+    private fun showTutorialStep(step: TutorialStep, onStepComplete: (TutorialStep) -> Unit, onNavigate: (TutorialStep) -> Unit) {
         val dialog = AlertDialog.Builder(context)
             .setTitle(step.title)
             .setMessage(step.description)
             .setPositiveButton(step.actionText) { _, _ ->
                 onStepComplete(step)
-                val nextStep = step.getNextStep()
-                if (nextStep != null) {
-                    showTutorialStep(nextStep, onStepComplete)
+                
+                // Si el paso requiere navegación, ejecutar navegación
+                if (step.requiresNavigation()) {
+                    onNavigate(step)
+                    // Continuar el tutorial después de la navegación
+                    markStepCompleted(step)
                 } else {
-                    completeTutorial()
+                    // Continuar inmediatamente al siguiente paso
+                    val nextStep = step.getNextStep()
+                    if (nextStep != null) {
+                        showTutorialStep(nextStep, onStepComplete, onNavigate)
+                    } else {
+                        completeTutorial()
+                    }
                 }
             }
             .setNegativeButton("Saltar Tutorial") { _, _ ->
                 skipTutorial()
             }
+            .setNeutralButton("Pausar") { _, _ ->
+                pauseTutorial()
+            }
             .setCancelable(false)
             .create()
         
         dialog.show()
+    }
+    
+    /**
+     * Continúa el tutorial después de una navegación.
+     */
+    fun continueAfterNavigation(currentStep: TutorialStep, onStepComplete: (TutorialStep) -> Unit, onNavigate: (TutorialStep) -> Unit) {
+        val nextStep = currentStep.getNextStep()
+        if (nextStep != null && isActive) {
+            // Pequeño delay para que la nueva actividad se cargue
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                showTutorialStep(nextStep, onStepComplete, onNavigate)
+            }, 1000)
+        } else {
+            completeTutorial()
+        }
+    }
+    
+    /**
+     * Marca un paso como completado.
+     */
+    private fun markStepCompleted(step: TutorialStep) {
+        prefs.edit().putBoolean("step_${step.name}_completed", true).apply()
+    }
+    
+    /**
+     * Pausa el tutorial.
+     */
+    private fun pauseTutorial() {
+        isActive = false
+        AlertDialog.Builder(context)
+            .setTitle("Tutorial Pausado")
+            .setMessage("El tutorial ha sido pausado. Puedes continuarlo desde el menú principal.")
+            .setPositiveButton("OK", null)
+            .show()
     }
     
     /**

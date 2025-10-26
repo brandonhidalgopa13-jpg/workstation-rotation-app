@@ -1,5 +1,34 @@
 # 📋 CHANGELOG - Sistema de Rotación Inteligente
 
+## [2.1.0] - 2024-10-26
+
+### ✨ Nuevas Funcionalidades
+- **🌙 Modo Oscuro**: Tema oscuro completo para mejor visualización nocturna
+- **💾 Sistema de Respaldo**: Crear, exportar e importar respaldos completos de datos
+- **📱 Tabla Responsive**: Layout optimizado para orientación horizontal con scroll mejorado
+- **⚙️ Centro de Configuraciones**: Actividad dedicada para personalización y configuración
+- **🔄 Sincronización Básica**: Sistema de backup/restore para proteger datos
+
+### 🎨 Mejoras de Interfaz
+- **Tema Nocturno**: Colores optimizados para uso en condiciones de poca luz
+- **Layout Landscape**: Tabla de rotación optimizada para dispositivos en horizontal
+- **Scroll Horizontal Mejorado**: Navegación fluida en tablas grandes
+- **Configuraciones Organizadas**: Interface intuitiva para ajustes de la aplicación
+
+### 🔧 Mejoras Técnicas
+- **Serialización JSON**: Sistema robusto para exportar/importar datos
+- **Validación de Respaldos**: Verificación de integridad antes de importar
+- **Gestión de Temas**: Alternancia automática entre modo claro y oscuro
+- **Persistencia de Preferencias**: Configuraciones guardadas entre sesiones
+
+### 📱 Experiencia de Usuario
+- **Configuración Centralizada**: Todas las opciones en un solo lugar
+- **Respaldos Automáticos**: Protección de datos con un clic
+- **Modo Oscuro Inteligente**: Activación inmediata sin reiniciar
+- **Tabla Adaptativa**: Mejor visualización en diferentes orientaciones
+
+---
+
 ## [2.0.0] - 2024-10-26
 
 ### ✨ Nuevas Funcionalidades

@@ -106,8 +106,26 @@ class MainActivity : AppCompatActivity() {
      * Inicia el tutorial interactivo.
      */
     private fun startInteractiveTutorial() {
-        tutorialManager.startTutorial { step ->
-            handleTutorialStep(step)
+        tutorialManager.startTutorial(
+            onStepComplete = { step ->
+                handleTutorialStep(step)
+            },
+            onNavigate = { step ->
+                navigateForTutorial(step)
+            }
+        )
+    }
+    
+    /**
+     * Navega a la actividad correspondiente durante el tutorial.
+     */
+    private fun navigateForTutorial(step: TutorialStep) {
+        val targetActivity = step.getTargetActivity()
+        if (targetActivity != null) {
+            val intent = Intent(this, targetActivity)
+            intent.putExtra("tutorial_active", true)
+            intent.putExtra("tutorial_step", step.name)
+            startActivity(intent)
         }
     }
     
@@ -212,6 +230,10 @@ class MainActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
+                true
+            }
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
                 true
             }
             else -> super.onOptionsItemSelected(item)

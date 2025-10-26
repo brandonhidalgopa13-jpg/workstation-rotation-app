@@ -78,4 +78,17 @@ interface WorkerDao {
     
     @Query("UPDATE workers SET rotationsInCurrentStation = 0 WHERE id = :workerId")
     suspend fun resetWorkerRotationCount(workerId: Long)
+    
+    // Métodos síncronos para respaldo
+    @Query("SELECT * FROM workers ORDER BY name")
+    fun getAllWorkersSync(): List<Worker>
+    
+    @Query("SELECT * FROM worker_workstations")
+    fun getAllWorkerWorkstationsSync(): List<WorkerWorkstation>
+    
+    @Query("DELETE FROM workers")
+    suspend fun deleteAllWorkers()
+    
+    @Query("DELETE FROM worker_workstations")
+    suspend fun deleteAllWorkerWorkstations()
 }

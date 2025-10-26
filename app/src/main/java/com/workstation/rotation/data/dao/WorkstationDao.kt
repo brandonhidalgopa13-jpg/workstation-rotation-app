@@ -27,4 +27,11 @@ interface WorkstationDao {
     
     @Query("UPDATE workstations SET isActive = :isActive WHERE id = :id")
     suspend fun updateWorkstationStatus(id: Long, isActive: Boolean)
+    
+    // Métodos síncronos para respaldo
+    @Query("SELECT * FROM workstations ORDER BY name")
+    fun getAllWorkstationsSync(): List<Workstation>
+    
+    @Query("DELETE FROM workstations")
+    suspend fun deleteAllWorkstations()
 }

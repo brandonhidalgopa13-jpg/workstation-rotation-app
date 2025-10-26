@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:title="Sistema de Rotación"
+        app:titleTextColor="@android:color/white"
+        app:navigationIcon="@drawable/ic_arrow_back" />
+
+    <!-- Controles compactos para landscape -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnGenerateRotation"
+            style="@style/PrimaryButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="🔄 Generar"
+            android:textSize="14sp"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnClearRotation"
+            style="@style/SecondaryButtonStyle"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="🗑️ Limpiar"
+            android:textSize="14sp"
+            android:layout_marginStart="4dp" />
+
+        <TextView
+            android:id="@+id/tvRotationInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:text="Desliza horizontalmente para ver todas las estaciones"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Tabla de rotación optimizada para landscape -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="4dp"
+        android:scrollbars="horizontal"
+        android:fadeScrollbars="false"
+        android:scrollbarStyle="outsideOverlay"
+        android:scrollbarThumbHorizontal="@drawable/scrollbar_thumb_horizontal"
+        android:scrollbarTrackHorizontal="@drawable/scrollbar_track_horizontal"
+        android:fillViewport="false"
+        android:smoothScrollbar="true"
+        android:overScrollMode="always">
+
+        <LinearLayout
+            android:id="@+id/layoutRotationTable"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:minWidth="800dp">
+
+            <!-- Header compacto con workstation names -->
+            <LinearLayout
+                android:id="@+id/layoutWorkstationHeaders"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="?attr/colorPrimary"
+                android:padding="4dp"
+                android:minHeight="40dp" />
+
+            <!-- Capacity requirements row compacta -->
+            <LinearLayout
+                android:id="@+id/layoutCapacityRequirements"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@color/background_surface"
+                android:padding="4dp"
+                android:minHeight="30dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="?attr/colorPrimary"
+                android:layout_marginVertical="4dp" />
+
+            <!-- Layout horizontal para mostrar ambas fases lado a lado en landscape -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <!-- Fase Actual -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:layout_marginEnd="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📍 ACTUAL"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorPrimary"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:background="@color/background_surface"
+                        android:minWidth="400dp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutCurrentPhase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:background="@color/background_light"
+                        android:minWidth="400dp" />
+
+                </LinearLayout>
+
+                <!-- Separador vertical -->
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="match_parent"
+                    android:background="@color/accent_orange"
+                    android:layout_marginHorizontal="4dp" />
+
+                <!-- Próxima Fase -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:layout_marginStart="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🔄 PRÓXIMA"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/accent_orange"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:background="@color/background_surface"
+                        android:minWidth="400dp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutNextPhase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:background="@color/background_light"
+                        android:minWidth="400dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </HorizontalScrollView>
+
+    <!-- Marca de agua compacta para landscape -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/watermark_creator_short"
+        android:textSize="8sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:padding="2dp"
+        android:alpha="0.5"
+        android:background="@color/background_surface" />
+
+</LinearLayout>
