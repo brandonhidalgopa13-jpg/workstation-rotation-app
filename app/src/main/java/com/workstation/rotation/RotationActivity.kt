@@ -98,7 +98,7 @@ class RotationActivity : AppCompatActivity() {
                 viewModel.updateEligibleWorkersCount()
                 val count = viewModel.getEligibleWorkersCount()
                 binding.tvRotationInfo.text = "Trabajadores elegibles: $count | " +
-                        "Rotación inteligente con control de capacidad y prioridades"
+                        "🔒 Estaciones prioritarias mantienen capacidad completa en ambas fases"
             } catch (e: Exception) {
                 binding.tvRotationInfo.text = "Error al contar trabajadores elegibles"
             }

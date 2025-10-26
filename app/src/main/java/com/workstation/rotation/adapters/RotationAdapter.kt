@@ -32,13 +32,26 @@ class RotationAdapter : ListAdapter<RotationItem, RotationAdapter.RotationViewHo
                 tvCurrentWorkstation.text = rotationItem.currentWorkstation
                 tvNextWorkstation.text = rotationItem.nextWorkstation
                 
-                // Show capacity info if it's a priority assignment or capacity is managed
-                if (rotationItem.isPriorityAssignment || 
-                    (rotationItem.currentWorkstation.contains("/") && rotationItem.nextWorkstation.contains("/"))) {
-                    tvCapacityInfo.visibility = android.view.View.VISIBLE
-                    tvCapacityInfo.text = "✅ Asignación inteligente - Capacidad controlada"
-                } else {
-                    tvCapacityInfo.visibility = android.view.View.GONE
+                // Show capacity info based on priority and assignment type
+                when {
+                    rotationItem.workerName.contains("[PRIORITARIO]") -> {
+                        tvCapacityInfo.visibility = android.view.View.VISIBLE
+                        tvCapacityInfo.text = "🔒 ESTACIÓN PRIORITARIA - Capacidad garantizada"
+                        tvCapacityInfo.setTextColor(android.graphics.Color.parseColor("#FF6200EE"))
+                    }
+                    rotationItem.currentWorkstation.contains("COMPLETA") || rotationItem.nextWorkstation.contains("COMPLETA") -> {
+                        tvCapacityInfo.visibility = android.view.View.VISIBLE
+                        tvCapacityInfo.text = "⭐ Estación con capacidad completa asegurada"
+                        tvCapacityInfo.setTextColor(android.graphics.Color.parseColor("#FF018786"))
+                    }
+                    rotationItem.currentWorkstation.contains("/") && rotationItem.nextWorkstation.contains("/") -> {
+                        tvCapacityInfo.visibility = android.view.View.VISIBLE
+                        tvCapacityInfo.text = "✅ Asignación inteligente - Capacidad controlada"
+                        tvCapacityInfo.setTextColor(android.graphics.Color.parseColor("#FF018786"))
+                    }
+                    else -> {
+                        tvCapacityInfo.visibility = android.view.View.GONE
+                    }
                 }
             }
         }
