@@ -38,8 +38,7 @@ import java.io.File
  *    - Importar datos desde archivo
  *    - Validar integridad de respaldos
  * 
- * 📚 TUTORIAL Y AYUDA:
- *    - Reiniciar tutorial interactivo
+ * 📚 AYUDA Y SOPORTE:
  *    - Configurar pistas y ayuda
  *    - Acceso a documentación
  * 
@@ -575,7 +574,7 @@ class SettingsActivity : AppCompatActivity() {
                 "• Sistema de entrenamiento avanzado\n" +
                 "• Rotación inteligente con cambio forzado\n" +
                 "• Certificación centralizada de trabajadores\n" +
-                "• Tutorial interactivo guiado\n" +
+                "• Interfaz intuitiva y fácil de usar\n" +
                 "• Modo oscuro automático\n" +
                 "• Respaldo y sincronización completa\n\n" +
                 "© 2024 - Todos los derechos reservados"
