@@ -76,8 +76,9 @@ class RotationViewModel(
                     currentAssignments.values.none { it.contains(worker) }
                 }
                 
-                // Sort by availability percentage (higher availability first for priority stations)
-                val sortedWorkers = availableWorkers.sortedByDescending { it.availabilityPercentage }
+                // Sort by availability and training status (trainers first, then by availability)
+                val sortedWorkers = availableWorkers.sortedWith(compareByDescending<Worker> { it.isTrainer }
+                    .thenByDescending { it.availabilityPercentage })
                 
                 val workersToAssign = minOf(priorityStation.requiredWorkers, sortedWorkers.size)
                 
@@ -91,11 +92,14 @@ class RotationViewModel(
                 currentAssignments.values.none { it.contains(worker) }
             }
             
-            // Sort unassigned workers by availability and apply probability-based assignment
-            val sortedUnassignedWorkers = unassignedWorkers.sortedByDescending { worker ->
-                // Create weighted score: availability + random factor for rotation variety
-                worker.availabilityPercentage + (kotlin.random.Random.nextInt(0, 30))
-            }
+            // Sort unassigned workers by training status and availability
+            val sortedUnassignedWorkers = unassignedWorkers.sortedWith(
+                compareByDescending<Worker> { it.isTrainer }
+                    .thenByDescending { worker ->
+                        // Create weighted score: availability + random factor for rotation variety
+                        worker.availabilityPercentage + (kotlin.random.Random.nextInt(0, 30))
+                    }
+            )
             
             for (worker in sortedUnassignedWorkers) {
                 // Apply availability probability check
@@ -109,10 +113,17 @@ class RotationViewModel(
                     }
                     
                     if (availableStations.isNotEmpty()) {
-                        // Assign to station with least workers
-                        val targetStation = availableStations.minByOrNull { 
-                            currentAssignments[it.id]?.size ?: 0 
+                        // For trainees, prioritize their training workstation
+                        val targetStation = if (worker.isTrainee && worker.trainingWorkstationId != null) {
+                            availableStations.find { it.id == worker.trainingWorkstationId }
+                                ?: availableStations.minByOrNull { currentAssignments[it.id]?.size ?: 0 }
+                        } else {
+                            // Assign to station with least workers
+                            availableStations.minByOrNull { 
+                                currentAssignments[it.id]?.size ?: 0 
+                            }
                         }
+                        
                         targetStation?.let { station ->
                             currentAssignments[station.id]?.add(worker)
                         }
@@ -192,11 +203,16 @@ class RotationViewModel(
                     }
                     
                     val restrictionStatus = if (worker.restrictionNotes.isNotEmpty()) " 🔒" else ""
+                    val trainingStatus = when {
+                        worker.isTrainer -> " 👨‍🏫"
+                        worker.isTrainee -> " 🎯"
+                        else -> ""
+                    }
                     
                     val workerLabel = if (isPriorityWorker) {
-                        "${worker.name} [PRIORITARIO]$availabilityStatus$restrictionStatus"
+                        "${worker.name} [PRIORITARIO]$availabilityStatus$restrictionStatus$trainingStatus"
                     } else {
-                        "${worker.name}$availabilityStatus$restrictionStatus"
+                        "${worker.name}$availabilityStatus$restrictionStatus$trainingStatus"
                     }
                     
                     val currentInfo = "${station.name} (${currentWorkers.size}/${station.requiredWorkers})" + 

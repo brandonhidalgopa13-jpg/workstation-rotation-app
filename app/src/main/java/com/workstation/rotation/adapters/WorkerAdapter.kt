@@ -57,6 +57,20 @@ class WorkerAdapter(
                     tvRestrictionStatus.visibility = android.view.View.GONE
                 }
                 
+                // Mostrar estado de entrenador
+                if (worker.isTrainer) {
+                    tvTrainerStatus.visibility = android.view.View.VISIBLE
+                } else {
+                    tvTrainerStatus.visibility = android.view.View.GONE
+                }
+                
+                // Mostrar estado de entrenamiento
+                if (worker.isTrainee) {
+                    tvTraineeStatus.visibility = android.view.View.VISIBLE
+                } else {
+                    tvTraineeStatus.visibility = android.view.View.GONE
+                }
+                
                 switchActive.setOnCheckedChangeListener { _, isChecked ->
                     onStatusChange(worker, isChecked)
                 }

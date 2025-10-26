@@ -50,6 +50,14 @@ class WorkerViewModel(
     suspend fun getWorkerWorkstationIds(workerId: Long): List<Long> {
         return workerDao.getWorkerWorkstationIds(workerId)
     }
+    
+    suspend fun getTrainers(): List<Worker> {
+        return workerDao.getAllWorkers().first().filter { it.isTrainer && it.isActive }
+    }
+    
+    suspend fun getWorkerById(workerId: Long): Worker? {
+        return workerDao.getWorkerById(workerId)
+    }
 }
 
 class WorkerViewModelFactory(

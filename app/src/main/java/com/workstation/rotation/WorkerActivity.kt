@@ -1,6 +1,10 @@
 package com.workstation.rotation
 
 import android.os.Bundle
+import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.CheckBox
+import android.widget.Spinner
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -86,10 +90,19 @@ class WorkerActivity : AppCompatActivity() {
             adapter = workstationAdapter
         }
         
+        // Setup training system
+        setupTrainingSystem(dialogBinding)
+        
         // Load workstations
         viewModel.activeWorkstations.observe(this) { workstations ->
             val checkItems = workstations.map { WorkstationCheckItem(it, false) }
             workstationAdapter.submitList(checkItems)
+            
+            // Setup training workstation spinner
+            val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+            val workstationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
+            workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
         }
         
         AlertDialog.Builder(this)
@@ -101,6 +114,34 @@ class WorkerActivity : AppCompatActivity() {
                 val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
                 val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
                 val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
+                val isTrainer = dialogBinding.checkboxIsTrainer.isChecked
+                val isTrainee = dialogBinding.checkboxIsTrainee.isChecked
+                
+                var trainerId: Long? = null
+                var trainingWorkstationId: Long? = null
+                
+                if (isTrainee) {
+                    // Get selected trainer and workstation
+                    val trainerPosition = dialogBinding.spinnerTrainer.selectedItemPosition
+                    val workstationPosition = dialogBinding.spinnerTrainingWorkstation.selectedItemPosition
+                    
+                    if (trainerPosition > 0) {
+                        lifecycleScope.launch {
+                            val trainers = viewModel.getTrainers()
+                            if (trainerPosition <= trainers.size) {
+                                trainerId = trainers[trainerPosition - 1].id
+                            }
+                        }
+                    }
+                    
+                    if (workstationPosition > 0) {
+                        viewModel.activeWorkstations.value?.let { workstations ->
+                            if (workstationPosition <= workstations.size) {
+                                trainingWorkstationId = workstations[workstationPosition - 1].id
+                            }
+                        }
+                    }
+                }
                 
                 if (name.isNotEmpty()) {
                     val selectedWorkstations = workstationAdapter.currentList
@@ -113,7 +154,11 @@ class WorkerActivity : AppCompatActivity() {
                                 name = name, 
                                 email = email,
                                 availabilityPercentage = availability,
-                                restrictionNotes = restrictionNotes
+                                restrictionNotes = restrictionNotes,
+                                isTrainer = isTrainer,
+                                isTrainee = isTrainee,
+                                trainerId = trainerId,
+                                trainingWorkstationId = trainingWorkstationId
                             ),
                             selectedWorkstations
                         )
@@ -122,6 +167,24 @@ class WorkerActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+    
+    private fun setupTrainingSystem(dialogBinding: DialogAddWorkerBinding) {
+        // Setup trainee checkbox listener
+        dialogBinding.checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
+            dialogBinding.layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+            
+            if (isChecked) {
+                // Load trainers
+                lifecycleScope.launch {
+                    val trainers = viewModel.getTrainers()
+                    val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
+                    val trainerAdapter = ArrayAdapter(this@WorkerActivity, android.R.layout.simple_spinner_item, trainerNames)
+                    trainerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    dialogBinding.spinnerTrainer.adapter = trainerAdapter
+                }
+            }
+        }
     }
     
     private fun showEditDialog(worker: Worker) {
