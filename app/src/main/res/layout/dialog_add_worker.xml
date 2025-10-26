@@ -300,7 +300,7 @@
                     android:layout_height="wrap_content"
                     android:text=""
                     android:textSize="12sp"
-                    android:textColor="@color/primary"
+                    android:textColor="@color/primary_blue"
                     android:textStyle="bold"
                     android:visibility="gone" />
 
