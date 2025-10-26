@@ -15,6 +15,54 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 🏭 SISTEMA DE ROTACIÓN INTELIGENTE DE ESTACIONES DE TRABAJO
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * 📋 FUNCIONES PRINCIPALES DEL SISTEMA:
+ * 
+ * 🎯 1. GESTIÓN DE ROTACIONES AUTOMÁTICAS
+ *    - Genera rotaciones inteligentes basadas en múltiples criterios
+ *    - Considera disponibilidad, capacitación y restricciones de trabajadores
+ *    - Optimiza la distribución de personal en estaciones de trabajo
+ * 
+ * 👥 2. SISTEMA DE ENTRENAMIENTO INTEGRADO
+ *    - Asigna automáticamente parejas entrenador-entrenado
+ *    - Garantiza que entrenados siempre estén con sus entrenadores asignados
+ *    - Prioriza estaciones de entrenamiento solicitadas
+ * 
+ * ⭐ 3. MANEJO DE ESTACIONES PRIORITARIAS
+ *    - Asegura capacidad completa en estaciones críticas
+ *    - Asigna los mejores trabajadores disponibles a estaciones prioritarias
+ *    - Mantiene continuidad operativa en áreas clave
+ * 
+ * 📊 4. ALGORITMO DE OPTIMIZACIÓN
+ *    - Balancea carga de trabajo entre estaciones
+ *    - Considera porcentajes de disponibilidad individual
+ *    - Aplica variación aleatoria para evitar patrones repetitivos
+ * 
+ * 🔄 5. ROTACIÓN DUAL (ACTUAL + SIGUIENTE)
+ *    - Genera posición actual y siguiente rotación simultáneamente
+ *    - Permite planificación anticipada de movimientos
+ *    - Facilita transiciones suaves entre turnos
+ * 
+ * 🎨 6. VISUALIZACIÓN AVANZADA
+ *    - Crea elementos visuales con indicadores de estado
+ *    - Muestra información de capacidad y disponibilidad
+ *    - Identifica visualmente parejas de entrenamiento activas
+ * 
+ * 🛡️ 7. VALIDACIÓN Y RESTRICCIONES
+ *    - Respeta restricciones individuales de trabajadores
+ *    - Valida capacidades de estaciones antes de asignación
+ *    - Maneja casos especiales y excepciones
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 💻 Desarrollado por: Brandon Josué Hidalgo Paz
+ * 🏷️ Versión: Sistema de Rotación Inteligente v2.0
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
 class RotationViewModel(
     private val workerDao: WorkerDao,
     private val workstationDao: WorkstationDao

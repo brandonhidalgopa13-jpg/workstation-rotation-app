@@ -22,6 +22,57 @@ import com.workstation.rotation.viewmodels.WorkerViewModel
 import com.workstation.rotation.viewmodels.WorkerViewModelFactory
 import kotlinx.coroutines.launch
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 👥 ACTIVIDAD DE GESTIÓN DE TRABAJADORES - CENTRO DE RECURSOS HUMANOS
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * 📋 FUNCIONES PRINCIPALES DE ESTA ACTIVIDAD:
+ * 
+ * 👤 1. GESTIÓN COMPLETA DE PERSONAL
+ *    - Crear, editar y eliminar trabajadores del sistema
+ *    - Configurar información básica (nombre, email, estado activo)
+ *    - Gestionar disponibilidad y restricciones laborales
+ * 
+ * 🎓 2. SISTEMA DE ENTRENAMIENTO AVANZADO
+ *    - Configurar trabajadores como entrenadores (👨‍🏫)
+ *    - Asignar trabajadores como entrenados (🎯)
+ *    - Establecer relaciones entrenador-entrenado
+ *    - Seleccionar estaciones específicas para entrenamiento
+ * 
+ * 🏭 3. ASIGNACIÓN DE ESTACIONES DE TRABAJO
+ *    - Seleccionar múltiples estaciones donde puede trabajar cada empleado
+ *    - Sistema de checkboxes para selección flexible
+ *    - Validación de que cada trabajador tenga al menos una estación
+ * 
+ * 📊 4. CONFIGURACIÓN DE DISPONIBILIDAD
+ *    - Establecer porcentaje de disponibilidad (0-100%)
+ *    - Agregar notas sobre restricciones específicas
+ *    - Sistema visual de indicadores de disponibilidad
+ * 
+ * 📱 5. INTERFAZ INTUITIVA Y FUNCIONAL
+ *    - Lista dinámica con RecyclerView para rendimiento óptimo
+ *    - Diálogos modales para agregar/editar trabajadores
+ *    - Floating Action Button para acceso rápido a creación
+ *    - Indicadores visuales de estado y roles
+ * 
+ * 🔄 6. INTEGRACIÓN CON SISTEMA DE ROTACIÓN
+ *    - Los trabajadores configurados aquí alimentan el algoritmo de rotación
+ *    - Validación de datos para asegurar rotaciones exitosas
+ *    - Sincronización automática con el motor de rotaciones
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔧 COMPONENTES TÉCNICOS:
+ * 
+ * • RecyclerView con adaptador personalizado para lista de trabajadores
+ * • Diálogos personalizados con View Binding para formularios
+ * • ViewModel con LiveData para gestión reactiva de estado
+ * • Validación de formularios con feedback visual
+ * • Operaciones CRUD asíncronas con corrutinas
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
 class WorkerActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityWorkerBinding

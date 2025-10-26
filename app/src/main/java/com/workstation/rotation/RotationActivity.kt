@@ -20,6 +20,57 @@ import com.workstation.rotation.viewmodels.RotationViewModel
 import com.workstation.rotation.viewmodels.RotationViewModelFactory
 import kotlinx.coroutines.launch
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔄 ACTIVIDAD DE ROTACIÓN - MOTOR PRINCIPAL DEL SISTEMA
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 
+ * 📋 FUNCIONES PRINCIPALES DE ESTA ACTIVIDAD:
+ * 
+ * 🎯 1. GENERACIÓN DE ROTACIONES INTELIGENTES
+ *    - Ejecuta el algoritmo de rotación con un solo clic
+ *    - Procesa todos los trabajadores y estaciones activos
+ *    - Aplica reglas de negocio complejas automáticamente
+ * 
+ * 📊 2. VISUALIZACIÓN AVANZADA DE RESULTADOS
+ *    - Muestra tabla de rotación con dos fases (actual y siguiente)
+ *    - Presenta información de capacidad y ocupación por estación
+ *    - Indica visualmente parejas de entrenamiento activas
+ *    - Resalta estaciones prioritarias y trabajadores especiales
+ * 
+ * 🎨 3. INTERFAZ DINÁMICA Y RESPONSIVE
+ *    - Genera columnas dinámicamente según estaciones disponibles
+ *    - Scroll horizontal para manejar múltiples estaciones
+ *    - Colores diferenciados para fases actual y siguiente
+ *    - Indicadores visuales de estado y capacidad
+ * 
+ * 🔧 4. CONTROLES DE GESTIÓN
+ *    - Botón "Generar Rotación": Ejecuta algoritmo completo
+ *    - Botón "Limpiar": Resetea resultados para nueva generación
+ *    - Información en tiempo real de trabajadores elegibles
+ * 
+ * 👥 5. SISTEMA DE ENTRENAMIENTO VISUAL
+ *    - Identifica parejas entrenador-entrenado con iconos especiales
+ *    - Muestra estado de entrenamiento activo (🤝 [ENTRENANDO])
+ *    - Confirma asignación correcta a estaciones de entrenamiento
+ * 
+ * ⭐ 6. MANEJO DE ESTACIONES PRIORITARIAS
+ *    - Resalta estaciones críticas con indicador ⭐ COMPLETA
+ *    - Asegura capacidad completa en áreas prioritarias
+ *    - Prioriza mejores trabajadores para estas estaciones
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔧 COMPONENTES TÉCNICOS:
+ * 
+ * • ViewModel con Factory para inyección de dependencias
+ * • Corrutinas para operaciones asíncronas de base de datos
+ * • LiveData para observación reactiva de cambios
+ * • View Binding para acceso seguro a elementos UI
+ * • Generación dinámica de layouts para flexibilidad
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════════════════════
+ */
+
 class RotationActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityRotationBinding
