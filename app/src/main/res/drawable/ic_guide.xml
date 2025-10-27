@@ -31,20 +31,18 @@
         android:fillColor="@color/accent_orange"
         android:pathData="M16,2V8L18,6L20,8V2H16Z" />
     
-    <!-- Icono de información -->
-    <circle
+    <!-- Icono de información (círculo convertido a path) -->
+    <path
         android:fillColor="@color/accent_green"
-        android:cx="14"
-        android:cy="16"
-        android:r="3" />
+        android:pathData="M14,13C12.34,13 11,14.34 11,16C11,17.66 12.34,19 14,19C15.66,19 17,17.66 17,16C17,14.34 15.66,13 14,13Z" />
     
+    <!-- Línea vertical del icono i -->
     <path
         android:fillColor="@color/white"
         android:pathData="M13.5,14.5H14.5V17.5H13.5V14.5Z" />
     
-    <circle
+    <!-- Punto del icono i (círculo pequeño convertido a path) -->
+    <path
         android:fillColor="@color/white"
-        android:cx="14"
-        android:cy="13.5"
-        android:r="0.5" />
+        android:pathData="M14,13C13.72,13 13.5,13.22 13.5,13.5C13.5,13.78 13.72,14 14,14C14.28,14 14.5,13.78 14.5,13.5C14.5,13.22 14.28,13 14,13Z" />
 </vector>
