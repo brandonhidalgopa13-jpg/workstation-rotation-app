@@ -172,7 +172,7 @@ data class CloudBackup(
     val id: String = "",
     val userId: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val deviceInfo: Map<String, Any> = emptyMap(),
+    val deviceInfo: Map<String, String> = emptyMap(),
     val workers: List<CloudWorker> = emptyList(),
     val workstations: List<CloudWorkstation> = emptyList(),
     val workerWorkstations: List<CloudWorkerWorkstation> = emptyList(),
@@ -200,7 +200,7 @@ data class CloudBackup(
 @Serializable
 data class WorkspaceInfo(
     val lastSync: Long = 0,
-    val deviceInfo: Map<String, Any> = emptyMap(),
+    val deviceInfo: Map<String, String> = emptyMap(),
     val dataVersion: Int = 1,
     val totalWorkers: Int = 0,
     val totalWorkstations: Int = 0,

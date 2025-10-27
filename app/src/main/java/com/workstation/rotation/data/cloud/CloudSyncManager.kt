@@ -72,9 +72,9 @@ class CloudSyncManager(
      */
     private fun getUserWorkspaceRef() = authManager.getCurrentUserId()?.let { userId ->
         firestore?.collection(COLLECTION_USERS)
-            .document(userId)
-            .collection(COLLECTION_WORKSPACES)
-            .document("default")
+            ?.document(userId)
+            ?.collection(COLLECTION_WORKSPACES)
+            ?.document("default")
     }
     
     /**
@@ -318,7 +318,7 @@ class CloudSyncManager(
     /**
      * Obtiene información del dispositivo actual.
      */
-    private fun getDeviceInfo(): Map<String, Any> {
+    private fun getDeviceInfo(): Map<String, String> {
         return mapOf(
             "model" to android.os.Build.MODEL,
             "manufacturer" to android.os.Build.MANUFACTURER,
