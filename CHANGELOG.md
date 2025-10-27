@@ -2,12 +2,32 @@
 
 ## [2.1.0] - 2024-10-26
 
-### ✨ Nuevas Funcionalidades
-- **🌙 Modo Oscuro**: Tema oscuro completo para mejor visualización nocturna
-- **💾 Sistema de Respaldo**: Crear, exportar e importar respaldos completos de datos
-- **📱 Tabla Responsive**: Layout optimizado para orientación horizontal con scroll mejorado
-- **⚙️ Centro de Configuraciones**: Actividad dedicada para personalización y configuración
-- **🔄 Sincronización Básica**: Sistema de backup/restore para proteger datos
+### 🚀 **FUNCIONALIDADES PRINCIPALES IMPLEMENTADAS**
+
+#### ☁️ **Sistema Completo de Sincronización en la Nube**
+- **Firebase Integration**: Integración completa con Firebase Firestore, Auth y Storage
+- **CloudAuthManager**: Autenticación segura con Google One Tap y modo anónimo
+- **CloudSyncManager**: Sincronización bidireccional automática entre dispositivos
+- **CloudSyncWorker**: Sincronización en segundo plano con WorkManager
+- **Respaldos Seguros**: Almacenamiento versionado en Firebase Storage
+- **Tiempo Real**: Escucha de cambios instantáneos con listeners
+- **Modo Offline**: Funciona sin conexión, sincroniza cuando se conecta
+- **Gestión de Cuentas**: Control completo de usuarios y eliminación segura
+
+#### 🌙 **Modo Oscuro Inteligente**
+- **Temas Adaptativos**: Modo claro y oscuro con transiciones suaves
+- **Detección del Sistema**: Sugiere automáticamente seguir configuración del dispositivo
+- **Persistencia Avanzada**: Recuerda preferencia con configuración de primera vez
+- **Feedback Táctil**: Vibración sutil al cambiar modo para mejor UX
+- **Colores Optimizados**: Paleta completa con colores específicos para cada tema
+- **Descripción Detallada**: Explica beneficios de cada modo al usuario
+
+#### 📖 **Sistema de Guía Interactiva Completa**
+- **Guía Paso a Paso**: Tutorial completo de 8 secciones detalladas
+- **Navegación Intuitiva**: Índice con acceso directo a cualquier sección
+- **Tips Avanzados**: Mejores prácticas y consejos de optimización
+- **Integración Perfecta**: Acceso desde Settings y desde información de la app
+- **Contenido Contextual**: Información específica para cada funcionalidad
 
 ### 🎨 Mejoras de Interfaz
 - **Tema Nocturno**: Colores optimizados para uso en condiciones de poca luz

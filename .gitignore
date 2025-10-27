@@ -50,10 +50,13 @@ captures/
 # Comment next line if keeping position of elements in Navigation Editor is desired
 .idea/navEditor.xml
 
-# Keystore files
-# Uncomment the following lines if you do not want to check your keystore files in.
-#*.jks
-#*.keystore
+# Keystore files - NEVER commit these to version control
+*.jks
+*.keystore
+keystore.properties
+
+# Release signing configuration
+release.properties
 
 # External native build folder generated in Android Studio 2.2 and later
 .externalNativeBuild
@@ -77,9 +80,25 @@ fastlane/readme.md
 # Version control
 vcs.xml
 
-# lint
+# Lint
 lint/intermediates/
 lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# Testing and Quality Reports
+app/build/reports/
+app/build/test-results/
+app/build/outputs/logs/
+
+# Jacoco Coverage Reports
+*.exec
+*.ec
+
+# Performance test results
+performance-results/
+
+# Temporary test files
+test-temp/
+*.tmp
