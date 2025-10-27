@@ -104,12 +104,14 @@ class CloudAuthManager(private val context: Context) {
      */
     suspend fun signInWithGoogle(data: Intent): AuthResult {
         return try {
-            val credential = oneTapClient.getSignInCredentialFromIntent(data)
+            val credential = oneTapClient?.getSignInCredentialFromIntent(data)
+                ?: return AuthResult.Error("Cliente de autenticación no disponible")
             val googleIdToken = credential.googleIdToken
             
             if (googleIdToken != null) {
                 val firebaseCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
-                val authResult = auth.signInWithCredential(firebaseCredential).await()
+                val authResult = auth?.signInWithCredential(firebaseCredential)?.await()
+                    ?: return AuthResult.Error("Firebase Auth no disponible")
                 
                 AuthResult.Success(authResult.user)
             } else {
@@ -125,7 +127,8 @@ class CloudAuthManager(private val context: Context) {
      */
     suspend fun signInAnonymously(): AuthResult {
         return try {
-            val result = auth.signInAnonymously().await()
+            val result = auth?.signInAnonymously()?.await()
+                ?: return AuthResult.Error("Firebase Auth no disponible")
             AuthResult.Success(result.user)
         } catch (e: Exception) {
             AuthResult.Error(e.message ?: "Error en el inicio de sesión anónimo")
@@ -137,8 +140,8 @@ class CloudAuthManager(private val context: Context) {
      */
     suspend fun signOut(): Boolean {
         return try {
-            auth.signOut()
-            oneTapClient.signOut().await()
+            auth?.signOut()
+            oneTapClient?.signOut()?.await()
             true
         } catch (e: Exception) {
             false

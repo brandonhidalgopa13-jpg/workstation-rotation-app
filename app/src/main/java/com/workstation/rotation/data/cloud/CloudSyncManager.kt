@@ -250,10 +250,10 @@ class CloudSyncManager(
                 workerWorkstations = workerWorkstations.map { it.toCloudData() }
             )
             
-            firestore.collection(COLLECTION_BACKUPS)
-                .document(backup.id)
-                .set(backup)
-                .await()
+            firestore?.collection(COLLECTION_BACKUPS)
+                ?.document(backup.id)
+                ?.set(backup)
+                ?.await()
             
             SyncResult.Success("Respaldo creado en la nube: ${backup.id}")
             
@@ -270,12 +270,13 @@ class CloudSyncManager(
             val userId = authManager.getCurrentUserId()
                 ?: return SyncResult.Error("Usuario no autenticado")
             
-            val backupsSnapshot = firestore.collection(COLLECTION_BACKUPS)
-                .whereEqualTo("userId", userId)
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .limit(10)
-                .get()
-                .await()
+            val backupsSnapshot = firestore?.collection(COLLECTION_BACKUPS)
+                ?.whereEqualTo("userId", userId)
+                ?.orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                ?.limit(10)
+                ?.get()
+                ?.await()
+                ?: return SyncResult.Error("Firestore no disponible")
             
             val backups = backupsSnapshot.documents.mapNotNull { doc ->
                 doc.toObject(CloudBackup::class.java)
@@ -293,10 +294,11 @@ class CloudSyncManager(
      */
     suspend fun restoreFromCloudBackup(backupId: String): SyncResult {
         return try {
-            val backupDoc = firestore.collection(COLLECTION_BACKUPS)
-                .document(backupId)
-                .get()
-                .await()
+            val backupDoc = firestore?.collection(COLLECTION_BACKUPS)
+                ?.document(backupId)
+                ?.get()
+                ?.await()
+                ?: return SyncResult.Error("Firestore no disponible")
             
             val backup = backupDoc.toObject(CloudBackup::class.java)
                 ?: return SyncResult.Error("Respaldo no encontrado")
