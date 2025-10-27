@@ -859,6 +859,12 @@ class SettingsActivity : AppCompatActivity() {
      * Muestra las opciones de sincronización en la nube.
      */
     private fun showCloudSyncOptions() {
+        // Verificar si Firebase está disponible
+        val authManager = com.workstation.rotation.data.cloud.CloudAuthManager(this)
+        if (!authManager.isFirebaseAvailable()) {
+            showFirebaseNotAvailableDialog()
+            return
+        }
         val options = arrayOf(
             "🔄 Sincronizar Ahora",
             "☁️ Subir a la Nube",
@@ -1215,6 +1221,55 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
             .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Muestra un diálogo cuando Firebase no está disponible.
+     */
+    private fun showFirebaseNotAvailableDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("☁️ Sincronización en la Nube No Disponible")
+            .setMessage(
+                "La sincronización en la nube requiere configuración de Firebase.\n\n" +
+                "📋 Para habilitar esta función:\n" +
+                "1. Configura un proyecto Firebase\n" +
+                "2. Descarga google-services.json\n" +
+                "3. Colócalo en la carpeta app/\n" +
+                "4. Recompila la aplicación\n\n" +
+                "📖 Consulta FIREBASE_SETUP.md para instrucciones detalladas.\n\n" +
+                "💡 Mientras tanto, puedes usar respaldos locales."
+            )
+            .setPositiveButton("Ver Guía") { _, _ ->
+                // Mostrar información sobre cómo configurar Firebase
+                showFirebaseSetupInfo()
+            }
+            .setNeutralButton("Respaldo Local") { _, _ ->
+                createBackup()
+            }
+            .setNegativeButton("OK", null)
+            .show()
+    }
+    
+    /**
+     * Muestra información sobre cómo configurar Firebase.
+     */
+    private fun showFirebaseSetupInfo() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔥 Configuración de Firebase")
+            .setMessage(
+                "Pasos rápidos para habilitar la nube:\n\n" +
+                "1️⃣ Ve a console.firebase.google.com\n" +
+                "2️⃣ Crea un nuevo proyecto\n" +
+                "3️⃣ Agrega una app Android\n" +
+                "4️⃣ Package: com.workstation.rotation\n" +
+                "5️⃣ Descarga google-services.json\n" +
+                "6️⃣ Colócalo en app/google-services.json\n" +
+                "7️⃣ Habilita Authentication y Firestore\n" +
+                "8️⃣ Recompila la app\n\n" +
+                "🎉 ¡Listo para sincronizar en la nube!"
+            )
+            .setPositiveButton("Entendido", null)
             .show()
     }
     

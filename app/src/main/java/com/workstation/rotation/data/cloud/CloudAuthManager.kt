@@ -38,8 +38,8 @@ import kotlinx.coroutines.tasks.await
  */
 class CloudAuthManager(private val context: Context) {
     
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val oneTapClient: SignInClient = Identity.getSignInClient(context)
+    private val auth: FirebaseAuth? = try { FirebaseAuth.getInstance() } catch (e: Exception) { null }
+    private val oneTapClient: SignInClient? = try { Identity.getSignInClient(context) } catch (e: Exception) { null }
     
     companion object {
         private const val WEB_CLIENT_ID = "your-web-client-id-here" // Se debe configurar
@@ -48,12 +48,12 @@ class CloudAuthManager(private val context: Context) {
     /**
      * Obtiene el usuario actual autenticado.
      */
-    fun getCurrentUser(): FirebaseUser? = auth.currentUser
+    fun getCurrentUser(): FirebaseUser? = auth?.currentUser
     
     /**
      * Verifica si hay un usuario autenticado.
      */
-    fun isUserSignedIn(): Boolean = getCurrentUser() != null
+    fun isUserSignedIn(): Boolean = auth != null && getCurrentUser() != null
     
     /**
      * Obtiene el ID único del usuario actual.
@@ -71,9 +71,15 @@ class CloudAuthManager(private val context: Context) {
     fun getCurrentUserName(): String? = getCurrentUser()?.displayName
     
     /**
+     * Verifica si Firebase está disponible.
+     */
+    fun isFirebaseAvailable(): Boolean = auth != null && oneTapClient != null
+    
+    /**
      * Inicia el proceso de autenticación con Google One Tap.
      */
     suspend fun beginSignIn(): IntentSenderRequest? {
+        if (!isFirebaseAvailable()) return null
         return try {
             val signInRequest = BeginSignInRequest.builder()
                 .setGoogleIdTokenRequestOptions(
@@ -86,8 +92,8 @@ class CloudAuthManager(private val context: Context) {
                 .setAutoSelectEnabled(true)
                 .build()
             
-            val result = oneTapClient.beginSignIn(signInRequest).await()
-            IntentSenderRequest.Builder(result.pendingIntent.intentSender).build()
+            val result = oneTapClient?.beginSignIn(signInRequest)?.await()
+            result?.let { IntentSenderRequest.Builder(it.pendingIntent.intentSender).build() }
         } catch (e: Exception) {
             null
         }

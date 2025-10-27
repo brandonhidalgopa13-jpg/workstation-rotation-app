@@ -50,7 +50,7 @@ class CloudSyncManager(
     private val authManager: CloudAuthManager
 ) {
     
-    private val firestore = FirebaseFirestore.getInstance()
+    private val firestore = try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
     private val json = Json { ignoreUnknownKeys = true }
     
     companion object {
@@ -63,10 +63,15 @@ class CloudSyncManager(
     }
     
     /**
+     * Verifica si Firebase está disponible.
+     */
+    fun isFirebaseAvailable(): Boolean = firestore != null && authManager.isFirebaseAvailable()
+    
+    /**
      * Obtiene la referencia del workspace del usuario actual.
      */
     private fun getUserWorkspaceRef() = authManager.getCurrentUserId()?.let { userId ->
-        firestore.collection(COLLECTION_USERS)
+        firestore?.collection(COLLECTION_USERS)
             .document(userId)
             .collection(COLLECTION_WORKSPACES)
             .document("default")
@@ -80,11 +85,14 @@ class CloudSyncManager(
         workstations: List<Workstation>,
         workerWorkstations: List<WorkerWorkstation>
     ): SyncResult {
+        if (!isFirebaseAvailable()) {
+            return SyncResult.Error("Firebase no está disponible. Configura google-services.json")
+        }
         return try {
             val workspaceRef = getUserWorkspaceRef()
                 ?: return SyncResult.Error("Usuario no autenticado")
             
-            val batch = firestore.batch()
+            val batch = firestore!!.batch()
             val timestamp = System.currentTimeMillis()
             
             // Subir trabajadores
