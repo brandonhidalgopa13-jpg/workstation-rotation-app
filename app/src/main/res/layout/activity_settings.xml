@@ -45,11 +45,11 @@
                         android:gravity="center"
                         android:layout_marginEnd="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🎨"
-                            android:textSize="20sp" />
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_dark_mode"
+                            android:tint="@android:color/white" />
 
                     </LinearLayout>
 
@@ -91,10 +91,11 @@
                             android:id="@+id/tvDarkModeDescription"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="☀️ Modo Claro Activado\nTema claro para mejor visualización diurna"
-                            android:textSize="14sp"
+                            android:text="☀️ Modo Claro Activado\n• Mejor contraste en ambientes bien iluminados\n• Colores más vibrantes y nítidos\n• Perfecto para uso diurno"
+                            android:textSize="13sp"
                             android:textColor="?attr/colorOnSurfaceVariant"
-                            android:layout_marginTop="4dp" />
+                            android:layout_marginTop="6dp"
+                            android:lineSpacingExtra="2dp" />
 
                     </LinearLayout>
 
@@ -197,6 +198,42 @@
 
                 </LinearLayout>
 
+                <!-- Sincronización en la Nube -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="☁️ Sincronización en la Nube"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnCloudSync"
+                        style="@style/PrimaryButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🔄 Sincronizar"
+                        android:layout_marginEnd="4dp" />
+
+                    <Button
+                        android:id="@+id/btnCloudBackup"
+                        style="@style/SecondaryButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="☁️ Respaldo"
+                        android:layout_marginStart="4dp" />
+
+                </LinearLayout>
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -228,11 +265,11 @@
                         android:gravity="center"
                         android:layout_marginEnd="16dp">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="📚"
-                            android:textSize="20sp" />
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_guide"
+                            android:tint="@android:color/white" />
 
                     </LinearLayout>
 
@@ -248,11 +285,11 @@
                 </LinearLayout>
 
                 <Button
-                    android:id="@+id/btnResetTutorial"
-                    style="@style/SecondaryButtonStyle"
+                    android:id="@+id/btnAppGuide"
+                    style="@style/PrimaryButtonStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🔄 Reiniciar Tutorial"
+                    android:text="📖 Guía de Funcionamiento"
                     android:layout_marginBottom="8dp" />
 
                 <Button

@@ -30,8 +30,12 @@ interface WorkstationDao {
     
     // Métodos síncronos para respaldo
     @Query("SELECT * FROM workstations ORDER BY name")
-    fun getAllWorkstationsSync(): List<Workstation>
+    suspend fun getAllWorkstationsSync(): List<Workstation>
     
     @Query("DELETE FROM workstations")
     suspend fun deleteAllWorkstations()
+    
+    // Métodos para sincronización en la nube
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateWorkstation(workstation: Workstation): Long
 }

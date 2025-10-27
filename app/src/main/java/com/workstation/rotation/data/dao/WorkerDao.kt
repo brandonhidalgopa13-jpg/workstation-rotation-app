@@ -81,14 +81,24 @@ interface WorkerDao {
     
     // Métodos síncronos para respaldo
     @Query("SELECT * FROM workers ORDER BY name")
-    fun getAllWorkersSync(): List<Worker>
+    suspend fun getAllWorkersSync(): List<Worker>
     
     @Query("SELECT * FROM worker_workstations")
-    fun getAllWorkerWorkstationsSync(): List<WorkerWorkstation>
+    suspend fun getAllWorkerWorkstationsSync(): List<WorkerWorkstation>
     
     @Query("DELETE FROM workers")
     suspend fun deleteAllWorkers()
     
     @Query("DELETE FROM worker_workstations")
     suspend fun deleteAllWorkerWorkstations()
+    
+    // Métodos para sincronización en la nube
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateWorker(worker: Worker): Long
+    
+    @Query("SELECT * FROM workers WHERE isTrainee = 1 AND trainerId IS NOT NULL")
+    suspend fun getWorkersInTraining(): List<Worker>
+    
+    @Query("UPDATE workers SET isTrainee = 0, trainerId = NULL, trainingWorkstationId = NULL WHERE id = :workerId")
+    suspend fun certifyWorker(workerId: Long)
 }

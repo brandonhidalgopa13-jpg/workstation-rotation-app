@@ -490,18 +490,22 @@ class RotationViewModel(
     /**
      * Determines if a worker can rotate based on availability and restrictions.
      * Workers who cannot rotate will stay in their current station.
+     * Made less restrictive to allow more workers to participate in rotation.
      */
     private fun canWorkerRotate(worker: Worker): Boolean {
-        // Workers with very low availability (below 50%) should stay in place for safety
-        if (worker.availabilityPercentage < 50) return false
+        // Only workers with very low availability (below 30%) should stay in place
+        if (worker.availabilityPercentage < 30) return false
         
-        // Workers with any restriction notes should stay in place for safety
-        if (worker.restrictionNotes.isNotEmpty()) return false
+        // Workers with critical restriction notes should stay in place
+        // Allow workers with minor restrictions to rotate
+        if (worker.restrictionNotes.contains("CRÍTICO") || 
+            worker.restrictionNotes.contains("PERMANENTE") ||
+            worker.restrictionNotes.contains("NO ROTAR")) return false
         
-        // Trainees and trainers have special constraints and are handled separately
-        if (worker.isTrainee || worker.isTrainer) return false
+        // Allow trainers and trainees to rotate if they're not in active training pairs
+        // This will be handled by the training assignment logic
         
-        // Certified workers can rotate freely
+        // Most workers can rotate freely
         return true
     }
 
@@ -681,11 +685,74 @@ class RotationViewModel(
             priorityWorkstations
         )
         
+        // FALLBACK: If next rotation is empty, copy current assignments and apply simple rotation
+        if (nextAssignments.values.all { it.isEmpty() }) {
+            generateSimpleNextRotation(eligibleWorkers, currentAssignments, nextAssignments, allWorkstations)
+        }
+        
         // Phase 4: Create rotation items and table
         val rotationItems = createRotationItems(allWorkstations, currentAssignments, nextAssignments)
         val rotationTable = createRotationTable(allWorkstations, currentAssignments, nextAssignments)
         
         return Pair(rotationItems, rotationTable)
+    }
+
+    /**
+     * Generates a simple next rotation when the complex algorithm fails to assign workers.
+     * This ensures that there's always a next rotation generated.
+     */
+    private suspend fun generateSimpleNextRotation(
+        eligibleWorkers: List<Worker>,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        // Get all workers currently assigned
+        val allCurrentWorkers = currentAssignments.values.flatten()
+        
+        // For each worker, try to assign them to a different station
+        for (worker in allCurrentWorkers) {
+            val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
+            val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
+            
+            // Try to find a different station first
+            val alternativeStations = qualifiedStations.filter { station ->
+                station.id != currentStationId &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            val targetStation = if (alternativeStations.isNotEmpty()) {
+                // Assign to different station with least workers
+                alternativeStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
+            } else {
+                // If no alternatives, assign to any available station
+                qualifiedStations.find { station ->
+                    (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                }
+            }
+            
+            targetStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+            }
+        }
+        
+        // Fill remaining capacity with unassigned workers
+        val unassignedWorkers = eligibleWorkers.filter { worker ->
+            !nextAssignments.values.any { it.contains(worker) }
+        }
+        
+        for (worker in unassignedWorkers) {
+            val qualifiedStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+            val availableStation = allWorkstations.find { station ->
+                station.id in qualifiedStationIds &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            availableStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+            }
+        }
     }
 
     /**
