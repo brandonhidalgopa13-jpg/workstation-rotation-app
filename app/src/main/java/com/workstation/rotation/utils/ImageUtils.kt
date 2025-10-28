@@ -85,20 +85,132 @@ object ImageUtils {
      * @return Bitmap de todo el contenido scrolleable
      */
     fun captureScrollView(scrollView: View, backgroundColor: Int = Color.WHITE): Bitmap {
+        // Para HorizontalScrollView, necesitamos obtener las dimensiones del contenido interno
+        val totalWidth = if (scrollView is ViewGroup && scrollView.childCount > 0) {
+            val child = scrollView.getChildAt(0)
+            child.width.coerceAtLeast(scrollView.width)
+        } else {
+            scrollView.width
+        }
+        
         val totalHeight = if (scrollView is ViewGroup && scrollView.childCount > 0) {
-            scrollView.getChildAt(0).height
+            val child = scrollView.getChildAt(0)
+            child.height.coerceAtLeast(scrollView.height)
         } else {
             scrollView.height
         }
-        val totalWidth = scrollView.width
+        
+        // Asegurar dimensiones mínimas válidas
+        val finalWidth = totalWidth.coerceAtLeast(100)
+        val finalHeight = totalHeight.coerceAtLeast(100)
         
         // Crear bitmap del tamaño completo del contenido
-        val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(backgroundColor)
         
+        // Guardar el estado actual del scroll
+        val originalScrollX = if (scrollView is android.widget.HorizontalScrollView) {
+            scrollView.scrollX
+        } else 0
+        
+        val originalScrollY = if (scrollView is android.widget.ScrollView) {
+            scrollView.scrollY
+        } else 0
+        
+        // Resetear scroll para capturar desde el inicio
+        if (scrollView is android.widget.HorizontalScrollView) {
+            scrollView.scrollTo(0, 0)
+        }
+        if (scrollView is android.widget.ScrollView) {
+            scrollView.scrollTo(0, 0)
+        }
+        
         // Dibujar todo el contenido
         scrollView.draw(canvas)
+        
+        // Restaurar posición original del scroll
+        if (scrollView is android.widget.HorizontalScrollView) {
+            scrollView.scrollTo(originalScrollX, originalScrollY)
+        }
+        if (scrollView is android.widget.ScrollView) {
+            scrollView.scrollTo(originalScrollX, originalScrollY)
+        }
+        
+        return bitmap
+    }
+    
+    /**
+     * Captura una tabla de rotación completa incluyendo todo el contenido scrolleable.
+     * Esta función está optimizada específicamente para capturar tablas de rotación.
+     * 
+     * @param cardView CardView que contiene la tabla de rotación
+     * @param backgroundColor Color de fondo
+     * @return Bitmap de toda la tabla de rotación
+     */
+    fun captureCompleteRotationTable(cardView: View, backgroundColor: Int = Color.WHITE): Bitmap {
+        // Buscar el HorizontalScrollView dentro del CardView
+        val scrollView = findHorizontalScrollView(cardView)
+        
+        return if (scrollView != null) {
+            // Si encontramos el scroll view, capturar todo su contenido
+            captureScrollViewContent(scrollView, backgroundColor)
+        } else {
+            // Si no hay scroll view, capturar el CardView completo
+            captureView(cardView, backgroundColor)
+        }
+    }
+    
+    /**
+     * Busca un HorizontalScrollView dentro de una vista.
+     */
+    private fun findHorizontalScrollView(view: View): android.widget.HorizontalScrollView? {
+        if (view is android.widget.HorizontalScrollView) {
+            return view
+        }
+        
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                val result = findHorizontalScrollView(child)
+                if (result != null) return result
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * Captura el contenido completo de un ScrollView.
+     */
+    private fun captureScrollViewContent(scrollView: android.widget.HorizontalScrollView, backgroundColor: Int): Bitmap {
+        val child = scrollView.getChildAt(0)
+        
+        // Obtener las dimensiones reales del contenido
+        val contentWidth = child.width
+        val contentHeight = child.height
+        val scrollViewHeight = scrollView.height
+        
+        // Usar las dimensiones más grandes para asegurar que capturamos todo
+        val finalWidth = contentWidth.coerceAtLeast(scrollView.width)
+        val finalHeight = contentHeight.coerceAtLeast(scrollViewHeight)
+        
+        // Crear bitmap del tamaño completo
+        val bitmap = Bitmap.createBitmap(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(backgroundColor)
+        
+        // Guardar posición actual del scroll
+        val originalScrollX = scrollView.scrollX
+        
+        // Resetear scroll para capturar desde el inicio
+        scrollView.scrollTo(0, 0)
+        
+        // Dibujar el contenido completo
+        child.draw(canvas)
+        
+        // Restaurar posición original
+        scrollView.scrollTo(originalScrollX, 0)
         
         return bitmap
     }

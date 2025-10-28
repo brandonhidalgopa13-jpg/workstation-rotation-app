@@ -241,14 +241,81 @@ class RotationActivity : AppCompatActivity() {
     }
     
     /**
+     * Creates a workstation header view.
+     */
+    private fun createWorkstationHeader(workstation: Workstation, layoutParams: LinearLayout.LayoutParams): TextView {
+        return TextView(this).apply {
+            text = workstation.name
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
+            gravity = android.view.Gravity.CENTER
+            setPadding(8, 12, 8, 12)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            this.layoutParams = layoutParams
+            
+            val bgColor = if (workstation.isPriority) R.color.priority_header else R.color.normal_header
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.gradient_primary)
+            backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
+        }
+    }
+    
+    /**
+     * Creates a capacity requirement view.
+     */
+    private fun createCapacityRequirement(
+        workstation: Workstation, 
+        currentWorkers: List<Worker>, 
+        layoutParams: LinearLayout.LayoutParams
+    ): LinearLayout {
+        val currentCount = currentWorkers.size
+        val requiredCount = workstation.requiredWorkers
+        val isFullyStaffed = currentCount >= requiredCount
+        
+        val capacityLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
+            this.layoutParams = layoutParams
+        }
+        
+        // Indicador de capacidad
+        val capacityView = TextView(this).apply {
+            text = "$currentCount/$requiredCount"
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
+            gravity = android.view.Gravity.CENTER
+            setPadding(8, 6, 8, 6)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            
+            val bgColor = if (isFullyStaffed) R.color.status_success else R.color.status_warning
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_green)
+            backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
+        }
+        capacityLayout.addView(capacityView)
+        
+        // Estado de la estación
+        val statusView = TextView(this).apply {
+            text = if (isFullyStaffed) "✅ COMPLETA" else "⚠️ INCOMPLETA"
+            textSize = 9f
+            setTextColor(if (isFullyStaffed) 
+                ContextCompat.getColor(this@RotationActivity, R.color.status_success) 
+                else ContextCompat.getColor(this@RotationActivity, R.color.status_warning))
+            gravity = android.view.Gravity.CENTER
+            setPadding(4, 2, 4, 2)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        capacityLayout.addView(statusView)
+        
+        return capacityLayout
+    }
+    
+    /**
      * Creates a column of workers for current or next phase.
      */
     private fun createWorkerColumn(
         workers: List<Worker>, 
-        parentLayout: LinearLayout, 
         layoutParams: LinearLayout.LayoutParams,
         isCurrentPhase: Boolean
-    ) {
+    ): LinearLayout {
         val columnLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(4, 4, 4, 4)
@@ -260,7 +327,7 @@ class RotationActivity : AppCompatActivity() {
             columnLayout.addView(workerView)
         }
         
-        parentLayout.addView(columnLayout)
+        return columnLayout
     }
     
     /**
@@ -273,7 +340,6 @@ class RotationActivity : AppCompatActivity() {
             
             // Fondo con colores diferenciados
             val bgColor = if (isCurrentPhase) R.color.current_phase_light else R.color.next_phase_light
-            val borderColor = if (isCurrentPhase) R.color.current_phase_border else R.color.next_phase_border
             
             background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.worker_card_background)
             backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
@@ -298,6 +364,32 @@ class RotationActivity : AppCompatActivity() {
                 setPadding(4, 2, 4, 4)
             }
             addView(statusView)
+        }
+    }
+    
+    /**
+     * Gets status indicators for a worker.
+     */
+    private fun getWorkerStatusIndicators(worker: Worker): String {
+        val indicators = mutableListOf<String>()
+        
+        // Training status
+        when {
+            worker.isTrainer -> indicators.add("👨‍🏫")
+            worker.isTrainee -> indicators.add("🎯")
+        }
+        
+        // Availability status
+        if (worker.availabilityPercentage < 100) {
+            indicators.add("${worker.availabilityPercentage}%")
+        }
+        
+        // Restriction status
+        if (worker.restrictionNotes.isNotEmpty()) {
+            indicators.add("🔒")
+        }
+        
+        return indicators.joinToString(" ")
             
             // Disponibilidad
             if (worker.availabilityPercentage < 100) {
@@ -402,6 +494,92 @@ class RotationActivity : AppCompatActivity() {
     }
     
     /**
+     * Sets up the rotation table display with current and next phases.
+     */
+    private fun setupRotationTable(rotationTable: RotationTable) {
+        clearRotationTable()
+        
+        val workstations = rotationTable.workstations
+        if (workstations.isEmpty()) return
+        
+        // Create column layout parameters
+        val columnWidth = 200 // Fixed width for each column
+        val layoutParams = LinearLayout.LayoutParams(
+            columnWidth,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(4, 4, 4, 4)
+        }
+        
+        // Setup headers for workstations
+        setupWorkstationHeaders(workstations, layoutParams)
+        
+        // Setup capacity requirements
+        setupCapacityRequirements(workstations, rotationTable, layoutParams)
+        
+        // Setup current phase (rotation actual)
+        setupCurrentPhase(workstations, rotationTable, layoutParams)
+        
+        // Setup next phase (próxima rotación)
+        setupNextPhase(workstations, rotationTable, layoutParams)
+    }
+    
+    /**
+     * Sets up workstation headers.
+     */
+    private fun setupWorkstationHeaders(workstations: List<Workstation>, layoutParams: LinearLayout.LayoutParams) {
+        workstations.forEach { workstation ->
+            val headerView = createWorkstationHeader(workstation, layoutParams)
+            binding.layoutWorkstationHeaders.addView(headerView)
+        }
+    }
+    
+    /**
+     * Sets up capacity requirements display.
+     */
+    private fun setupCapacityRequirements(
+        workstations: List<Workstation>, 
+        rotationTable: RotationTable, 
+        layoutParams: LinearLayout.LayoutParams
+    ) {
+        workstations.forEach { workstation ->
+            val currentWorkers = rotationTable.currentPhase[workstation.id] ?: emptyList()
+            val capacityView = createCapacityRequirement(workstation, currentWorkers, layoutParams)
+            binding.layoutCapacityRequirements.addView(capacityView)
+        }
+    }
+    
+    /**
+     * Sets up current phase display.
+     */
+    private fun setupCurrentPhase(
+        workstations: List<Workstation>, 
+        rotationTable: RotationTable, 
+        layoutParams: LinearLayout.LayoutParams
+    ) {
+        workstations.forEach { workstation ->
+            val workers = rotationTable.currentPhase[workstation.id] ?: emptyList()
+            val columnView = createWorkerColumn(workers, layoutParams, true)
+            binding.layoutCurrentPhase.addView(columnView)
+        }
+    }
+    
+    /**
+     * Sets up next phase display.
+     */
+    private fun setupNextPhase(
+        workstations: List<Workstation>, 
+        rotationTable: RotationTable, 
+        layoutParams: LinearLayout.LayoutParams
+    ) {
+        workstations.forEach { workstation ->
+            val workers = rotationTable.nextPhase[workstation.id] ?: emptyList()
+            val columnView = createWorkerColumn(workers, layoutParams, false)
+            binding.layoutNextPhase.addView(columnView)
+        }
+    }
+    
+    /**
      * Clears the rotation table display.
      */
     private fun clearRotationTable() {
@@ -463,7 +641,7 @@ class RotationActivity : AppCompatActivity() {
     }
     
     /**
-     * Descarga la rotación como imagen.
+     * Descarga la rotación como imagen capturando toda la tabla completa.
      */
     private fun downloadRotationAsImage() {
         lifecycleScope.launch {
@@ -472,12 +650,12 @@ class RotationActivity : AppCompatActivity() {
                 binding.btnDownloadImage?.isEnabled = false
                 binding.btnDownloadImage?.text = "📷 Generando..."
                 
-                // Capturar la vista de la tabla de rotación
+                // Capturar toda la tabla de rotación completa (CardView con header y contenido)
                 val cardView = binding.cardRotationTable ?: return@launch
-                val bitmap = ImageUtils.captureView(cardView)
+                val bitmap = ImageUtils.captureCompleteRotationTable(cardView)
                 
                 // Guardar en galería
-                val filename = ImageUtils.generateRotationFilename("rotacion_inteligente")
+                val filename = ImageUtils.generateRotationFilename("rotacion_completa")
                 val uri = ImageUtils.saveBitmapToGallery(this@RotationActivity, bitmap, filename)
                 
                 if (uri != null) {

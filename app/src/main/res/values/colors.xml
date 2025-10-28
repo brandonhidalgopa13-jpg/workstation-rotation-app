@@ -75,6 +75,10 @@
     <color name="priority_gold">#FFFFD700</color>
     <color name="watermark_background">#10000000</color>
     
+    <!-- Header Colors -->
+    <color name="priority_header">#FFFFD700</color>
+    <color name="normal_header">#FF1976D2</color>
+    
     <!-- Legacy Colors -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
