@@ -671,30 +671,71 @@ class RotationViewModel(
         // Phase 2: Assign remaining workers to NORMAL workstations (current positions)
         assignNormalWorkstations(normalWorkstations, eligibleWorkers, currentAssignments)
         
-        // Phase 3: Generate next rotation positions with FORCED ROTATION
-        // PHASE 3.0: ABSOLUTE PRIORITY - Assign ALL trainer-trainee pairs FIRST for next rotation
-        val allUnassignedWorkersNext = eligibleWorkers.toMutableList()
-        assignTrainerTraineePairsWithPriority(eligibleWorkers, nextAssignments, allWorkstations, allUnassignedWorkersNext)
-        
-        // Phase 3.1: FORCED ROTATION - Ensure workers change stations between current and next
-        assignWorkersWithForcedRotation(
-            eligibleWorkers, 
-            currentAssignments, 
-            nextAssignments, 
-            allWorkstations,
-            priorityWorkstations
-        )
-        
-        // FALLBACK: If next rotation is empty, copy current assignments and apply simple rotation
-        if (nextAssignments.values.all { it.isEmpty() }) {
-            generateSimpleNextRotation(eligibleWorkers, currentAssignments, nextAssignments, allWorkstations)
-        }
+        // Phase 3: Generate next rotation - SIMPLIFIED APPROACH
+        // Always generate a next rotation by rotating workers to different stations
+        generateNextRotationSimple(eligibleWorkers, currentAssignments, nextAssignments, allWorkstations)
         
         // Phase 4: Create rotation items and table
         val rotationItems = createRotationItems(allWorkstations, currentAssignments, nextAssignments)
         val rotationTable = createRotationTable(allWorkstations, currentAssignments, nextAssignments)
         
         return Pair(rotationItems, rotationTable)
+    }
+
+    /**
+     * Generates next rotation with simple rotation logic - ALWAYS generates a next rotation.
+     */
+    private suspend fun generateNextRotationSimple(
+        eligibleWorkers: List<Worker>,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        // Get all workers currently assigned
+        val allCurrentWorkers = currentAssignments.values.flatten()
+        
+        // For each worker, try to assign them to a different station
+        for (worker in allCurrentWorkers) {
+            val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
+            val qualifiedStationIds = getWorkerWorkstationIds(worker.id)
+            val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }
+            
+            // Try to find a different station first (for rotation)
+            val alternativeStations = qualifiedStations.filter { station ->
+                station.id != currentStationId &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            val targetStation = if (alternativeStations.isNotEmpty()) {
+                // Prefer stations with fewer workers assigned
+                alternativeStations.minByOrNull { nextAssignments[it.id]?.size ?: 0 }
+            } else {
+                // If no alternatives, find any available station
+                qualifiedStations.find { station ->
+                    (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                }
+            }
+            
+            targetStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+            }
+        }
+        
+        // Fill remaining capacity with any unassigned workers
+        val assignedInNext = nextAssignments.values.flatten().toSet()
+        val unassignedWorkers = eligibleWorkers.filter { !assignedInNext.contains(it) }
+        
+        for (worker in unassignedWorkers) {
+            val qualifiedStationIds = getWorkerWorkstationIds(worker.id)
+            val availableStation = allWorkstations.find { station ->
+                station.id in qualifiedStationIds &&
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+            }
+            
+            availableStation?.let { station ->
+                nextAssignments[station.id]?.add(worker)
+            }
+        }
     }
 
     /**
