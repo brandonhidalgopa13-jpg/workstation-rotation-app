@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
@@ -84,7 +85,11 @@ object ImageUtils {
      * @return Bitmap de todo el contenido scrolleable
      */
     fun captureScrollView(scrollView: View, backgroundColor: Int = Color.WHITE): Bitmap {
-        val totalHeight = scrollView.getChildAt(0)?.height ?: scrollView.height
+        val totalHeight = if (scrollView is ViewGroup && scrollView.childCount > 0) {
+            scrollView.getChildAt(0).height
+        } else {
+            scrollView.height
+        }
         val totalWidth = scrollView.width
         
         // Crear bitmap del tamaño completo del contenido

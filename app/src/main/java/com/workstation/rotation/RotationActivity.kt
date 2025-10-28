@@ -3,6 +3,7 @@ package com.workstation.rotation
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.viewModels
@@ -381,7 +382,7 @@ class RotationActivity : AppCompatActivity() {
             Snackbar.make(binding.root, "Rotación limpiada", Snackbar.LENGTH_SHORT).show()
         }
         
-        binding.btnDownloadImage.setOnClickListener {
+        binding.btnDownloadImage?.setOnClickListener {
             downloadRotationAsImage()
         }
     }
@@ -472,7 +473,7 @@ class RotationActivity : AppCompatActivity() {
                 binding.btnDownloadImage?.text = "📷 Generando..."
                 
                 // Capturar la vista de la tabla de rotación
-                val bitmap = ImageUtils.captureView(binding.cardRotationTable as View)
+                val bitmap = ImageUtils.captureView(binding.cardRotationTable)
                 
                 // Guardar en galería
                 val filename = ImageUtils.generateRotationFilename("rotacion_inteligente")
