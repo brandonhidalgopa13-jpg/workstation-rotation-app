@@ -141,6 +141,33 @@ object ImageUtils {
     }
     
     /**
+     * Captura contenido scrolleable completo (vertical y horizontal) incluyendo rotación actual y siguiente.
+     * Optimizada para capturar tablas de rotación con scroll en ambas direcciones.
+     * 
+     * @param cardView CardView que contiene la tabla de rotación
+     * @param backgroundColor Color de fondo
+     * @return Bitmap de toda la tabla de rotación (actual + siguiente)
+     */
+    fun captureCompleteScrollableContent(cardView: View, backgroundColor: Int = Color.WHITE): Bitmap {
+        // Buscar el ScrollView vertical primero
+        val verticalScrollView = findVerticalScrollView(cardView)
+        
+        return if (verticalScrollView != null) {
+            // Capturar todo el contenido del ScrollView vertical (que incluye el horizontal)
+            captureVerticalScrollViewContent(verticalScrollView, backgroundColor)
+        } else {
+            // Fallback: buscar HorizontalScrollView
+            val horizontalScrollView = findHorizontalScrollView(cardView)
+            if (horizontalScrollView != null) {
+                captureScrollViewContent(horizontalScrollView, backgroundColor)
+            } else {
+                // Último fallback: capturar el CardView completo
+                captureView(cardView, backgroundColor)
+            }
+        }
+    }
+    
+    /**
      * Captura una tabla de rotación completa incluyendo todo el contenido scrolleable.
      * Esta función está optimizada específicamente para capturar tablas de rotación.
      * 
@@ -159,6 +186,25 @@ object ImageUtils {
             // Si no hay scroll view, capturar el CardView completo
             captureView(cardView, backgroundColor)
         }
+    }
+    
+    /**
+     * Busca un ScrollView vertical dentro de una vista.
+     */
+    private fun findVerticalScrollView(view: View): android.widget.ScrollView? {
+        if (view is android.widget.ScrollView) {
+            return view
+        }
+        
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                val result = findVerticalScrollView(child)
+                if (result != null) return result
+            }
+        }
+        
+        return null
     }
     
     /**
@@ -181,7 +227,42 @@ object ImageUtils {
     }
     
     /**
-     * Captura el contenido completo de un ScrollView.
+     * Captura el contenido completo de un ScrollView vertical.
+     */
+    private fun captureVerticalScrollViewContent(scrollView: android.widget.ScrollView, backgroundColor: Int): Bitmap {
+        val child = scrollView.getChildAt(0)
+        
+        // Obtener las dimensiones reales del contenido
+        val contentWidth = child.width
+        val contentHeight = child.height
+        val scrollViewWidth = scrollView.width
+        
+        // Usar las dimensiones más grandes para asegurar que capturamos todo
+        val finalWidth = contentWidth.coerceAtLeast(scrollViewWidth)
+        val finalHeight = contentHeight.coerceAtLeast(scrollView.height)
+        
+        // Crear bitmap del tamaño completo
+        val bitmap = Bitmap.createBitmap(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(backgroundColor)
+        
+        // Guardar posición actual del scroll
+        val originalScrollY = scrollView.scrollY
+        
+        // Resetear scroll para capturar desde el inicio
+        scrollView.scrollTo(0, 0)
+        
+        // Dibujar el contenido completo
+        child.draw(canvas)
+        
+        // Restaurar posición original
+        scrollView.scrollTo(0, originalScrollY)
+        
+        return bitmap
+    }
+    
+    /**
+     * Captura el contenido completo de un ScrollView horizontal.
      */
     private fun captureScrollViewContent(scrollView: android.widget.HorizontalScrollView, backgroundColor: Int): Bitmap {
         val child = scrollView.getChildAt(0)

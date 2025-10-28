@@ -331,12 +331,13 @@ class RotationActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 binding.btnDownloadImage?.isEnabled = false
-                binding.btnDownloadImage?.text = "Generando..."
+                binding.btnDownloadImage?.text = "📸 Capturando..."
                 
+                // Capturar toda la tabla incluyendo scroll vertical y horizontal
                 val cardView = binding.cardRotationTable ?: return@launch
-                val bitmap = ImageUtils.captureCompleteRotationTable(cardView)
+                val bitmap = ImageUtils.captureCompleteScrollableContent(cardView)
                 
-                val filename = ImageUtils.generateRotationFilename("rotacion_completa")
+                val filename = ImageUtils.generateRotationFilename("rotacion_actual_y_siguiente")
                 val uri = ImageUtils.saveBitmapToGallery(this@RotationActivity, bitmap, filename)
                 
                 if (uri != null) {
@@ -349,7 +350,7 @@ class RotationActivity : AppCompatActivity() {
                 ImageUtils.showErrorMessage(this@RotationActivity, "Error al generar imagen: ${e.message}")
             } finally {
                 binding.btnDownloadImage?.isEnabled = true
-                binding.btnDownloadImage?.text = "Foto"
+                binding.btnDownloadImage?.text = "📷"
             }
         }
     }

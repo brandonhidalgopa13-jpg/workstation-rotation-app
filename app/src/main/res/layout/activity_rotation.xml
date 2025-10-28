@@ -192,15 +192,22 @@
 
             </LinearLayout>
 
-            <!-- Contenido Scrolleable -->
-            <HorizontalScrollView
-                android:id="@+id/scrollViewRotation"
+            <!-- Contenido Scrolleable - Scroll Vertical y Horizontal -->
+            <ScrollView
+                android:id="@+id/scrollViewVertical"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
-                android:padding="16dp"
-                android:scrollbars="horizontal"
-                android:fadeScrollbars="false">
+                android:fillViewport="true"
+                android:scrollbars="vertical">
+                
+                <HorizontalScrollView
+                    android:id="@+id/scrollViewRotation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:scrollbars="horizontal"
+                    android:fadeScrollbars="false">
 
                 <LinearLayout
                     android:id="@+id/layoutRotationTable"
@@ -310,7 +317,9 @@
 
                 </LinearLayout>
 
-            </HorizontalScrollView>
+                </HorizontalScrollView>
+                
+            </ScrollView>
 
         </LinearLayout>
 
