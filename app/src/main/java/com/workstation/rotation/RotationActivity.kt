@@ -1,5 +1,6 @@
 package com.workstation.rotation
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.LinearLayout
@@ -9,6 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import com.workstation.rotation.utils.ImageUtils
+import java.text.SimpleDateFormat
+import java.util.*
 import com.workstation.rotation.R
 import com.workstation.rotation.data.database.AppDatabase
 import com.workstation.rotation.data.entities.Worker
@@ -120,6 +124,9 @@ class RotationActivity : AppCompatActivity() {
         workstationColumns.forEach { column ->
             createWorkstationColumn(column)
         }
+        
+        // Mostrar botón de descarga
+        showDownloadButton()
     }
     
     /**
@@ -148,35 +155,88 @@ class RotationActivity : AppCompatActivity() {
     }
     
     /**
-     * Creates the header for a workstation column.
+     * Creates the header for a workstation column with enhanced design.
      */
     private fun createWorkstationHeader(column: WorkstationColumn, layoutParams: LinearLayout.LayoutParams) {
-        val headerView = TextView(this).apply {
-            text = column.workstation.getDisplayName()
+        val headerLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 12, 8, 12)
+            
+            // Fondo con gradiente
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.gradient_primary)
+            this.layoutParams = layoutParams
+        }
+        
+        // Nombre de la estación
+        val nameView = TextView(this).apply {
+            text = column.workstation.name
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
             gravity = android.view.Gravity.CENTER
-            setPadding(12, 12, 12, 12)
-            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.icon_background_blue)
-            this.layoutParams = layoutParams
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(4, 4, 4, 2)
         }
-        binding.layoutWorkstationHeaders.addView(headerView)
+        headerLayout.addView(nameView)
+        
+        // Indicador de prioridad
+        if (column.workstation.isPriority) {
+            val priorityView = TextView(this).apply {
+                text = "⭐ PRIORITARIA"
+                textSize = 10f
+                setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.priority_gold))
+                gravity = android.view.Gravity.CENTER
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(4, 2, 4, 4)
+            }
+            headerLayout.addView(priorityView)
+        }
+        
+        binding.layoutWorkstationHeaders.addView(headerLayout)
     }
     
     /**
-     * Creates the capacity requirement display for a workstation.
+     * Creates the capacity requirement display for a workstation with visual indicators.
      */
     private fun createCapacityRequirement(column: WorkstationColumn, layoutParams: LinearLayout.LayoutParams) {
-        val capacityView = TextView(this).apply {
-            text = "Requiere: ${column.workstation.requiredWorkers}"
-            textSize = 12f
-            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
-            gravity = android.view.Gravity.CENTER
+        val currentCount = column.currentWorkers.size
+        val requiredCount = column.workstation.requiredWorkers
+        val isFullyStaffed = currentCount >= requiredCount
+        
+        val capacityLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             setPadding(8, 8, 8, 8)
-            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_orange)
             this.layoutParams = layoutParams
         }
-        binding.layoutCapacityRequirements.addView(capacityView)
+        
+        // Indicador de capacidad
+        val capacityView = TextView(this).apply {
+            text = "$currentCount/$requiredCount"
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
+            gravity = android.view.Gravity.CENTER
+            setPadding(8, 6, 8, 6)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            
+            val bgColor = if (isFullyStaffed) R.color.status_success else R.color.status_warning
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_green)
+            backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
+        }
+        capacityLayout.addView(capacityView)
+        
+        // Estado de la estación
+        val statusView = TextView(this).apply {
+            text = if (isFullyStaffed) "✅ COMPLETA" else "⚠️ INCOMPLETA"
+            textSize = 9f
+            setTextColor(if (isFullyStaffed) 
+                ContextCompat.getColor(this@RotationActivity, R.color.status_success) 
+                else ContextCompat.getColor(this@RotationActivity, R.color.status_warning))
+            gravity = android.view.Gravity.CENTER
+            setPadding(4, 2, 4, 2)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        }
+        capacityLayout.addView(statusView)
+        
+        binding.layoutCapacityRequirements.addView(capacityLayout)
     }
     
     /**
@@ -203,27 +263,85 @@ class RotationActivity : AppCompatActivity() {
     }
     
     /**
-     * Creates a view for an individual worker.
+     * Creates a view for an individual worker with enhanced visual design.
      */
-    private fun createWorkerView(worker: Worker, isCurrentPhase: Boolean): TextView {
-        return TextView(this).apply {
-            text = worker.getDisplayName()
-            textSize = 11f
-            setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
-            gravity = android.view.Gravity.CENTER
-            setPadding(8, 6, 8, 6)
+    private fun createWorkerView(worker: Worker, isCurrentPhase: Boolean): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(8, 8, 8, 8)
             
-            val bgColor = if (isCurrentPhase) R.color.primary_blue_light else R.color.accent_orange
-            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_green)
+            // Fondo con colores diferenciados
+            val bgColor = if (isCurrentPhase) R.color.current_phase_light else R.color.next_phase_light
+            val borderColor = if (isCurrentPhase) R.color.current_phase_border else R.color.next_phase_border
+            
+            background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.worker_card_background)
             backgroundTintList = ContextCompat.getColorStateList(this@RotationActivity, bgColor)
             
+            // Nombre del trabajador
+            val nameView = TextView(this@RotationActivity).apply {
+                text = worker.name
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
+                gravity = android.view.Gravity.CENTER
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setPadding(4, 4, 4, 2)
+            }
+            addView(nameView)
+            
+            // Indicadores de estado
+            val statusView = TextView(this@RotationActivity).apply {
+                text = getWorkerStatusIndicators(worker)
+                textSize = 10f
+                setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_secondary))
+                gravity = android.view.Gravity.CENTER
+                setPadding(4, 2, 4, 4)
+            }
+            addView(statusView)
+            
+            // Disponibilidad
+            if (worker.availabilityPercentage < 100) {
+                val availabilityView = TextView(this@RotationActivity).apply {
+                    text = "${worker.availabilityPercentage}%"
+                    textSize = 9f
+                    setTextColor(getAvailabilityColor(worker.availabilityPercentage))
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(4, 2, 4, 2)
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                }
+                addView(availabilityView)
+            }
+            
             val params = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                (140 * resources.displayMetrics.density).toInt(),
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(2, 2, 2, 2)
+                setMargins(4, 4, 4, 4)
             }
             layoutParams = params
+        }
+    }
+    
+    /**
+     * Obtiene indicadores de estado para un trabajador.
+     */
+    private fun getWorkerStatusIndicators(worker: Worker): String {
+        val indicators = mutableListOf<String>()
+        
+        if (worker.isTrainer) indicators.add("👨‍🏫")
+        if (worker.isTrainee) indicators.add("🎯")
+        if (worker.restrictionNotes.isNotEmpty()) indicators.add("⚠️")
+        
+        return indicators.joinToString(" ")
+    }
+    
+    /**
+     * Obtiene el color apropiado según el porcentaje de disponibilidad.
+     */
+    private fun getAvailabilityColor(percentage: Int): Int {
+        return when {
+            percentage >= 80 -> ContextCompat.getColor(this, R.color.status_success)
+            percentage >= 50 -> ContextCompat.getColor(this, R.color.status_warning)
+            else -> ContextCompat.getColor(this, R.color.status_error)
         }
     }
     
@@ -259,7 +377,12 @@ class RotationActivity : AppCompatActivity() {
         binding.btnClearRotation.setOnClickListener {
             viewModel.clearRotation()
             updateWorkerCount()
+            hideDownloadButton()
             Snackbar.make(binding.root, "Rotación limpiada", Snackbar.LENGTH_SHORT).show()
+        }
+        
+        binding.btnDownloadImage.setOnClickListener {
+            downloadRotationAsImage()
         }
     }
     
@@ -304,13 +427,127 @@ class RotationActivity : AppCompatActivity() {
      * Updates the rotation information display with statistics.
      */
     private fun updateRotationInfo(stats: RotationViewModel.RotationStatistics) {
-        val baseInfo = "Trabajadores elegibles: ${viewModel.getEligibleWorkersCount()}"
-        val rotationInfo = if (stats.totalWorkers > 0) {
-            "\n🔄 ${stats.getSummaryText()}"
-        } else {
-            ""
-        }
+        // Actualizar información básica
+        binding.tvRotationInfo.text = "🎯 Rotación generada exitosamente con algoritmo inteligente"
         
-        binding.tvRotationInfo.text = "$baseInfo$rotationInfo"
+        // Mostrar estadísticas
+        binding.layoutRotationStats.visibility = android.view.View.VISIBLE
+        binding.tvStatsWorkers.text = "👥 ${stats.totalWorkers} trabajadores"
+        binding.tvStatsRotating.text = "🔄 ${stats.rotationPercentage}% rotando"
+        binding.tvStatsTraining.text = "🎓 ${stats.trainerTraineePairs} entrenamientos"
+        
+        // Mostrar timestamp
+        val timestamp = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+        binding.tvTimestamp.text = timestamp
+        binding.tvTimestamp.visibility = android.view.View.VISIBLE
+        
+        // Mostrar botón de descarga
+        showDownloadButton()
+    }
+    
+    /**
+     * Muestra el botón de descarga cuando hay una rotación generada.
+     */
+    private fun showDownloadButton() {
+        binding.btnDownloadImage.visibility = android.view.View.VISIBLE
+    }
+    
+    /**
+     * Oculta el botón de descarga cuando no hay rotación.
+     */
+    private fun hideDownloadButton() {
+        binding.btnDownloadImage.visibility = android.view.View.GONE
+        binding.layoutRotationStats.visibility = android.view.View.GONE
+        binding.tvTimestamp.visibility = android.view.View.GONE
+    }
+    
+    /**
+     * Descarga la rotación como imagen.
+     */
+    private fun downloadRotationAsImage() {
+        lifecycleScope.launch {
+            try {
+                // Mostrar progreso
+                binding.btnDownloadImage.isEnabled = false
+                binding.btnDownloadImage.text = "📷 Generando..."
+                
+                // Capturar la vista de la tabla de rotación
+                val bitmap = ImageUtils.captureView(binding.cardRotationTable)
+                
+                // Guardar en galería
+                val filename = ImageUtils.generateRotationFilename("rotacion_inteligente")
+                val uri = ImageUtils.saveBitmapToGallery(this@RotationActivity, bitmap, filename)
+                
+                if (uri != null) {
+                    // Éxito - mostrar opciones
+                    showImageSavedOptions(bitmap, filename)
+                } else {
+                    ImageUtils.showErrorMessage(this@RotationActivity, "No se pudo guardar la imagen")
+                }
+                
+            } catch (e: Exception) {
+                ImageUtils.showErrorMessage(this@RotationActivity, "Error al generar imagen: ${e.message}")
+            } finally {
+                // Restaurar botón
+                binding.btnDownloadImage.isEnabled = true
+                binding.btnDownloadImage.text = "📷"
+            }
+        }
+    }
+    
+    /**
+     * Muestra opciones después de guardar la imagen.
+     */
+    private fun showImageSavedOptions(bitmap: android.graphics.Bitmap, filename: String) {
+        lifecycleScope.launch {
+            try {
+                // Crear URI para compartir
+                val shareUri = ImageUtils.saveBitmapForSharing(this@RotationActivity, bitmap, filename)
+                
+                if (shareUri != null) {
+                    // Mostrar Snackbar con opción de compartir
+                    val snackbar = Snackbar.make(
+                        binding.root,
+                        "✅ Imagen guardada en galería",
+                        Snackbar.LENGTH_LONG
+                    )
+                    
+                    snackbar.setAction("📤 Compartir") {
+                        shareRotationImage(shareUri)
+                    }
+                    
+                    snackbar.show()
+                } else {
+                    ImageUtils.showSuccessMessage(this@RotationActivity, "Imagen guardada en galería")
+                }
+                
+            } catch (e: Exception) {
+                ImageUtils.showSuccessMessage(this@RotationActivity, "Imagen guardada en galería")
+            }
+        }
+    }
+    
+    /**
+     * Comparte la imagen de rotación.
+     */
+    private fun shareRotationImage(uri: android.net.Uri) {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Rotación Inteligente de Trabajadores")
+                putExtra(Intent.EXTRA_TEXT, 
+                    "📊 Rotación generada con el Sistema de Rotación Inteligente\n" +
+                    "🏭 Optimización automática de personal en estaciones de trabajo\n" +
+                    "⏰ Generada el ${SimpleDateFormat("dd/MM/yyyy 'a las' HH:mm", Locale.getDefault()).format(Date())}"
+                )
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            startActivity(Intent.createChooser(shareIntent, "📤 Compartir Rotación"))
+            
+        } catch (e: Exception) {
+            ImageUtils.showErrorMessage(this, "Error al compartir imagen")
+        }
     }
 }

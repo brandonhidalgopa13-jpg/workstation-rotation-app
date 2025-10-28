@@ -18,135 +18,302 @@
         app:navigationIcon="@drawable/ic_arrow_back"
         app:navigationIconTint="@color/text_primary" />
 
-    <!-- Controles Minimalistas -->
+    <!-- Controles Mejorados -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="24dp"
+        android:padding="16dp"
         android:gravity="center">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnGenerateRotation"
             style="@style/Widget.Material3.Button"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="Generar"
+            android:text="🔄 Generar Rotación"
             android:textSize="16sp"
-            app:cornerRadius="24dp"
+            app:cornerRadius="28dp"
             app:backgroundTint="@color/primary_blue"
-            android:layout_marginEnd="12dp" />
+            android:layout_marginEnd="8dp"
+            app:icon="@drawable/ic_rotation"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDownloadImage"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="wrap_content"
+            android:layout_height="56dp"
+            android:text="📷"
+            android:textSize="18sp"
+            app:cornerRadius="28dp"
+            app:backgroundTint="@color/accent_green"
+            android:layout_marginHorizontal="4dp"
+            android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClearRotation"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Limpiar"
-            android:textSize="16sp"
-            app:cornerRadius="24dp"
+            android:layout_height="56dp"
+            android:text="🗑️"
+            android:textSize="18sp"
+            app:cornerRadius="28dp"
             app:strokeColor="@color/text_secondary"
             android:textColor="@color/text_secondary"
-            android:layout_marginStart="12dp" />
+            android:layout_marginStart="8dp" />
 
     </LinearLayout>
 
-    <!-- Información Minimalista -->
-    <TextView
-        android:id="@+id/tvRotationInfo"
+    <!-- Información y Estadísticas -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardRotationInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Presiona Generar para crear rotaciones automáticas"
-        android:textSize="14sp"
-        android:textColor="@color/text_secondary"
-        android:gravity="center"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="24dp" />
-
-    <!-- Tabla de Rotación Minimalista -->
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingHorizontal="16dp"
-        android:scrollbars="none">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:cardBackgroundColor="?attr/colorSurface">
 
         <LinearLayout
-            android:id="@+id/layoutRotationTable"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <!-- Headers Minimalistas -->
-            <LinearLayout
-                android:id="@+id/layoutWorkstationHeaders"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingVertical="16dp" />
-
-            <!-- Capacidades -->
-            <LinearLayout
-                android:id="@+id/layoutCapacityRequirements"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingBottom="8dp" />
-
-            <!-- Separador Sutil -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/border_light"
-                android:layout_marginVertical="16dp" />
-
-            <!-- Rotación Actual -->
             <TextView
+                android:id="@+id/tvRotationInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Actual"
+                android:text="🎯 Presiona Generar para crear rotaciones automáticas inteligentes"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/colorOnSurface"
                 android:gravity="center"
-                android:paddingBottom="12dp" />
+                android:layout_marginBottom="12dp" />
 
             <LinearLayout
-                android:id="@+id/layoutCurrentPhase"
-                android:layout_width="wrap_content"
+                android:id="@+id/layoutRotationStats"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:minHeight="120dp"
-                android:paddingBottom="24dp" />
-
-            <!-- Separador -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/border_light"
-                android:layout_marginVertical="16dp" />
-
-            <!-- Próxima Rotación -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Próxima"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary"
                 android:gravity="center"
-                android:paddingBottom="12dp" />
+                android:visibility="gone">
 
-            <LinearLayout
-                android:id="@+id/layoutNextPhase"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:minHeight="120dp" />
+                <TextView
+                    android:id="@+id/tvStatsWorkers"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="👥 0 trabajadores"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvStatsRotating"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🔄 0% rotando"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvStatsTraining"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="🎓 0 entrenamientos"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:gravity="center" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </HorizontalScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Tabla de Rotación Mejorada -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardRotationTable"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:cardBackgroundColor="?attr/colorSurface">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Header de la Tabla -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="@drawable/gradient_primary"
+                android:padding="16dp"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊"
+                    android:textSize="24sp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tabla de Rotación Inteligente"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvTimestamp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white"
+                    android:alpha="0.8"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- Contenido Scrolleable -->
+            <HorizontalScrollView
+                android:id="@+id/scrollViewRotation"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:padding="16dp"
+                android:scrollbars="horizontal"
+                android:fadeScrollbars="false">
+
+                <LinearLayout
+                    android:id="@+id/layoutRotationTable"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:background="@android:color/white">
+
+                    <!-- Headers de Estaciones -->
+                    <LinearLayout
+                        android:id="@+id/layoutWorkstationHeaders"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingVertical="12dp" />
+
+                    <!-- Capacidades Requeridas -->
+                    <LinearLayout
+                        android:id="@+id/layoutCapacityRequirements"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingBottom="16dp" />
+
+                    <!-- Separador Elegante -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="2dp"
+                        android:background="@drawable/gradient_primary"
+                        android:layout_marginVertical="8dp" />
+
+                    <!-- Fase Actual -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@color/current_phase_background"
+                        android:padding="12dp"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔵"
+                            android:textSize="16sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="ROTACIÓN ACTUAL"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/current_phase_color" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutCurrentPhase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:minHeight="150dp"
+                        android:paddingBottom="16dp" />
+
+                    <!-- Separador -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/border_medium"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- Próxima Fase -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@color/next_phase_background"
+                        android:padding="12dp"
+                        android:layout_marginBottom="8dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🟠"
+                            android:textSize="16sp"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="PRÓXIMA ROTACIÓN"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/next_phase_color" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutNextPhase"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:minHeight="150dp" />
+
+                </LinearLayout>
+
+            </HorizontalScrollView>
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>
