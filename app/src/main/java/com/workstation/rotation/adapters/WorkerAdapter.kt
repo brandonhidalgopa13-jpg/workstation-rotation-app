@@ -50,7 +50,7 @@ class WorkerAdapter(
         private fun bindBasicInfo(worker: Worker, workstationCount: Int) {
             binding.apply {
                 tvWorkerName.text = worker.name
-                tvWorkerEmail.text = if (worker.email.isNotEmpty()) worker.email else "Sin email"
+                // Email removido por simplicidad
                 tvAssignedWorkstations.text = "Estaciones: $workstationCount asignadas"
                 switchActive.isChecked = worker.isActive
             }

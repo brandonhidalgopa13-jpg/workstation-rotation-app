@@ -191,7 +191,6 @@ class WorkerActivity : AppCompatActivity() {
             .setView(dialogBinding.root)
             .setPositiveButton("Guardar") { _, _ ->
                 val name = dialogBinding.etWorkerName.text.toString().trim()
-                val email = dialogBinding.etWorkerEmail.text.toString().trim()
                 val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
                 val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
                 val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
@@ -233,7 +232,7 @@ class WorkerActivity : AppCompatActivity() {
                         viewModel.insertWorkerWithWorkstations(
                             Worker(
                                 name = name, 
-                                email = email,
+                                email = "", // Email removido por simplicidad
                                 availabilityPercentage = availability,
                                 restrictionNotes = restrictionNotes,
                                 isTrainer = isTrainer,
@@ -281,7 +280,7 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val trainers = viewModel.getTrainers()
-                val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { "${it.name} (${it.email})" }
+                val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
                 val trainerAdapter = ArrayAdapter(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
@@ -303,7 +302,7 @@ class WorkerActivity : AppCompatActivity() {
         
         dialogBinding.apply {
             etWorkerName.setText(worker.name)
-            etWorkerEmail.setText(worker.email)
+            // Email removido por simplicidad
             etAvailabilityPercentage.setText(worker.availabilityPercentage.toString())
             etRestrictionNotes.setText(worker.restrictionNotes)
             
@@ -381,7 +380,6 @@ class WorkerActivity : AppCompatActivity() {
             .setView(dialogBinding.root)
             .setPositiveButton("Guardar") { _, _ ->
                 val name = dialogBinding.etWorkerName.text.toString().trim()
-                val email = dialogBinding.etWorkerEmail.text.toString().trim()
                 val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
                 val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
                 val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
@@ -397,7 +395,7 @@ class WorkerActivity : AppCompatActivity() {
                     lifecycleScope.launch {
                         val updatedWorker = worker.copy(
                             name = name, 
-                            email = email,
+                            email = worker.email, // Mantener email existente
                             availabilityPercentage = availability,
                             restrictionNotes = restrictionNotes,
                             isTrainer = isTrainer,
