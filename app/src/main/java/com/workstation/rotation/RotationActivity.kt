@@ -473,7 +473,8 @@ class RotationActivity : AppCompatActivity() {
                 binding.btnDownloadImage?.text = "📷 Generando..."
                 
                 // Capturar la vista de la tabla de rotación
-                val bitmap = ImageUtils.captureView(binding.cardRotationTable)
+                val cardView = binding.cardRotationTable ?: return@launch
+                val bitmap = ImageUtils.captureView(cardView)
                 
                 // Guardar en galería
                 val filename = ImageUtils.generateRotationFilename("rotacion_inteligente")
