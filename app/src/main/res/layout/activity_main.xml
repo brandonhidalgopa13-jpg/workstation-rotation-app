@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:background="?attr/colorBackground">
 
     <!-- Header Elegante -->
     <LinearLayout
@@ -59,7 +59,10 @@
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="?attr/colorSurface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -95,14 +98,14 @@
                         android:text="Estaciones de Trabajo"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Gestiona estaciones y capacidades"
                         android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="4dp" />
 
                 </LinearLayout>
@@ -127,7 +130,10 @@
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="?attr/colorSurface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -163,14 +169,14 @@
                         android:text="Trabajadores"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Administra personal y disponibilidad"
                         android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="4dp" />
 
                 </LinearLayout>
@@ -192,10 +198,13 @@
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardBackgroundColor="?attr/colorSurface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -231,14 +240,14 @@
                         android:text="Sistema de Rotación"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Genera rotaciones automáticas"
                         android:textSize="14sp"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:layout_marginTop="4dp" />
 
                 </LinearLayout>
@@ -256,6 +265,77 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Configuraciones -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?android:attr/selectableItemBackground">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="24dp"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/icon_background_purple"
+                    android:gravity="center"
+                    android:layout_marginEnd="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚙️"
+                        android:textSize="24sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Configuraciones"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Modo oscuro, respaldos y más"
+                        android:textSize="14sp"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSettings"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    app:cornerRadius="24dp"
+                    app:backgroundTint="@color/accent_purple" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
 
     <!-- Footer Minimalista -->
@@ -264,7 +344,7 @@
         android:layout_height="wrap_content"
         android:text="@string/watermark_creator_full"
         android:textSize="12sp"
-        android:textColor="@color/text_secondary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:gravity="center"
         android:padding="16dp"
         android:alpha="0.7" />
