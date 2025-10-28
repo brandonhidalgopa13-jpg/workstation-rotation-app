@@ -715,16 +715,16 @@ class RotationActivity : AppCompatActivity() {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Rotación Inteligente de Trabajadores")
+                putExtra(Intent.EXTRA_SUBJECT, "Rotacion Inteligente de Trabajadores")
                 putExtra(Intent.EXTRA_TEXT, 
-                    "📊 Rotación generada con el Sistema de Rotación Inteligente\n" +
-                    "🏭 Optimización automática de personal en estaciones de trabajo\n" +
-                    "⏰ Generada el ${SimpleDateFormat("dd/MM/yyyy 'a las' HH:mm", Locale.getDefault()).format(Date())}"
+                    "Rotacion generada con el Sistema de Rotacion Inteligente\n" +
+                    "Optimizacion automatica de personal en estaciones de trabajo\n" +
+                    "Generada el ${SimpleDateFormat("dd/MM/yyyy 'a las' HH:mm", Locale.getDefault()).format(Date())}"
                 )
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             
-            startActivity(Intent.createChooser(shareIntent, "📤 Compartir Rotación"))
+            startActivity(Intent.createChooser(shareIntent, "Compartir Rotacion"))
             
         } catch (e: Exception) {
             ImageUtils.showErrorMessage(this, "Error al compartir imagen")
