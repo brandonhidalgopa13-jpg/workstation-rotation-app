@@ -2,7 +2,6 @@ package com.workstation.rotation
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,34 +16,35 @@ import java.util.*
 import com.workstation.rotation.R
 import com.workstation.rotation.data.database.AppDatabase
 import com.workstation.rotation.data.entities.Worker
+import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.databinding.ActivityRotationBinding
 import com.workstation.rotation.models.RotationTable
-import com.workstation.rotation.models.WorkstationColumn
-import com.workstation.rotation.utils.UIUtils
 import com.workstation.rotation.viewmodels.RotationViewModel
 import com.workstation.rotation.viewmodels.RotationViewModelFactory
 import kotlinx.coroutines.launch
 
-/**
- * ═══════════════════════════════════════════════════════════════════════════════════════════════
- * 🔄 ACTIVIDAD DE ROTACIÓN - MOTOR PRINCIPAL DEL SISTEMA
- * ═══════════════════════════════════════════════════════════════════════════════════════════════
- * 
- * 📋 FUNCIONES PRINCIPALES DE ESTA ACTIVIDAD:
- * 
- * 🎯 1. GENERACIÓN DE ROTACIONES INTELIGENTES
- *    - Ejecuta el algoritmo de rotación con un solo clic
- *    - Procesa todos los trabajadores y estaciones activos
- *    - Aplica reglas de negocio complejas automáticamente
- * 
- * 📊 2. VISUALIZACIÓN AVANZADA DE RESULTADOS
- *    - Muestra tabla de rotación con dos fases (actual y siguiente)
- *    - Presenta información de capacidad y ocupación por estación
- *    - Indica visualmente parejas de entrenamiento activas
- *    - Resalta estaciones prioritarias y trabajadores especiales
- * 
- * 🎨 3. INTERFAZ DINÁMICA Y RESPONSIVE
- *    - Genera columnas dinámicamente según estaciones disponibles
+class RotationActivity : AppCompatActivity() {
+    
+    private lateinit var binding: ActivityRotationBinding
+    
+    private val viewModel: RotationViewModel by viewModels {
+        RotationViewModelFactory(
+            AppDatabase.getDatabase(this).workerDao(),
+            AppDatabase.getDatabase(this).workstationDao()
+        )
+    }
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityRotationBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        
+        setupToolbar()
+        setupButtons()
+        observeRotation()
+    }
+    
+    private funcolumnas dinámicamente según estaciones disponibles
  *    - Scroll horizontal para manejar múltiples estaciones
  *    - Colores diferenciados para fases actual y siguiente
  *    - Indicadores visuales de estado y capacidad
@@ -707,27 +707,18 @@ class RotationActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Comparte la imagen de rotación.
-     */
     private fun shareRotationImage(uri: android.net.Uri) {
         try {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Rotacion Inteligente de Trabajadores")
-                putExtra(Intent.EXTRA_TEXT, 
-                    "Rotacion generada con el Sistema de Rotacion Inteligente\n" +
-                    "Optimizacion automatica de personal en estaciones de trabajo\n" +
-                    "Generada el ${SimpleDateFormat("dd/MM/yyyy 'a las' HH:mm", Locale.getDefault()).format(Date())}"
-                )
+                putExtra(Intent.EXTRA_SUBJECT, "Rotacion Inteligente")
+                putExtra(Intent.EXTRA_TEXT, "Rotacion generada automaticamente")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
-            
-            startActivity(Intent.createChooser(shareIntent, "Compartir Rotacion"))
-            
+            startActivity(Intent.createChooser(shareIntent, "Compartir"))
         } catch (e: Exception) {
-            ImageUtils.showErrorMessage(this, "Error al compartir imagen")
+            ImageUtils.showErrorMessage(this, "Error al compartir")
         }
     }
 }
