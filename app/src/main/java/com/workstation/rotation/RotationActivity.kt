@@ -731,4 +731,3 @@ class RotationActivity : AppCompatActivity() {
         }
     }
 }
-}
