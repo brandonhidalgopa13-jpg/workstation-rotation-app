@@ -56,13 +56,15 @@ class RotationActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 try {
                     val success = viewModel.generateRotation()
-                    val message = if (success) {
-                        "Rotacion generada exitosamente"
+                    if (success) {
+                        showDownloadButton()
+                        Snackbar.make(binding.root, "Rotacion generada exitosamente", Snackbar.LENGTH_LONG).show()
                     } else {
-                        "No se pudo generar la rotacion"
+                        hideDownloadButton()
+                        Snackbar.make(binding.root, "No se pudo generar la rotacion", Snackbar.LENGTH_LONG).show()
                     }
-                    Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
                 } catch (e: Exception) {
+                    hideDownloadButton()
                     Snackbar.make(binding.root, "Error: ${e.message}", Snackbar.LENGTH_LONG).show()
                 }
             }
@@ -99,6 +101,11 @@ class RotationActivity : AppCompatActivity() {
         val workstations = rotationTable.workstations
         if (workstations.isEmpty()) return
         
+        // Debug: verificar que tenemos datos
+        val currentTotal = rotationTable.currentPhase.values.sumOf { it.size }
+        val nextTotal = rotationTable.nextPhase.values.sumOf { it.size }
+        println("DEBUG: Current phase workers: $currentTotal, Next phase workers: $nextTotal")
+        
         val columnWidth = 200
         val layoutParams = LinearLayout.LayoutParams(
             columnWidth,
@@ -111,6 +118,9 @@ class RotationActivity : AppCompatActivity() {
         setupCapacityRequirements(workstations, rotationTable, layoutParams)
         setupCurrentPhase(workstations, rotationTable, layoutParams)
         setupNextPhase(workstations, rotationTable, layoutParams)
+        
+        // Mostrar botón de descarga cuando hay rotación
+        showDownloadButton()
     }
     
     private fun setupWorkstationHeaders(workstations: List<com.workstation.rotation.data.entities.Workstation>, layoutParams: LinearLayout.LayoutParams) {
@@ -139,6 +149,7 @@ class RotationActivity : AppCompatActivity() {
     ) {
         workstations.forEach { workstation ->
             val workers = rotationTable.currentPhase[workstation.id] ?: emptyList()
+            println("DEBUG: Current phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, true)
             binding.layoutCurrentPhase.addView(columnView)
         }
@@ -151,6 +162,7 @@ class RotationActivity : AppCompatActivity() {
     ) {
         workstations.forEach { workstation ->
             val workers = rotationTable.nextPhase[workstation.id] ?: emptyList()
+            println("DEBUG: Next phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, false)
             binding.layoutNextPhase.addView(columnView)
         }
@@ -306,6 +318,7 @@ class RotationActivity : AppCompatActivity() {
     
     private fun showDownloadButton() {
         binding.btnDownloadImage?.visibility = android.view.View.VISIBLE
+        binding.btnDownloadImage?.text = "📷"
     }
     
     private fun hideDownloadButton() {
