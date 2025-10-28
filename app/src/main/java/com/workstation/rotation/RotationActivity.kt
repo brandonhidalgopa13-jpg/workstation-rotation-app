@@ -431,15 +431,15 @@ class RotationActivity : AppCompatActivity() {
         binding.tvRotationInfo.text = "🎯 Rotación generada exitosamente con algoritmo inteligente"
         
         // Mostrar estadísticas
-        binding.layoutRotationStats.visibility = android.view.View.VISIBLE
-        binding.tvStatsWorkers.text = "👥 ${stats.totalWorkers} trabajadores"
-        binding.tvStatsRotating.text = "🔄 ${stats.rotationPercentage}% rotando"
-        binding.tvStatsTraining.text = "🎓 ${stats.trainerTraineePairs} entrenamientos"
+        binding.layoutRotationStats?.visibility = android.view.View.VISIBLE
+        binding.tvStatsWorkers?.text = "👥 ${stats.totalWorkers} trabajadores"
+        binding.tvStatsRotating?.text = "🔄 ${stats.rotationPercentage}% rotando"
+        binding.tvStatsTraining?.text = "🎓 ${stats.trainerTraineePairs} entrenamientos"
         
         // Mostrar timestamp
         val timestamp = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
-        binding.tvTimestamp.text = timestamp
-        binding.tvTimestamp.visibility = android.view.View.VISIBLE
+        binding.tvTimestamp?.text = timestamp
+        binding.tvTimestamp?.visibility = android.view.View.VISIBLE
         
         // Mostrar botón de descarga
         showDownloadButton()
@@ -449,16 +449,16 @@ class RotationActivity : AppCompatActivity() {
      * Muestra el botón de descarga cuando hay una rotación generada.
      */
     private fun showDownloadButton() {
-        binding.btnDownloadImage.visibility = android.view.View.VISIBLE
+        binding.btnDownloadImage?.visibility = android.view.View.VISIBLE
     }
     
     /**
      * Oculta el botón de descarga cuando no hay rotación.
      */
     private fun hideDownloadButton() {
-        binding.btnDownloadImage.visibility = android.view.View.GONE
-        binding.layoutRotationStats.visibility = android.view.View.GONE
-        binding.tvTimestamp.visibility = android.view.View.GONE
+        binding.btnDownloadImage?.visibility = android.view.View.GONE
+        binding.layoutRotationStats?.visibility = android.view.View.GONE
+        binding.tvTimestamp?.visibility = android.view.View.GONE
     }
     
     /**
@@ -468,11 +468,11 @@ class RotationActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 // Mostrar progreso
-                binding.btnDownloadImage.isEnabled = false
-                binding.btnDownloadImage.text = "📷 Generando..."
+                binding.btnDownloadImage?.isEnabled = false
+                binding.btnDownloadImage?.text = "📷 Generando..."
                 
                 // Capturar la vista de la tabla de rotación
-                val bitmap = ImageUtils.captureView(binding.cardRotationTable)
+                val bitmap = ImageUtils.captureView(binding.cardRotationTable as View)
                 
                 // Guardar en galería
                 val filename = ImageUtils.generateRotationFilename("rotacion_inteligente")
@@ -489,8 +489,8 @@ class RotationActivity : AppCompatActivity() {
                 ImageUtils.showErrorMessage(this@RotationActivity, "Error al generar imagen: ${e.message}")
             } finally {
                 // Restaurar botón
-                binding.btnDownloadImage.isEnabled = true
-                binding.btnDownloadImage.text = "📷"
+                binding.btnDownloadImage?.isEnabled = true
+                binding.btnDownloadImage?.text = "📷"
             }
         }
     }

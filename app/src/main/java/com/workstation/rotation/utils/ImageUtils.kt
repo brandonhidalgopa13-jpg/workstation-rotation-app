@@ -84,7 +84,7 @@ object ImageUtils {
      * @return Bitmap de todo el contenido scrolleable
      */
     fun captureScrollView(scrollView: View, backgroundColor: Int = Color.WHITE): Bitmap {
-        val totalHeight = scrollView.getChildAt(0).height
+        val totalHeight = scrollView.getChildAt(0)?.height ?: scrollView.height
         val totalWidth = scrollView.width
         
         // Crear bitmap del tamaño completo del contenido
