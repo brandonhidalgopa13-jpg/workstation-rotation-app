@@ -149,20 +149,26 @@ object ImageUtils {
      * @return Bitmap de toda la tabla de rotación (actual + siguiente)
      */
     fun captureCompleteScrollableContent(cardView: View, backgroundColor: Int = Color.WHITE): Bitmap {
-        // Buscar el ScrollView vertical primero
-        val verticalScrollView = findVerticalScrollView(cardView)
+        // Buscar el LinearLayout que contiene toda la tabla de rotación
+        val rotationTableLayout = findRotationTableLayout(cardView)
         
-        return if (verticalScrollView != null) {
-            // Capturar todo el contenido del ScrollView vertical (que incluye el horizontal)
-            captureVerticalScrollViewContent(verticalScrollView, backgroundColor)
+        return if (rotationTableLayout != null) {
+            // Capturar directamente el layout completo de la tabla
+            captureCompleteLayoutContent(rotationTableLayout, backgroundColor)
         } else {
-            // Fallback: buscar HorizontalScrollView
-            val horizontalScrollView = findHorizontalScrollView(cardView)
-            if (horizontalScrollView != null) {
-                captureScrollViewContent(horizontalScrollView, backgroundColor)
+            // Fallback: buscar el ScrollView vertical
+            val verticalScrollView = findVerticalScrollView(cardView)
+            if (verticalScrollView != null) {
+                captureVerticalScrollViewContent(verticalScrollView, backgroundColor)
             } else {
-                // Último fallback: capturar el CardView completo
-                captureView(cardView, backgroundColor)
+                // Fallback: buscar HorizontalScrollView
+                val horizontalScrollView = findHorizontalScrollView(cardView)
+                if (horizontalScrollView != null) {
+                    captureScrollViewContent(horizontalScrollView, backgroundColor)
+                } else {
+                    // Último fallback: capturar el CardView completo
+                    captureView(cardView, backgroundColor)
+                }
             }
         }
     }
@@ -186,6 +192,61 @@ object ImageUtils {
             // Si no hay scroll view, capturar el CardView completo
             captureView(cardView, backgroundColor)
         }
+    }
+    
+    /**
+     * Busca el LinearLayout que contiene la tabla de rotación completa.
+     */
+    private fun findRotationTableLayout(view: View): LinearLayout? {
+        if (view is LinearLayout && view.id != View.NO_ID) {
+            // Buscar por ID específico del layout de la tabla
+            val resources = view.context.resources
+            try {
+                val resourceName = resources.getResourceEntryName(view.id)
+                if (resourceName == "layoutRotationTable") {
+                    return view
+                }
+            } catch (e: Exception) {
+                // Ignorar errores de recursos
+            }
+        }
+        
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                val result = findRotationTableLayout(child)
+                if (result != null) return result
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * Captura el contenido completo de un LinearLayout con toda la tabla de rotación.
+     */
+    private fun captureCompleteLayoutContent(layout: LinearLayout, backgroundColor: Int): Bitmap {
+        // Forzar medición completa del layout
+        layout.measure(
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        
+        val width = layout.measuredWidth.coerceAtLeast(layout.width).coerceAtLeast(800)
+        val height = layout.measuredHeight.coerceAtLeast(layout.height).coerceAtLeast(600)
+        
+        // Crear bitmap del tamaño completo
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(backgroundColor)
+        
+        // Forzar layout en el tamaño completo
+        layout.layout(0, 0, width, height)
+        
+        // Dibujar el contenido completo
+        layout.draw(canvas)
+        
+        return bitmap
     }
     
     /**
@@ -227,22 +288,32 @@ object ImageUtils {
     }
     
     /**
-     * Captura el contenido completo de un ScrollView vertical.
+     * Captura el contenido completo de un ScrollView vertical incluyendo TODA la rotación.
      */
     private fun captureVerticalScrollViewContent(scrollView: android.widget.ScrollView, backgroundColor: Int): Bitmap {
         val child = scrollView.getChildAt(0)
         
-        // Obtener las dimensiones reales del contenido
-        val contentWidth = child.width
-        val contentHeight = child.height
+        // Forzar medición del contenido para obtener dimensiones reales
+        child.measure(
+            View.MeasureSpec.makeMeasureSpec(scrollView.width, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        
+        // Obtener las dimensiones reales del contenido después de la medición
+        val contentWidth = child.measuredWidth.coerceAtLeast(child.width)
+        val contentHeight = child.measuredHeight.coerceAtLeast(child.height)
         val scrollViewWidth = scrollView.width
         
-        // Usar las dimensiones más grandes para asegurar que capturamos todo
+        // Usar las dimensiones más grandes para asegurar que capturamos TODO
         val finalWidth = contentWidth.coerceAtLeast(scrollViewWidth)
         val finalHeight = contentHeight.coerceAtLeast(scrollView.height)
         
+        // Asegurar dimensiones mínimas válidas
+        val safeWidth = finalWidth.coerceAtLeast(100)
+        val safeHeight = finalHeight.coerceAtLeast(100)
+        
         // Crear bitmap del tamaño completo
-        val bitmap = Bitmap.createBitmap(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(safeWidth, safeHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(backgroundColor)
         
@@ -251,6 +322,9 @@ object ImageUtils {
         
         // Resetear scroll para capturar desde el inicio
         scrollView.scrollTo(0, 0)
+        
+        // Forzar layout del contenido en el tamaño completo
+        child.layout(0, 0, safeWidth, safeHeight)
         
         // Dibujar el contenido completo
         child.draw(canvas)
