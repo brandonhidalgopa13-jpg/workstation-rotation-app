@@ -177,16 +177,26 @@ class WorkerActivity : AppCompatActivity() {
         // Hide certification section for new workers
         dialogBinding.cardCertification.visibility = View.GONE
         
-        // Load workstations
-        viewModel.activeWorkstations.observe(this) { workstations ->
-            val checkItems = workstations.map { WorkstationCheckItem(it, false) }
-            workstationAdapter.submitList(checkItems)
-            
-            // Setup training workstation spinner
-            val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
-            val workstationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
-            workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+        // Load workstations directly from database
+        lifecycleScope.launch {
+            try {
+                val workstations = viewModel.getActiveWorkstationsSync()
+                val checkItems = workstations.map { WorkstationCheckItem(it, false) }
+                workstationAdapter.submitList(checkItems)
+                
+                // Setup training workstation spinner
+                val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+                val spinnerAdapter = ArrayAdapter(this@WorkerActivity, android.R.layout.simple_spinner_item, workstationNames)
+                spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerTrainingWorkstation.adapter = spinnerAdapter
+            } catch (e: Exception) {
+                // Handle error loading workstations
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando estaciones: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
         }
         
         AlertDialog.Builder(this)
@@ -589,12 +599,20 @@ class WorkerActivity : AppCompatActivity() {
         
         // Load workstations with current assignments
         lifecycleScope.launch {
-            val assignedIds = viewModel.getWorkerWorkstationIds(worker.id)
-            viewModel.activeWorkstations.observe(this@WorkerActivity) { workstations ->
+            try {
+                val assignedIds = viewModel.getWorkerWorkstationIds(worker.id)
+                val workstations = viewModel.getActiveWorkstationsSync()
                 val checkItems = workstations.map { workstation ->
                     WorkstationCheckItem(workstation, assignedIds.contains(workstation.id))
                 }
                 workstationAdapter.submitList(checkItems)
+            } catch (e: Exception) {
+                // Handle error loading workstations
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando estaciones: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
         

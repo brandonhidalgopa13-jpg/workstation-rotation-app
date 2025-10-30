@@ -161,6 +161,13 @@ class WorkerViewModel(
             trainerWorkstationIds.contains(workstation.id)
         }
     }
+    
+    /**
+     * Obtiene las estaciones activas de forma síncrona.
+     */
+    suspend fun getActiveWorkstationsSync(): List<Workstation> {
+        return workstationDao.getAllActiveWorkstations().first()
+    }
 }
 
 class WorkerViewModelFactory(
