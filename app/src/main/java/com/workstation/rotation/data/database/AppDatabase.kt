@@ -11,6 +11,8 @@ import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.data.entities.WorkerWorkstation
+import com.workstation.rotation.data.entities.WorkerRestriction
+import com.workstation.rotation.data.dao.WorkerRestrictionDao
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -58,14 +60,15 @@ import com.workstation.rotation.data.entities.WorkerWorkstation
  */
 
 @Database(
-    entities = [Worker::class, Workstation::class, WorkerWorkstation::class],
-    version = Constants.DATABASE_VERSION,
+    entities = [Worker::class, Workstation::class, WorkerWorkstation::class, WorkerRestriction::class],
+    version = Constants.DATABASE_VERSION + 1, // Incrementar versión para la nueva entidad
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     
     abstract fun workerDao(): WorkerDao
     abstract fun workstationDao(): WorkstationDao
+    abstract fun workerRestrictionDao(): WorkerRestrictionDao
     
     companion object {
         @Volatile

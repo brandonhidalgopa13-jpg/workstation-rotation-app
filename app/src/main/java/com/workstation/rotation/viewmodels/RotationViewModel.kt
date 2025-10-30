@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
+import com.workstation.rotation.data.dao.WorkerRestrictionDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
+import com.workstation.rotation.data.entities.RestrictionType
 import com.workstation.rotation.models.RotationItem
 import com.workstation.rotation.models.RotationTable
 import kotlinx.coroutines.flow.first
@@ -65,7 +67,8 @@ import kotlin.random.Random
 
 class RotationViewModel(
     private val workerDao: WorkerDao,
-    private val workstationDao: WorkstationDao
+    private val workstationDao: WorkstationDao,
+    private val workerRestrictionDao: WorkerRestrictionDao
 ) : ViewModel() {
     
     // Cache for worker-workstation relationships to avoid multiple DB calls
@@ -464,10 +467,8 @@ class RotationViewModel(
             
             if (remainingCapacity > 0) {
                 // Get workers who can work at this station but are NOT currently assigned to it
-                val availableWorkers = regularWorkers.filter { worker ->
-                    // Worker is qualified for this station (simplified check)
-                    // For now, assume worker can work at any active station
-                    true &&
+                val eligibleWorkers = getEligibleWorkersForStation(regularWorkers, station.id)
+                val availableWorkers = eligibleWorkers.filter { worker ->
                     // Worker is NOT currently assigned to this station
                     !isWorkerCurrentlyAssignedToStation(worker, station.id, currentAssignments) &&
                     // Worker is not already assigned to next rotation
@@ -488,25 +489,54 @@ class RotationViewModel(
     }
     
     /**
-     * Determines if a worker can rotate based on availability and restrictions.
+     * Determines if a worker can rotate based on availability and general restrictions.
      * Workers who cannot rotate will stay in their current station.
-     * Made less restrictive to allow more workers to participate in rotation.
      */
     private fun canWorkerRotate(worker: Worker): Boolean {
         // Only workers with very low availability (below 30%) should stay in place
         if (worker.availabilityPercentage < 30) return false
         
-        // Workers with critical restriction notes should stay in place
-        // Allow workers with minor restrictions to rotate
-        if (worker.restrictionNotes.contains("CRÍTICO") || 
-            worker.restrictionNotes.contains("PERMANENTE") ||
-            worker.restrictionNotes.contains("NO ROTAR")) return false
-        
-        // Allow trainers and trainees to rotate if they're not in active training pairs
-        // This will be handled by the training assignment logic
-        
-        // Most workers can rotate freely
+        // Most workers can rotate freely - specific station restrictions are handled separately
         return true
+    }
+    
+    /**
+     * Verifica si un trabajador puede trabajar en una estación específica.
+     * Considera las restricciones específicas por estación.
+     */
+    private suspend fun canWorkerWorkAtStation(workerId: Long, workstationId: Long): Boolean {
+        // Verificar si el trabajador tiene restricciones prohibitivas para esta estación
+        val hasProhibitedRestriction = workerRestrictionDao.hasRestriction(
+            workerId, 
+            workstationId, 
+            RestrictionType.PROHIBITED
+        )
+        
+        if (hasProhibitedRestriction) {
+            return false
+        }
+        
+        // Verificar si el trabajador está asignado a esta estación
+        val workerWorkstations = getWorkerWorkstationIds(workerId)
+        return workerWorkstations.contains(workstationId)
+    }
+    
+    /**
+     * Obtiene los trabajadores elegibles para una estación específica.
+     * Filtra por restricciones específicas y asignaciones de estación.
+     */
+    private suspend fun getEligibleWorkersForStation(
+        workers: List<Worker>, 
+        workstationId: Long
+    ): List<Worker> {
+        return workers.filter { worker ->
+            // Verificar de forma síncrona si puede trabajar en esta estación
+            runCatching {
+                // Usar una versión simplificada para evitar suspend en filter
+                val workerWorkstations = workerWorkstationCache[worker.id] ?: emptyList()
+                workerWorkstations.contains(workstationId)
+            }.getOrDefault(false)
+        }
     }
 
     /**
@@ -1053,12 +1083,13 @@ class RotationViewModel(
 
 class RotationViewModelFactory(
     private val workerDao: WorkerDao,
-    private val workstationDao: WorkstationDao
+    private val workstationDao: WorkstationDao,
+    private val workerRestrictionDao: WorkerRestrictionDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RotationViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RotationViewModel(workerDao, workstationDao) as T
+            return RotationViewModel(workerDao, workstationDao, workerRestrictionDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

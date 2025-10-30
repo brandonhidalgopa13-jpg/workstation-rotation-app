@@ -31,7 +31,8 @@ class RotationActivity : AppCompatActivity() {
     private val viewModel: RotationViewModel by viewModels {
         RotationViewModelFactory(
             AppDatabase.getDatabase(this).workerDao(),
-            AppDatabase.getDatabase(this).workstationDao()
+            AppDatabase.getDatabase(this).workstationDao(),
+            AppDatabase.getDatabase(this).workerRestrictionDao()
         )
     }
     

@@ -16,6 +16,7 @@ data class WorkerWithWorkstationCount(
 class WorkerAdapter(
     private val onEditClick: (Worker) -> Unit,
     private val onDeleteClick: (Worker) -> Unit,
+    private val onRestrictionsClick: (Worker) -> Unit,
     private val onStatusChange: (Worker, Boolean) -> Unit
 ) : ListAdapter<WorkerWithWorkstationCount, WorkerAdapter.WorkerViewHolder>(WorkerDiffCallback()) {
 
@@ -95,7 +96,7 @@ class WorkerAdapter(
             binding.tvRestrictionStatus.apply {
                 if (worker.restrictionNotes.isNotEmpty()) {
                     visibility = android.view.View.VISIBLE
-                    text = "⚠️ ${worker.restrictionNotes}"
+                    text = "🚫 Con restricciones específicas"
                 } else {
                     visibility = android.view.View.GONE
                 }
@@ -113,6 +114,10 @@ class WorkerAdapter(
                 
                 btnEdit.setOnClickListener {
                     onEditClick(worker)
+                }
+                
+                btnRestrictions.setOnClickListener {
+                    onRestrictionsClick(worker)
                 }
                 
                 btnDelete.setOnClickListener {

@@ -7,14 +7,18 @@ import androidx.lifecycle.liveData
 import com.workstation.rotation.adapters.WorkerWithWorkstationCount
 import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
+import com.workstation.rotation.data.dao.WorkerRestrictionDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.WorkerWorkstation
+import com.workstation.rotation.data.entities.WorkerRestriction
+import com.workstation.rotation.data.entities.RestrictionType
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 
 class WorkerViewModel(
     private val workerDao: WorkerDao,
-    private val workstationDao: WorkstationDao
+    private val workstationDao: WorkstationDao,
+    private val workerRestrictionDao: WorkerRestrictionDao
 ) : ViewModel() {
     
     val allWorkers = liveData {
@@ -103,16 +107,60 @@ class WorkerViewModel(
     suspend fun hasTrainees(trainerId: Long): Boolean {
         return workerDao.hasTrainees(trainerId)
     }
+    
+    /**
+     * Obtiene las restricciones de un trabajador.
+     */
+    fun getWorkerRestrictions(workerId: Long) = workerRestrictionDao.getWorkerRestrictions(workerId)
+    
+    /**
+     * Obtiene las restricciones de un trabajador de forma síncrona.
+     */
+    suspend fun getWorkerRestrictionsSync(workerId: Long) = workerRestrictionDao.getWorkerRestrictionsSync(workerId)
+    
+    /**
+     * Guarda las restricciones de un trabajador.
+     */
+    suspend fun saveWorkerRestrictions(workerId: Long, restrictedWorkstations: List<Long>, restrictionType: RestrictionType, notes: String) {
+        // Primero eliminar todas las restricciones existentes del trabajador
+        workerRestrictionDao.deleteAllWorkerRestrictions(workerId)
+        
+        // Luego agregar las nuevas restricciones
+        restrictedWorkstations.forEach { workstationId ->
+            val restriction = WorkerRestriction(
+                workerId = workerId,
+                workstationId = workstationId,
+                restrictionType = restrictionType,
+                notes = notes
+            )
+            workerRestrictionDao.insertRestriction(restriction)
+        }
+    }
+    
+    /**
+     * Obtiene el conteo de restricciones de un trabajador.
+     */
+    suspend fun getWorkerRestrictionCount(workerId: Long): Int {
+        return workerRestrictionDao.getWorkerRestrictionCount(workerId)
+    }
+    
+    /**
+     * Obtiene las estaciones prohibidas para un trabajador.
+     */
+    suspend fun getProhibitedWorkstations(workerId: Long): List<Long> {
+        return workerRestrictionDao.getProhibitedWorkstations(workerId)
+    }
 }
 
 class WorkerViewModelFactory(
     private val workerDao: WorkerDao,
-    private val workstationDao: WorkstationDao
+    private val workstationDao: WorkstationDao,
+    private val workerRestrictionDao: WorkerRestrictionDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return WorkerViewModel(workerDao, workstationDao) as T
+            return WorkerViewModel(workerDao, workstationDao, workerRestrictionDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

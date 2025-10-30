@@ -81,7 +81,8 @@ class WorkerActivity : AppCompatActivity() {
     private val viewModel: WorkerViewModel by viewModels {
         WorkerViewModelFactory(
             AppDatabase.getDatabase(this).workerDao(),
-            AppDatabase.getDatabase(this).workstationDao()
+            AppDatabase.getDatabase(this).workstationDao(),
+            AppDatabase.getDatabase(this).workerRestrictionDao()
         )
     }
     
@@ -106,6 +107,7 @@ class WorkerActivity : AppCompatActivity() {
         adapter = WorkerAdapter(
             onEditClick = { worker -> showEditDialog(worker) },
             onDeleteClick = { worker -> showDeleteWorkerDialog(worker) },
+            onRestrictionsClick = { worker -> showRestrictionsDialog(worker) },
             onStatusChange = { worker, isActive -> 
                 lifecycleScope.launch {
                     viewModel.updateWorkerStatus(worker.id, isActive)
@@ -295,6 +297,87 @@ class WorkerActivity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Sets up the training system UI components for edit dialog.
+     */
+    private fun setupTrainingSystemForEdit(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
+        with(dialogBinding) {
+            // Setup trainee checkbox listener
+            checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
+                layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+                
+                if (isChecked) {
+                    loadTrainersForEditSpinner(dialogBinding, worker)
+                    loadWorkstationsForEditSpinner(dialogBinding, worker)
+                }
+            }
+            
+            // Prevent trainer and trainee from being selected simultaneously
+            checkboxIsTrainer.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    checkboxIsTrainee.isChecked = false
+                    layoutTrainingDetails.visibility = View.GONE
+                }
+            }
+            
+            // If worker is currently a trainee, show training details
+            if (worker.isTrainee) {
+                layoutTrainingDetails.visibility = View.VISIBLE
+                loadTrainersForEditSpinner(dialogBinding, worker)
+                loadWorkstationsForEditSpinner(dialogBinding, worker)
+            }
+        }
+    }
+    
+    /**
+     * Loads available trainers into the spinner for edit dialog and selects current trainer.
+     */
+    private fun loadTrainersForEditSpinner(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
+        lifecycleScope.launch {
+            try {
+                val trainers = viewModel.getTrainers()
+                val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
+                val trainerAdapter = ArrayAdapter(
+                    this@WorkerActivity,
+                    android.R.layout.simple_spinner_item,
+                    trainerNames
+                )
+                trainerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerTrainer.adapter = trainerAdapter
+                
+                // Select current trainer if exists
+                worker.trainerId?.let { trainerId ->
+                    val trainerIndex = trainers.indexOfFirst { it.id == trainerId }
+                    if (trainerIndex >= 0) {
+                        dialogBinding.spinnerTrainer.setSelection(trainerIndex + 1) // +1 because of "Seleccionar..." option
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error loading trainers
+            }
+        }
+    }
+    
+    /**
+     * Loads available workstations into the spinner for edit dialog and selects current training workstation.
+     */
+    private fun loadWorkstationsForEditSpinner(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
+        viewModel.activeWorkstations.observe(this) { workstations ->
+            val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+            val workstationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
+            workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+            
+            // Select current training workstation if exists
+            worker.trainingWorkstationId?.let { trainingWorkstationId ->
+                val workstationIndex = workstations.indexOfFirst { it.id == trainingWorkstationId }
+                if (workstationIndex >= 0) {
+                    dialogBinding.spinnerTrainingWorkstation.setSelection(workstationIndex + 1) // +1 because of "Seleccionar..." option
+                }
+            }
+        }
+    }
+    
     private fun showEditDialog(worker: Worker) {
         val dialogBinding = DialogAddWorkerBinding.inflate(layoutInflater)
         val workstationAdapter = WorkstationCheckboxAdapter { item, isChecked ->
@@ -311,6 +394,9 @@ class WorkerActivity : AppCompatActivity() {
             checkboxIsTrainer.isChecked = worker.isTrainer
             checkboxIsTrainee.isChecked = worker.isTrainee
             checkboxIsCertified.isChecked = worker.isCertified
+            
+            // Setup training system for edit dialog
+            setupTrainingSystemForEdit(dialogBinding, worker)
             
             // Show certification option if worker can be certified
             if (worker.canBeCertified()) {
@@ -362,6 +448,31 @@ class WorkerActivity : AppCompatActivity() {
             recyclerViewWorkstations.apply {
                 layoutManager = LinearLayoutManager(this@WorkerActivity)
                 adapter = workstationAdapter
+                // Optimizaciones para manejar muchas estaciones
+                isNestedScrollingEnabled = true
+                setHasFixedSize(true)
+                setItemViewCacheSize(com.workstation.rotation.utils.Constants.RECYCLER_VIEW_CACHE_SIZE)
+                
+                // Mejorar el scroll suave
+                isVerticalScrollBarEnabled = true
+                scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
+                
+                // Agregar separadores sutiles entre elementos
+                val divider = androidx.recyclerview.widget.DividerItemDecoration(
+                    this@WorkerActivity, 
+                    androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+                )
+                // Personalizar el drawable del divisor para que sea más sutil
+                divider.setDrawable(
+                    androidx.core.content.ContextCompat.getDrawable(
+                        this@WorkerActivity, 
+                        com.workstation.rotation.R.drawable.recycler_divider
+                    ) ?: androidx.core.content.ContextCompat.getDrawable(
+                        this@WorkerActivity, 
+                        android.R.drawable.divider_horizontal_bright
+                    )!!
+                )
+                addItemDecoration(divider)
             }
         }
         
@@ -393,26 +504,74 @@ class WorkerActivity : AppCompatActivity() {
                         .filter { it.isChecked }
                         .map { it.workstation.id }
                     
-                    lifecycleScope.launch {
-                        val updatedWorker = worker.copy(
-                            name = name, 
-                            email = worker.email, // Mantener email existente
-                            availabilityPercentage = availability,
-                            restrictionNotes = restrictionNotes,
-                            isTrainer = isTrainer,
-                            isTrainee = isTrainee,
-                            isCertified = isCertified,
-                            certificationDate = if (isCertified && !worker.isCertified) {
-                                System.currentTimeMillis()
-                            } else {
-                                worker.certificationDate
-                            },
-                            // Clear training data if certified
-                            trainerId = if (isCertified) null else worker.trainerId,
-                            trainingWorkstationId = if (isCertified) null else worker.trainingWorkstationId
-                        )
+                    // Handle training data for edit dialog
+                    var trainerId: Long? = null
+                    var trainingWorkstationId: Long? = null
+                    
+                    if (isTrainee) {
+                        // Get selected trainer and workstation
+                        val trainerPosition = dialogBinding.spinnerTrainer.selectedItemPosition
+                        val workstationPosition = dialogBinding.spinnerTrainingWorkstation.selectedItemPosition
                         
-                        viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
+                        lifecycleScope.launch {
+                            if (trainerPosition > 0) {
+                                val trainers = viewModel.getTrainers()
+                                if (trainerPosition <= trainers.size) {
+                                    trainerId = trainers[trainerPosition - 1].id
+                                }
+                            }
+                            
+                            if (workstationPosition > 0) {
+                                viewModel.activeWorkstations.value?.let { workstations ->
+                                    if (workstationPosition <= workstations.size) {
+                                        trainingWorkstationId = workstations[workstationPosition - 1].id
+                                    }
+                                }
+                            }
+                            
+                            val updatedWorker = worker.copy(
+                                name = name, 
+                                email = worker.email, // Mantener email existente
+                                availabilityPercentage = availability,
+                                restrictionNotes = restrictionNotes,
+                                isTrainer = isTrainer,
+                                isTrainee = isTrainee,
+                                isCertified = isCertified,
+                                certificationDate = if (isCertified && !worker.isCertified) {
+                                    System.currentTimeMillis()
+                                } else {
+                                    worker.certificationDate
+                                },
+                                // Update training data based on current selections
+                                trainerId = if (isCertified) null else (if (isTrainee) trainerId else null),
+                                trainingWorkstationId = if (isCertified) null else (if (isTrainee) trainingWorkstationId else null)
+                            )
+                            
+                            viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
+                        }
+                    } else {
+                        // Not a trainee, clear training data
+                        lifecycleScope.launch {
+                            val updatedWorker = worker.copy(
+                                name = name, 
+                                email = worker.email, // Mantener email existente
+                                availabilityPercentage = availability,
+                                restrictionNotes = restrictionNotes,
+                                isTrainer = isTrainer,
+                                isTrainee = isTrainee,
+                                isCertified = isCertified,
+                                certificationDate = if (isCertified && !worker.isCertified) {
+                                    System.currentTimeMillis()
+                                } else {
+                                    worker.certificationDate
+                                },
+                                // Clear training data if not trainee or certified
+                                trainerId = null,
+                                trainingWorkstationId = null
+                            )
+                            
+                            viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
+                        }
                     }
                 }
             }
@@ -495,6 +654,113 @@ class WorkerActivity : AppCompatActivity() {
                     .show()
             }
         }
+    }
+    
+    /**
+     * Muestra el diálogo para gestionar restricciones específicas de estaciones.
+     */
+    private fun showRestrictionsDialog(worker: Worker) {
+        val dialogBinding = com.workstation.rotation.databinding.DialogWorkerRestrictionsBinding.inflate(layoutInflater)
+        val restrictionAdapter = com.workstation.rotation.adapters.WorkstationRestrictionAdapter { item, isRestricted ->
+            // El adapter maneja el cambio automáticamente
+        }
+        
+        dialogBinding.recyclerViewRestrictions.apply {
+            layoutManager = LinearLayoutManager(this@WorkerActivity)
+            adapter = restrictionAdapter
+        }
+        
+        // Configurar spinner de tipos de restricción
+        val restrictionTypes = arrayOf("Prohibido", "Limitado", "Temporal")
+        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, restrictionTypes)
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spinnerRestrictionType.adapter = spinnerAdapter
+        
+        // Cargar datos
+        lifecycleScope.launch {
+            try {
+                val workstations = viewModel.activeWorkstations.value ?: emptyList()
+                val existingRestrictions = viewModel.getWorkerRestrictionsSync(worker.id)
+                
+                val restrictionItems = workstations.map { workstation ->
+                    val existingRestriction = existingRestrictions.find { it.workstationId == workstation.id }
+                    com.workstation.rotation.adapters.WorkstationRestrictionItem(
+                        workstation = workstation,
+                        isRestricted = existingRestriction != null,
+                        restriction = existingRestriction
+                    )
+                }
+                
+                restrictionAdapter.submitList(restrictionItems)
+                
+                // Si hay restricciones existentes, usar las notas de la primera
+                existingRestrictions.firstOrNull()?.let { restriction ->
+                    dialogBinding.etRestrictionNotes.setText(restriction.notes)
+                    val typeIndex = when (restriction.restrictionType) {
+                        com.workstation.rotation.data.entities.RestrictionType.PROHIBITED -> 0
+                        com.workstation.rotation.data.entities.RestrictionType.LIMITED -> 1
+                        com.workstation.rotation.data.entities.RestrictionType.TEMPORARY -> 2
+                    }
+                    dialogBinding.spinnerRestrictionType.setSelection(typeIndex)
+                }
+                
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando restricciones: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        
+        AlertDialog.Builder(this)
+            .setTitle("Restricciones de ${worker.name}")
+            .setView(dialogBinding.root)
+            .setPositiveButton("Guardar") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        val restrictedWorkstations = restrictionAdapter.currentList
+                            .filter { it.isRestricted }
+                            .map { it.workstation.id }
+                        
+                        val notes = dialogBinding.etRestrictionNotes.text.toString().trim()
+                        val restrictionType = when (dialogBinding.spinnerRestrictionType.selectedItemPosition) {
+                            0 -> com.workstation.rotation.data.entities.RestrictionType.PROHIBITED
+                            1 -> com.workstation.rotation.data.entities.RestrictionType.LIMITED
+                            2 -> com.workstation.rotation.data.entities.RestrictionType.TEMPORARY
+                            else -> com.workstation.rotation.data.entities.RestrictionType.PROHIBITED
+                        }
+                        
+                        viewModel.saveWorkerRestrictions(worker.id, restrictedWorkstations, restrictionType, notes)
+                        
+                        // Actualizar el campo restrictionNotes del trabajador para mostrar en la lista
+                        val restrictionCount = restrictedWorkstations.size
+                        val updatedNotes = if (restrictionCount > 0) {
+                            "$restrictionCount estación${if (restrictionCount > 1) "es" else ""} restringida${if (restrictionCount > 1) "s" else ""}"
+                        } else {
+                            ""
+                        }
+                        
+                        val updatedWorker = worker.copy(restrictionNotes = updatedNotes)
+                        viewModel.updateWorkerWithWorkstations(updatedWorker, viewModel.getWorkerWorkstationIds(worker.id))
+                        
+                        android.widget.Toast.makeText(
+                            this@WorkerActivity,
+                            "Restricciones guardadas correctamente",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                        
+                    } catch (e: Exception) {
+                        AlertDialog.Builder(this@WorkerActivity)
+                            .setTitle("Error")
+                            .setMessage("No se pudieron guardar las restricciones: ${e.message}")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
 }

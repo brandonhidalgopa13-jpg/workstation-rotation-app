@@ -121,6 +121,16 @@
                 android:contentDescription="Editar trabajador" />
 
             <ImageButton
+                android:id="@+id/btnRestrictions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_warning"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginTop="4dp"
+                android:contentDescription="Gestionar restricciones"
+                android:tint="@android:color/holo_orange_dark" />
+
+            <ImageButton
                 android:id="@+id/btnDelete"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
