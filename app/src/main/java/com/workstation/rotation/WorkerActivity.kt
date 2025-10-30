@@ -601,65 +601,84 @@ class WorkerActivity : AppCompatActivity() {
                 }
             }
             
-            recyclerViewWorkstations.apply {
-                layoutManager = LinearLayoutManager(this@WorkerActivity)
-                adapter = workstationAdapter
-                // Optimizaciones para manejar muchas estaciones
-                isNestedScrollingEnabled = true
-                setHasFixedSize(true)
-                setItemViewCacheSize(com.workstation.rotation.utils.Constants.RECYCLER_VIEW_CACHE_SIZE)
-                
-                // Mejorar el scroll suave
-                isVerticalScrollBarEnabled = true
-                scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
-                
-                // Agregar separadores sutiles entre elementos
-                val divider = androidx.recyclerview.widget.DividerItemDecoration(
-                    this@WorkerActivity, 
-                    androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-                )
-                // Personalizar el drawable del divisor para que sea más sutil
-                divider.setDrawable(
-                    androidx.core.content.ContextCompat.getDrawable(
-                        this@WorkerActivity, 
-                        com.workstation.rotation.R.drawable.recycler_divider
-                    ) ?: androidx.core.content.ContextCompat.getDrawable(
-                        this@WorkerActivity, 
-                        android.R.drawable.divider_horizontal_bright
-                    )!!
-                )
-                addItemDecoration(divider)
-            }
+            // IMPORTANTE: NO configurar el RecyclerView aquí, se hace después de cargar los datos
+            android.util.Log.d("WorkerActivity", "RecyclerView preparado para configuración posterior")
+        }
+        
+        // Setup RecyclerView BEFORE loading data
+        recyclerViewWorkstations.apply {
+            layoutManager = LinearLayoutManager(this@WorkerActivity)
+            adapter = workstationAdapter
+            // Optimizaciones para manejar muchas estaciones
+            isNestedScrollingEnabled = true
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            
+            // Mejorar el scroll suave
+            isVerticalScrollBarEnabled = true
+            scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
+            
+            // Agregar separadores sutiles entre elementos
+            val divider = androidx.recyclerview.widget.DividerItemDecoration(
+                this@WorkerActivity, 
+                androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+            )
+            addItemDecoration(divider)
+            
+            // Debug: Verificar configuración del RecyclerView
+            android.util.Log.d("WorkerActivity", "RecyclerView configurado - Adapter: ${adapter != null}")
         }
         
         // Load workstations with current assignments
         lifecycleScope.launch {
             try {
+                android.util.Log.d("WorkerActivity", "=== INICIANDO CARGA DE ESTACIONES PARA EDICIÓN ===")
+                
                 val assignedIds = viewModel.getWorkerWorkstationIds(worker.id)
                 val workstations = viewModel.getActiveWorkstationsSync()
                 
                 // Debug: Log workstation count for edit dialog
                 android.util.Log.d("WorkerActivity", "Edición - Cargadas ${workstations.size} estaciones activas")
-                android.util.Log.d("WorkerActivity", "Edición - Trabajador ${worker.name} tiene ${assignedIds.size} estaciones asignadas")
+                android.util.Log.d("WorkerActivity", "Edición - Trabajador ${worker.name} tiene ${assignedIds.size} estaciones asignadas: $assignedIds")
                 
                 if (workstations.isEmpty()) {
+                    android.util.Log.w("WorkerActivity", "WARNING: No hay estaciones activas disponibles")
                     android.widget.Toast.makeText(
                         this@WorkerActivity,
                         "⚠️ No hay estaciones activas disponibles",
                         android.widget.Toast.LENGTH_LONG
                     ).show()
+                    return@launch
                 }
                 
                 val checkItems = workstations.map { workstation ->
                     val isAssigned = assignedIds.contains(workstation.id)
-                    android.util.Log.d("WorkerActivity", "Estación ${workstation.name}: asignada = $isAssigned")
+                    android.util.Log.d("WorkerActivity", "Estación ${workstation.name} (ID: ${workstation.id}): asignada = $isAssigned")
                     WorkstationCheckItem(workstation, isAssigned)
                 }
+                
+                android.util.Log.d("WorkerActivity", "Creados ${checkItems.size} items para el adaptador")
+                android.util.Log.d("WorkerActivity", "Items marcados: ${checkItems.count { it.isChecked }}")
+                
+                // Verificar que el adaptador esté configurado
+                if (recyclerViewWorkstations.adapter == null) {
+                    android.util.Log.e("WorkerActivity", "ERROR: RecyclerView adapter es null!")
+                    recyclerViewWorkstations.adapter = workstationAdapter
+                }
+                
                 workstationAdapter.submitList(checkItems)
+                android.util.Log.d("WorkerActivity", "Lista enviada al adaptador")
+                
+                // Forzar actualización del RecyclerView
+                recyclerViewWorkstations.post {
+                    workstationAdapter.notifyDataSetChanged()
+                    android.util.Log.d("WorkerActivity", "RecyclerView actualizado - Items visibles: ${recyclerViewWorkstations.childCount}")
+                }
                 
             } catch (e: Exception) {
                 // Handle error loading workstations
                 android.util.Log.e("WorkerActivity", "Error cargando estaciones en edición", e)
+                e.printStackTrace()
                 android.widget.Toast.makeText(
                     this@WorkerActivity,
                     "Error cargando estaciones: ${e.message}",

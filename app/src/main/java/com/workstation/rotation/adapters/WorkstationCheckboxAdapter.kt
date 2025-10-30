@@ -16,8 +16,17 @@ data class WorkstationCheckItem(
 class WorkstationCheckboxAdapter(
     private val onCheckChanged: (WorkstationCheckItem, Boolean) -> Unit
 ) : ListAdapter<WorkstationCheckItem, WorkstationCheckboxAdapter.ViewHolder>(DiffCallback()) {
+    
+    override fun submitList(list: List<WorkstationCheckItem>?) {
+        android.util.Log.d("WorkstationCheckboxAdapter", "submitList called with ${list?.size ?: 0} items")
+        list?.forEachIndexed { index, item ->
+            android.util.Log.d("WorkstationCheckboxAdapter", "Item $index: ${item.workstation.name}, checked: ${item.isChecked}")
+        }
+        super.submitList(list)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        android.util.Log.d("WorkstationCheckboxAdapter", "Creating ViewHolder")
         val binding = ItemWorkstationCheckboxBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
@@ -25,7 +34,9 @@ class WorkstationCheckboxAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val item = getItem(position)
+        android.util.Log.d("WorkstationCheckboxAdapter", "Binding item at position $position: ${item.workstation.name}, checked: ${item.isChecked}")
+        holder.bind(item)
     }
 
     inner class ViewHolder(
