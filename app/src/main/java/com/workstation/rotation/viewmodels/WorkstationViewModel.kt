@@ -26,6 +26,13 @@ class WorkstationViewModel(private val workstationDao: WorkstationDao) : ViewMod
     suspend fun updateWorkstationStatus(id: Long, isActive: Boolean) {
         workstationDao.updateWorkstationStatus(id, isActive)
     }
+    
+    /**
+     * Verifica si una estación está siendo usada para entrenamiento.
+     */
+    suspend fun isWorkstationUsedForTraining(workstationId: Long): Boolean {
+        return workstationDao.isWorkstationUsedForTraining(workstationId)
+    }
 }
 
 class WorkstationViewModelFactory(private val workstationDao: WorkstationDao) : ViewModelProvider.Factory {

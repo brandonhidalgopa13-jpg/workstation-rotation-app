@@ -105,6 +105,7 @@ class WorkerActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = WorkerAdapter(
             onEditClick = { worker -> showEditDialog(worker) },
+            onDeleteClick = { worker -> showDeleteWorkerDialog(worker) },
             onStatusChange = { worker, isActive -> 
                 lifecycleScope.launch {
                     viewModel.updateWorkerStatus(worker.id, isActive)
@@ -419,5 +420,81 @@ class WorkerActivity : AppCompatActivity() {
             .show()
     }
     
+    /**
+     * Muestra un diálogo de confirmación para eliminar un trabajador.
+     */
+    private fun showDeleteWorkerDialog(worker: Worker) {
+        lifecycleScope.launch {
+            try {
+                val hasTrainees = if (worker.isTrainer) {
+                    viewModel.hasTrainees(worker.id)
+                } else false
+                
+                val message = when {
+                    worker.isTrainer && hasTrainees -> 
+                        "¿Estás seguro de que deseas eliminar a '${worker.name}'?\n\n⚠️ ADVERTENCIA: Este trabajador es entrenador y tiene trabajadores asignados. Al eliminarlo, se afectarán los trabajadores en entrenamiento.\n\nEsta acción no se puede deshacer y se eliminarán todas sus asignaciones de estaciones."
+                    worker.isTrainer -> 
+                        "¿Estás seguro de que deseas eliminar a '${worker.name}'?\n\n👨‍🏫 Este trabajador es entrenador.\n\nEsta acción no se puede deshacer y se eliminarán todas sus asignaciones de estaciones."
+                    worker.isTrainee -> 
+                        "¿Estás seguro de que deseas eliminar a '${worker.name}'?\n\n🎯 Este trabajador está en entrenamiento.\n\nEsta acción no se puede deshacer y se eliminarán todas sus asignaciones de estaciones."
+                    else -> 
+                        "¿Estás seguro de que deseas eliminar a '${worker.name}'?\n\nEsta acción no se puede deshacer y se eliminarán todas sus asignaciones de estaciones."
+                }
+                
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("Eliminar Trabajador")
+                    .setMessage(message)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        lifecycleScope.launch {
+                            try {
+                                viewModel.deleteWorker(worker)
+                                // Mostrar mensaje de confirmación
+                                android.widget.Toast.makeText(
+                                    this@WorkerActivity,
+                                    "Trabajador '${worker.name}' eliminado correctamente",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                // Mostrar mensaje de error
+                                AlertDialog.Builder(this@WorkerActivity)
+                                    .setTitle("Error")
+                                    .setMessage("No se pudo eliminar el trabajador: ${e.message}")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            } catch (e: Exception) {
+                // Si hay error verificando, mostrar diálogo simple
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("Eliminar Trabajador")
+                    .setMessage("¿Estás seguro de que deseas eliminar a '${worker.name}'?\n\nEsta acción no se puede deshacer y se eliminarán todas sus asignaciones de estaciones.")
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        lifecycleScope.launch {
+                            try {
+                                viewModel.deleteWorker(worker)
+                                android.widget.Toast.makeText(
+                                    this@WorkerActivity,
+                                    "Trabajador '${worker.name}' eliminado correctamente",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                AlertDialog.Builder(this@WorkerActivity)
+                                    .setTitle("Error")
+                                    .setMessage("No se pudo eliminar el trabajador: ${e.message}")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            }
+        }
+    }
 
 }

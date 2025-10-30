@@ -38,4 +38,7 @@ interface WorkstationDao {
     // Métodos para sincronización en la nube
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateWorkstation(workstation: Workstation): Long
+    
+    @Query("SELECT COUNT(*) > 0 FROM workers WHERE trainingWorkstationId = :workstationId AND isTrainee = 1")
+    suspend fun isWorkstationUsedForTraining(workstationId: Long): Boolean
 }

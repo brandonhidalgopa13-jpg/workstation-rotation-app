@@ -10,6 +10,7 @@ import com.workstation.rotation.databinding.ItemWorkstationBinding
 
 class WorkstationAdapter(
     private val onEditClick: (Workstation) -> Unit,
+    private val onDeleteClick: (Workstation) -> Unit,
     private val onStatusChange: (Workstation, Boolean) -> Unit
 ) : ListAdapter<Workstation, WorkstationAdapter.WorkstationViewHolder>(WorkstationDiffCallback()) {
 
@@ -48,6 +49,10 @@ class WorkstationAdapter(
                 
                 btnEdit.setOnClickListener {
                     onEditClick(workstation)
+                }
+                
+                btnDelete.setOnClickListener {
+                    onDeleteClick(workstation)
                 }
             }
         }

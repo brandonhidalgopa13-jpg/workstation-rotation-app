@@ -15,6 +15,7 @@ data class WorkerWithWorkstationCount(
 
 class WorkerAdapter(
     private val onEditClick: (Worker) -> Unit,
+    private val onDeleteClick: (Worker) -> Unit,
     private val onStatusChange: (Worker, Boolean) -> Unit
 ) : ListAdapter<WorkerWithWorkstationCount, WorkerAdapter.WorkerViewHolder>(WorkerDiffCallback()) {
 
@@ -112,6 +113,10 @@ class WorkerAdapter(
                 
                 btnEdit.setOnClickListener {
                     onEditClick(worker)
+                }
+                
+                btnDelete.setOnClickListener {
+                    onDeleteClick(worker)
                 }
             }
         }

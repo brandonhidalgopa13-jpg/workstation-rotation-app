@@ -101,4 +101,7 @@ interface WorkerDao {
     
     @Query("UPDATE workers SET isTrainee = 0, trainerId = NULL, trainingWorkstationId = NULL WHERE id = :workerId")
     suspend fun certifyWorker(workerId: Long)
+    
+    @Query("SELECT COUNT(*) > 0 FROM workers WHERE trainerId = :trainerId AND isTrainee = 1")
+    suspend fun hasTrainees(trainerId: Long): Boolean
 }

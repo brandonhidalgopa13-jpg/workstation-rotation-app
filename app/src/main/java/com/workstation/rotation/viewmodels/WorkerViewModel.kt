@@ -85,6 +85,24 @@ class WorkerViewModel(
     suspend fun getWorkersInTraining(): List<Worker> {
         return workerDao.getAllWorkers().first().filter { it.isTrainee && it.isActive }
     }
+    
+    /**
+     * Elimina un trabajador del sistema.
+     * También elimina todas sus asignaciones de estaciones.
+     */
+    suspend fun deleteWorker(worker: Worker) {
+        // Primero eliminar todas las asignaciones de estaciones
+        workerDao.deleteAllWorkerWorkstations(worker.id)
+        // Luego eliminar el trabajador
+        workerDao.deleteWorker(worker)
+    }
+    
+    /**
+     * Verifica si un entrenador tiene trabajadores asignados.
+     */
+    suspend fun hasTrainees(trainerId: Long): Boolean {
+        return workerDao.hasTrainees(trainerId)
+    }
 }
 
 class WorkerViewModelFactory(

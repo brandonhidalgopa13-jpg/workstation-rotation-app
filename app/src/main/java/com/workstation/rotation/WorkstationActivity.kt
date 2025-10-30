@@ -48,6 +48,7 @@ class WorkstationActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         adapter = WorkstationAdapter(
             onEditClick = { workstation -> showEditDialog(workstation) },
+            onDeleteClick = { workstation -> showDeleteWorkstationDialog(workstation) },
             onStatusChange = { workstation, isActive -> 
                 lifecycleScope.launch {
                     viewModel.updateWorkstationStatus(workstation.id, isActive)
@@ -265,6 +266,76 @@ class WorkstationActivity : AppCompatActivity() {
                         etRequiredWorkers.error = "Máximo ${com.workstation.rotation.utils.Constants.MAX_REQUIRED_WORKERS}"
                     else -> etRequiredWorkers.error = null
                 }
+            }
+        }
+    }
+    
+    /**
+     * Muestra un diálogo de confirmación para eliminar una estación.
+     */
+    private fun showDeleteWorkstationDialog(workstation: Workstation) {
+        // Verificar si la estación está siendo usada para entrenamiento
+        lifecycleScope.launch {
+            try {
+                val isUsedForTraining = viewModel.isWorkstationUsedForTraining(workstation.id)
+                val message = if (isUsedForTraining) {
+                    "¿Estás seguro de que deseas eliminar la estación '${workstation.name}'?\n\n⚠️ ADVERTENCIA: Esta estación está siendo usada para entrenamiento. Al eliminarla, se afectarán los trabajadores en entrenamiento.\n\nEsta acción no se puede deshacer y se eliminarán todas las asignaciones de trabajadores a esta estación."
+                } else {
+                    "¿Estás seguro de que deseas eliminar la estación '${workstation.name}'?\n\nEsta acción no se puede deshacer y se eliminarán todas las asignaciones de trabajadores a esta estación."
+                }
+                
+                AlertDialog.Builder(this@WorkstationActivity)
+                    .setTitle("Eliminar Estación")
+                    .setMessage(message)
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        lifecycleScope.launch {
+                            try {
+                                viewModel.deleteWorkstation(workstation)
+                                // Mostrar mensaje de confirmación
+                                android.widget.Toast.makeText(
+                                    this@WorkstationActivity,
+                                    "Estación '${workstation.name}' eliminada correctamente",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                // Mostrar mensaje de error
+                                AlertDialog.Builder(this@WorkstationActivity)
+                                    .setTitle("Error")
+                                    .setMessage("No se pudo eliminar la estación: ${e.message}")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            } catch (e: Exception) {
+                // Si hay error verificando, mostrar diálogo simple
+                AlertDialog.Builder(this@WorkstationActivity)
+                    .setTitle("Eliminar Estación")
+                    .setMessage("¿Estás seguro de que deseas eliminar la estación '${workstation.name}'?\n\nEsta acción no se puede deshacer y se eliminarán todas las asignaciones de trabajadores a esta estación.")
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("Eliminar") { _, _ ->
+                        lifecycleScope.launch {
+                            try {
+                                viewModel.deleteWorkstation(workstation)
+                                android.widget.Toast.makeText(
+                                    this@WorkstationActivity,
+                                    "Estación '${workstation.name}' eliminada correctamente",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            } catch (e: Exception) {
+                                AlertDialog.Builder(this@WorkstationActivity)
+                                    .setTitle("Error")
+                                    .setMessage("No se pudo eliminar la estación: ${e.message}")
+                                    .setPositiveButton("OK", null)
+                                    .show()
+                            }
+                        }
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
             }
         }
     }
