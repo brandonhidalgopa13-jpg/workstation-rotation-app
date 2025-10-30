@@ -245,6 +245,57 @@ class RotationViewModel(
     ) {
         assignTrainerTraineePairsWithPriority(eligibleWorkers, assignments, allWorkstations, unassignedWorkers)
     }
+    
+    /**
+     * Assigns trainer-trainee pairs to the NEXT rotation with ABSOLUTE PRIORITY.
+     * 
+     * CRITICAL BUSINESS RULE: Trainer-trainee pairs MUST stay together in BOTH rotations
+     * until the trainee is certified. This ensures continuous training and mentorship.
+     * 
+     * This function ensures that:
+     * - Trainer and trainee are ALWAYS assigned to the SAME station in next rotation
+     * - They are assigned to their designated training workstation
+     * - Training continuity is maintained across rotation cycles
+     * - No other constraints can separate a training pair
+     */
+    private fun assignTrainerTraineePairsToNextRotation(
+        eligibleWorkers: List<Worker>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>,
+        remainingWorkers: MutableList<Worker>
+    ) {
+        val traineesWithTrainers = remainingWorkers.filter { worker ->
+            worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null && !worker.isCertified
+        }
+        
+        // Sort trainees by priority: priority workstations first, then normal workstations
+        val sortedTrainees = traineesWithTrainers.sortedByDescending { trainee ->
+            val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+            trainingStation?.isPriority ?: false
+        }
+        
+        for (trainee in sortedTrainees) {
+            val trainer = eligibleWorkers.find { it.id == trainee.trainerId }
+            
+            if (trainer != null && 
+                remainingWorkers.contains(trainer) && 
+                remainingWorkers.contains(trainee)) {
+                
+                val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                
+                trainingStation?.let { station ->
+                    // FORCE assignment to next rotation regardless of ALL constraints
+                    // Training pairs have ABSOLUTE PRIORITY over capacity limits
+                    nextAssignments[station.id]?.addAll(listOf(trainee, trainer))
+                    remainingWorkers.removeAll(listOf(trainee, trainer))
+                    
+                    // CRITICAL: Training pairs override capacity limits
+                    // If this causes the station to exceed capacity, that's acceptable
+                    // because training continuity is more important than operational efficiency
+                }
+            }
+        }
+    }
 
     /**
      * Assigns workers to priority workstations ensuring full capacity.
@@ -714,6 +765,7 @@ class RotationViewModel(
 
     /**
      * Generates next rotation with simple rotation logic - ALWAYS generates a next rotation.
+     * CRITICAL: Ensures trainer-trainee pairs stay together in BOTH rotations.
      */
     private suspend fun generateNextRotationSimple(
         eligibleWorkers: List<Worker>,
@@ -721,11 +773,17 @@ class RotationViewModel(
         nextAssignments: MutableMap<Long, MutableList<Worker>>,
         allWorkstations: List<Workstation>
     ) {
-        // Get all workers currently assigned
-        val allCurrentWorkers = currentAssignments.values.flatten()
+        // PHASE 0: ABSOLUTE PRIORITY - Assign trainer-trainee pairs FIRST in next rotation
+        // This ensures they stay together in BOTH current AND next rotations
+        val remainingWorkers = eligibleWorkers.toMutableList()
+        assignTrainerTraineePairsToNextRotation(eligibleWorkers, nextAssignments, allWorkstations, remainingWorkers)
         
-        // For each worker, try to assign them to a different station
-        for (worker in allCurrentWorkers) {
+        // Get all workers currently assigned (excluding those already assigned as pairs)
+        val allCurrentWorkers = currentAssignments.values.flatten()
+        val workersToRotate = allCurrentWorkers.filter { remainingWorkers.contains(it) }
+        
+        // For each remaining worker, try to assign them to a different station
+        for (worker in workersToRotate) {
             val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
             val qualifiedStationIds = getWorkerWorkstationIds(worker.id)
             val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }

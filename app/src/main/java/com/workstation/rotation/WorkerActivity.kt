@@ -263,6 +263,7 @@ class WorkerActivity : AppCompatActivity() {
                 
                 if (isChecked) {
                     loadTrainersForSpinner(dialogBinding)
+                    setupTrainerSelectionListener(dialogBinding)
                 }
             }
             
@@ -298,6 +299,70 @@ class WorkerActivity : AppCompatActivity() {
     }
     
     /**
+     * Configura el listener del spinner de entrenadores para filtrar estaciones.
+     */
+    private fun setupTrainerSelectionListener(dialogBinding: DialogAddWorkerBinding) {
+        dialogBinding.spinnerTrainer.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                if (position > 0) { // Si no es "Seleccionar entrenador..."
+                    lifecycleScope.launch {
+                        try {
+                            val trainers = viewModel.getTrainers()
+                            if (position <= trainers.size) {
+                                val selectedTrainer = trainers[position - 1]
+                                loadTrainerWorkstations(dialogBinding, selectedTrainer.id)
+                            }
+                        } catch (e: Exception) {
+                            // Handle error
+                        }
+                    }
+                } else {
+                    // Si no hay entrenador seleccionado, limpiar estaciones
+                    clearWorkstationSpinner(dialogBinding)
+                }
+            }
+            
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                clearWorkstationSpinner(dialogBinding)
+            }
+        }
+    }
+    
+    /**
+     * Carga las estaciones donde puede trabajar el entrenador seleccionado.
+     */
+    private fun loadTrainerWorkstations(dialogBinding: DialogAddWorkerBinding, trainerId: Long) {
+        lifecycleScope.launch {
+            try {
+                val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
+                val workstationNames = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                val workstationAdapter = ArrayAdapter(
+                    this@WorkerActivity,
+                    android.R.layout.simple_spinner_item,
+                    workstationNames
+                )
+                workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+            } catch (e: Exception) {
+                // Handle error loading trainer workstations
+            }
+        }
+    }
+    
+    /**
+     * Limpia el spinner de estaciones cuando no hay entrenador seleccionado.
+     */
+    private fun clearWorkstationSpinner(dialogBinding: DialogAddWorkerBinding) {
+        val emptyAdapter = ArrayAdapter(
+            this@WorkerActivity,
+            android.R.layout.simple_spinner_item,
+            listOf("Primero selecciona un entrenador")
+        )
+        emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spinnerTrainingWorkstation.adapter = emptyAdapter
+    }
+    
+    /**
      * Sets up the training system UI components for edit dialog.
      */
     private fun setupTrainingSystemForEdit(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
@@ -308,7 +373,7 @@ class WorkerActivity : AppCompatActivity() {
                 
                 if (isChecked) {
                     loadTrainersForEditSpinner(dialogBinding, worker)
-                    loadWorkstationsForEditSpinner(dialogBinding, worker)
+                    setupTrainerSelectionListenerForEdit(dialogBinding, worker)
                 }
             }
             
@@ -324,7 +389,7 @@ class WorkerActivity : AppCompatActivity() {
             if (worker.isTrainee) {
                 layoutTrainingDetails.visibility = View.VISIBLE
                 loadTrainersForEditSpinner(dialogBinding, worker)
-                loadWorkstationsForEditSpinner(dialogBinding, worker)
+                setupTrainerSelectionListenerForEdit(dialogBinding, worker)
             }
         }
     }
@@ -359,21 +424,67 @@ class WorkerActivity : AppCompatActivity() {
     }
     
     /**
-     * Loads available workstations into the spinner for edit dialog and selects current training workstation.
+     * Configura el listener del spinner de entrenadores para el diálogo de edición.
      */
-    private fun loadWorkstationsForEditSpinner(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
-        viewModel.activeWorkstations.observe(this) { workstations ->
-            val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
-            val workstationAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
-            workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
-            
-            // Select current training workstation if exists
-            worker.trainingWorkstationId?.let { trainingWorkstationId ->
-                val workstationIndex = workstations.indexOfFirst { it.id == trainingWorkstationId }
-                if (workstationIndex >= 0) {
-                    dialogBinding.spinnerTrainingWorkstation.setSelection(workstationIndex + 1) // +1 because of "Seleccionar..." option
+    private fun setupTrainerSelectionListenerForEdit(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
+        dialogBinding.spinnerTrainer.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                if (position > 0) { // Si no es "Seleccionar entrenador..."
+                    lifecycleScope.launch {
+                        try {
+                            val trainers = viewModel.getTrainers()
+                            if (position <= trainers.size) {
+                                val selectedTrainer = trainers[position - 1]
+                                loadTrainerWorkstationsForEdit(dialogBinding, selectedTrainer.id, worker)
+                            }
+                        } catch (e: Exception) {
+                            // Handle error
+                        }
+                    }
+                } else {
+                    // Si no hay entrenador seleccionado, limpiar estaciones
+                    clearWorkstationSpinner(dialogBinding)
                 }
+            }
+            
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {
+                clearWorkstationSpinner(dialogBinding)
+            }
+        }
+        
+        // Si el trabajador ya tiene un entrenador, cargar sus estaciones inmediatamente
+        worker.trainerId?.let { trainerId ->
+            lifecycleScope.launch {
+                loadTrainerWorkstationsForEdit(dialogBinding, trainerId, worker)
+            }
+        }
+    }
+    
+    /**
+     * Carga las estaciones del entrenador para el diálogo de edición y selecciona la actual si existe.
+     */
+    private fun loadTrainerWorkstationsForEdit(dialogBinding: DialogAddWorkerBinding, trainerId: Long, worker: Worker) {
+        lifecycleScope.launch {
+            try {
+                val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
+                val workstationNames = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                val workstationAdapter = ArrayAdapter(
+                    this@WorkerActivity,
+                    android.R.layout.simple_spinner_item,
+                    workstationNames
+                )
+                workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+                
+                // Select current training workstation if exists and is available for this trainer
+                worker.trainingWorkstationId?.let { trainingWorkstationId ->
+                    val workstationIndex = trainerWorkstations.indexOfFirst { it.id == trainingWorkstationId }
+                    if (workstationIndex >= 0) {
+                        dialogBinding.spinnerTrainingWorkstation.setSelection(workstationIndex + 1) // +1 because of "Seleccionar..." option
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error loading trainer workstations
             }
         }
     }

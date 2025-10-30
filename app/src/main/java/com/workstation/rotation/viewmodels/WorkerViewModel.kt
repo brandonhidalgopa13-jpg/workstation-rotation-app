@@ -150,6 +150,16 @@ class WorkerViewModel(
     suspend fun getProhibitedWorkstations(workerId: Long): List<Long> {
         return workerRestrictionDao.getProhibitedWorkstations(workerId)
     }
+    
+    /**
+     * Obtiene las estaciones donde puede trabajar un entrenador específico.
+     */
+    suspend fun getTrainerWorkstations(trainerId: Long): List<Workstation> {
+        val trainerWorkstationIds = getWorkerWorkstationIds(trainerId)
+        return workstationDao.getAllActiveWorkstations().first().filter { workstation ->
+            trainerWorkstationIds.contains(workstation.id)
+        }
+    }
 }
 
 class WorkerViewModelFactory(
