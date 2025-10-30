@@ -36,6 +36,9 @@ class RotationViewModelTest {
     private lateinit var workstationDao: WorkstationDao
 
     @Mock
+    private lateinit var workerRestrictionDao: com.workstation.rotation.data.dao.WorkerRestrictionDao
+
+    @Mock
     private lateinit var rotationItemsObserver: Observer<List<RotationItem>>
 
     @Mock
@@ -112,7 +115,7 @@ class RotationViewModelTest {
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
-        viewModel = RotationViewModel(workerDao, workstationDao)
+        viewModel = RotationViewModel(workerDao, workstationDao, workerRestrictionDao)
         
         // Setup observers
         viewModel.rotationItems.observeForever(rotationItemsObserver)

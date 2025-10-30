@@ -87,7 +87,7 @@ class SettingsActivity : AppCompatActivity() {
         
         // Inicializar WorkerViewModel
         val database = AppDatabase.getDatabase(this)
-        val factory = WorkerViewModelFactory(database.workerDao(), database.workstationDao())
+        val factory = WorkerViewModelFactory(database.workerDao(), database.workstationDao(), database.workerRestrictionDao())
         workerViewModel = factory.create(WorkerViewModel::class.java)
     }
     
