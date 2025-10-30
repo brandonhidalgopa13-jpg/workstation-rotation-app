@@ -78,7 +78,16 @@ class RotationViewModel(
      * Gets worker workstation IDs from cache or database.
      */
     private suspend fun getWorkerWorkstationIds(workerId: Long): List<Long> {
-        return workerWorkstationCache[workerId] ?: workerDao.getWorkerWorkstationIds(workerId)
+        val cachedIds = workerWorkstationCache[workerId]
+        return if (cachedIds != null) {
+            cachedIds
+        } else {
+            // Si no está en caché, obtener de la base de datos
+            val ids = workerDao.getWorkerWorkstationIds(workerId)
+            // Debug: Log para verificar las asignaciones
+            println("DEBUG: Worker $workerId has workstation IDs: $ids")
+            ids
+        }
     }
     
     private val _rotationItems = MutableLiveData<List<RotationItem>>()
@@ -115,9 +124,16 @@ class RotationViewModel(
      */
     suspend fun generateRotation(): Boolean {
         return try {
+            println("DEBUG: ===== INICIANDO GENERACIÓN DE ROTACIÓN =====")
+            
+            // Verificar integridad de datos antes de proceder
+            verifyDataIntegrity()
+            
             val rotationData = prepareRotationData()
             if (!rotationData.isValid()) {
+                println("DEBUG: ERROR - Rotation data is not valid")
                 _rotationItems.value = emptyList()
+                _rotationTable.value = null
                 return false
             }
             
@@ -125,10 +141,16 @@ class RotationViewModel(
             _rotationItems.value = rotationItems.sortedBy { it.rotationOrder }
             _rotationTable.value = rotationTable
             
+            println("DEBUG: Rotation generation completed - ${rotationItems.size} items generated")
+            println("DEBUG: ============================================")
+            
             rotationItems.isNotEmpty()
             
         } catch (e: Exception) {
+            println("DEBUG: ERROR in generateRotation: ${e.message}")
+            e.printStackTrace()
             _rotationItems.value = emptyList()
+            _rotationTable.value = null
             eligibleWorkersCount = 0
             false
         }
@@ -144,11 +166,19 @@ class RotationViewModel(
         // Pre-load all worker-workstation relationships to avoid multiple DB calls
         val workerWorkstationMap = mutableMapOf<Long, List<Long>>()
         
+        println("DEBUG: Preparing rotation data for ${allWorkers.size} active workers")
+        
         for (worker in allWorkers) {
             val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
             workerWorkstationMap[worker.id] = workstationIds
+            
+            // Debug: Log worker assignments
+            println("DEBUG: Worker ${worker.name} (ID: ${worker.id}) assigned to ${workstationIds.size} workstations: $workstationIds")
+            
             if (workstationIds.isNotEmpty()) {
                 eligibleWorkers.add(worker)
+            } else {
+                println("DEBUG: Worker ${worker.name} has NO workstation assignments - excluded from rotation")
             }
         }
         
@@ -157,6 +187,8 @@ class RotationViewModel(
         
         eligibleWorkersCount = eligibleWorkers.size
         val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+        
+        println("DEBUG: Found ${eligibleWorkers.size} eligible workers and ${allWorkstations.size} active workstations")
         
         return RotationData(eligibleWorkers, allWorkstations)
     }
@@ -168,7 +200,52 @@ class RotationViewModel(
         val eligibleWorkers: List<Worker>,
         val allWorkstations: List<Workstation>
     ) {
-        fun isValid(): Boolean = eligibleWorkers.isNotEmpty() && allWorkstations.isNotEmpty()
+        fun isValid(): Boolean {
+            val hasWorkers = eligibleWorkers.isNotEmpty()
+            val hasWorkstations = allWorkstations.isNotEmpty()
+            
+            println("DEBUG: RotationData validation - Workers: $hasWorkers (${eligibleWorkers.size}), Workstations: $hasWorkstations (${allWorkstations.size})")
+            
+            return hasWorkers && hasWorkstations
+        }
+    }
+    
+    /**
+     * Verifica la integridad de los datos de trabajadores y estaciones.
+     */
+    private suspend fun verifyDataIntegrity() {
+        println("DEBUG: ===== VERIFICACIÓN DE INTEGRIDAD DE DATOS =====")
+        
+        // Verificar trabajadores activos
+        val allWorkers = workerDao.getAllWorkers().first()
+        val activeWorkers = allWorkers.filter { it.isActive }
+        println("DEBUG: Total workers: ${allWorkers.size}, Active workers: ${activeWorkers.size}")
+        
+        // Verificar estaciones activas
+        val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+        println("DEBUG: Active workstations: ${allWorkstations.size}")
+        allWorkstations.forEach { station ->
+            println("DEBUG: Workstation: ${station.name} (ID: ${station.id}, Required: ${station.requiredWorkers}, Priority: ${station.isPriority})")
+        }
+        
+        // Verificar asignaciones trabajador-estación
+        var workersWithAssignments = 0
+        var totalAssignments = 0
+        
+        for (worker in activeWorkers) {
+            val assignments = workerDao.getWorkerWorkstationIds(worker.id)
+            if (assignments.isNotEmpty()) {
+                workersWithAssignments++
+                totalAssignments += assignments.size
+                println("DEBUG: Worker ${worker.name} assigned to ${assignments.size} stations: $assignments")
+            } else {
+                println("DEBUG: WARNING - Worker ${worker.name} has NO station assignments!")
+            }
+        }
+        
+        println("DEBUG: Workers with assignments: $workersWithAssignments/${activeWorkers.size}")
+        println("DEBUG: Total assignments: $totalAssignments")
+        println("DEBUG: ================================================")
     }
     
     /**
@@ -306,15 +383,26 @@ class RotationViewModel(
         eligibleWorkers: List<Worker>,
         assignments: MutableMap<Long, MutableList<Worker>>
     ) {
+        println("DEBUG: Assigning ${priorityWorkstations.size} priority workstations")
+        
         for (station in priorityWorkstations) {
             val currentlyAssigned = assignments[station.id]?.size ?: 0
             val remainingCapacity = station.requiredWorkers - currentlyAssigned
             
+            println("DEBUG: Priority station ${station.name}: ${currentlyAssigned}/${station.requiredWorkers} assigned, remaining capacity: $remainingCapacity")
+            
             if (remainingCapacity > 0) {
                 val availableWorkers = eligibleWorkers.filter { worker ->
-                    getWorkerWorkstationIds(worker.id).contains(station.id) &&
-                    assignments.values.none { it.contains(worker) }
+                    val workerStations = getWorkerWorkstationIds(worker.id)
+                    val canWorkHere = workerStations.contains(station.id)
+                    val alreadyAssigned = assignments.values.any { it.contains(worker) }
+                    
+                    println("DEBUG: Worker ${worker.name} - can work at ${station.name}: $canWorkHere, already assigned: $alreadyAssigned")
+                    
+                    canWorkHere && !alreadyAssigned
                 }
+                
+                println("DEBUG: Found ${availableWorkers.size} available workers for ${station.name}")
                 
                 val sortedWorkers = availableWorkers.sortedWith(
                     compareByDescending<Worker> { it.isTrainer }
@@ -322,7 +410,11 @@ class RotationViewModel(
                 )
                 
                 val workersToAssign = minOf(remainingCapacity, sortedWorkers.size)
-                assignments[station.id]?.addAll(sortedWorkers.take(workersToAssign))
+                val assignedWorkers = sortedWorkers.take(workersToAssign)
+                
+                assignments[station.id]?.addAll(assignedWorkers)
+                
+                println("DEBUG: Assigned ${assignedWorkers.size} workers to ${station.name}: ${assignedWorkers.map { it.name }}")
             }
         }
     }
@@ -339,6 +431,8 @@ class RotationViewModel(
             assignments.values.none { it.contains(worker) }
         }.toMutableList()
         
+        println("DEBUG: Assigning ${normalWorkstations.size} normal workstations to ${unassignedWorkers.size} unassigned workers")
+        
         // First assign trainer-trainee pairs
         assignTrainerTraineePairs(eligibleWorkers, assignments, normalWorkstations, unassignedWorkers)
         
@@ -353,9 +447,18 @@ class RotationViewModel(
                 }
         )
         
+        println("DEBUG: Attempting to assign ${sortedWorkers.size} remaining workers to normal stations")
+        
         for (worker in sortedWorkers) {
-            if (Random.nextInt(1, 101) <= worker.availabilityPercentage) {
+            val availabilityRoll = Random.nextInt(1, 101)
+            val isAvailable = availabilityRoll <= worker.availabilityPercentage
+            
+            println("DEBUG: Worker ${worker.name} availability check: $availabilityRoll <= ${worker.availabilityPercentage} = $isAvailable")
+            
+            if (isAvailable) {
                 assignWorkerToOptimalStation(worker, normalWorkstations, assignments)
+            } else {
+                println("DEBUG: Worker ${worker.name} not available for this rotation (availability check failed)")
             }
         }
     }
@@ -427,23 +530,48 @@ class RotationViewModel(
         assignments: MutableMap<Long, MutableList<Worker>>
     ) {
         val workerStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+        
+        println("DEBUG: Assigning worker ${worker.name} to optimal station")
+        println("DEBUG: Worker ${worker.name} can work at stations: $workerStationIds")
+        
         val compatibleStations = availableStations.filter { station ->
-            station.id in workerStationIds &&
-            (assignments[station.id]?.size ?: 0) < station.requiredWorkers
+            val canWorkHere = station.id in workerStationIds
+            val hasCapacity = (assignments[station.id]?.size ?: 0) < station.requiredWorkers
+            val currentAssigned = assignments[station.id]?.size ?: 0
+            
+            println("DEBUG: Station ${station.name} - can work: $canWorkHere, capacity: $currentAssigned/${station.requiredWorkers}, has space: $hasCapacity")
+            
+            canWorkHere && hasCapacity
         }
+        
+        println("DEBUG: Found ${compatibleStations.size} compatible stations for ${worker.name}")
         
         val targetStation = when {
             worker.isTrainee && worker.trainingWorkstationId != null -> {
-                compatibleStations.find { it.id == worker.trainingWorkstationId }
-                    ?: compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                println("DEBUG: Worker ${worker.name} is trainee, looking for training station ID: ${worker.trainingWorkstationId}")
+                val trainingStation = compatibleStations.find { it.id == worker.trainingWorkstationId }
+                if (trainingStation != null) {
+                    println("DEBUG: Found training station ${trainingStation.name} for trainee ${worker.name}")
+                    trainingStation
+                } else {
+                    println("DEBUG: Training station not available, using station with least workers")
+                    compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                }
             }
-            else -> compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+            else -> {
+                val selected = compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                println("DEBUG: Selected station with least workers: ${selected?.name}")
+                selected
+            }
         }
         
         targetStation?.let { station ->
             assignments[station.id]?.add(worker)
+            println("DEBUG: Successfully assigned ${worker.name} to ${station.name}")
             // Update rotation tracking for all workers
             updateWorkerRotationTracking(worker, station.id)
+        } ?: run {
+            println("DEBUG: ERROR - Could not find suitable station for worker ${worker.name}")
         }
     }
 
@@ -1019,6 +1147,27 @@ class RotationViewModel(
         currentAssignments: Map<Long, List<Worker>>,
         nextAssignments: Map<Long, List<Worker>>
     ): RotationTable {
+        // Debug: Verificar asignaciones finales
+        println("DEBUG: ===== ASIGNACIONES FINALES =====")
+        
+        var totalCurrentWorkers = 0
+        var totalNextWorkers = 0
+        
+        allWorkstations.forEach { station ->
+            val currentWorkers = currentAssignments[station.id] ?: emptyList()
+            val nextWorkers = nextAssignments[station.id] ?: emptyList()
+            
+            totalCurrentWorkers += currentWorkers.size
+            totalNextWorkers += nextWorkers.size
+            
+            println("DEBUG: ${station.name}:")
+            println("DEBUG:   Current: ${currentWorkers.size}/${station.requiredWorkers} - ${currentWorkers.map { it.name }}")
+            println("DEBUG:   Next: ${nextWorkers.size}/${station.requiredWorkers} - ${nextWorkers.map { it.name }}")
+        }
+        
+        println("DEBUG: Total workers assigned - Current: $totalCurrentWorkers, Next: $totalNextWorkers")
+        println("DEBUG: ================================")
+        
         return RotationTable(
             workstations = allWorkstations,
             currentPhase = currentAssignments.mapValues { it.value.toList() },
