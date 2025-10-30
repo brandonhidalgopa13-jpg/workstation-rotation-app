@@ -9,6 +9,7 @@ import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
 import com.workstation.rotation.data.dao.WorkerRestrictionDao
 import com.workstation.rotation.data.entities.Worker
+import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.data.entities.WorkerWorkstation
 import com.workstation.rotation.data.entities.WorkerRestriction
 import com.workstation.rotation.data.entities.RestrictionType

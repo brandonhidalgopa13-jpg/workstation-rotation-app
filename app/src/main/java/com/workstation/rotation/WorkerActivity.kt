@@ -335,8 +335,8 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
-                val workstationNames = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
-                val workstationAdapter = ArrayAdapter(
+                val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                val workstationAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
                     workstationNames
@@ -467,8 +467,8 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
-                val workstationNames = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
-                val workstationAdapter = ArrayAdapter(
+                val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                val workstationAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
                     workstationNames
