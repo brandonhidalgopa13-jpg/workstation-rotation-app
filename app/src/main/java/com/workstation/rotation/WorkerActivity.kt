@@ -606,7 +606,7 @@ class WorkerActivity : AppCompatActivity() {
         }
         
         // Setup RecyclerView BEFORE loading data
-        recyclerViewWorkstations.apply {
+        dialogBinding.recyclerViewWorkstations.apply {
             layoutManager = LinearLayoutManager(this@WorkerActivity)
             adapter = workstationAdapter
             // Optimizaciones para manejar muchas estaciones
@@ -661,18 +661,18 @@ class WorkerActivity : AppCompatActivity() {
                 android.util.Log.d("WorkerActivity", "Items marcados: ${checkItems.count { it.isChecked }}")
                 
                 // Verificar que el adaptador esté configurado
-                if (recyclerViewWorkstations.adapter == null) {
+                if (dialogBinding.recyclerViewWorkstations.adapter == null) {
                     android.util.Log.e("WorkerActivity", "ERROR: RecyclerView adapter es null!")
-                    recyclerViewWorkstations.adapter = workstationAdapter
+                    dialogBinding.recyclerViewWorkstations.adapter = workstationAdapter
                 }
                 
                 workstationAdapter.submitList(checkItems)
                 android.util.Log.d("WorkerActivity", "Lista enviada al adaptador")
                 
                 // Forzar actualización del RecyclerView
-                recyclerViewWorkstations.post {
+                dialogBinding.recyclerViewWorkstations.post {
                     workstationAdapter.notifyDataSetChanged()
-                    android.util.Log.d("WorkerActivity", "RecyclerView actualizado - Items visibles: ${recyclerViewWorkstations.childCount}")
+                    android.util.Log.d("WorkerActivity", "RecyclerView actualizado - Items visibles: ${dialogBinding.recyclerViewWorkstations.childCount}")
                 }
                 
             } catch (e: Exception) {
