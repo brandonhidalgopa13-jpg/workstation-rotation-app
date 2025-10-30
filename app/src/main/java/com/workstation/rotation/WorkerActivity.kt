@@ -144,6 +144,14 @@ class WorkerActivity : AppCompatActivity() {
         dialogBinding.recyclerViewWorkstations.apply {
             layoutManager = LinearLayoutManager(this@WorkerActivity)
             adapter = workstationAdapter
+            
+            // Debug: Verificar visibilidad del RecyclerView
+            android.util.Log.d("WorkerActivity", "RecyclerView visibility: $visibility")
+            android.util.Log.d("WorkerActivity", "RecyclerView width: $width, height: $height")
+            
+            // Asegurar que el RecyclerView sea visible
+            visibility = android.view.View.VISIBLE
+            
             // Optimizaciones para manejar muchas estaciones
             isNestedScrollingEnabled = true
             setHasFixedSize(true)  // Mejora rendimiento cuando el tamaño es fijo
@@ -153,22 +161,23 @@ class WorkerActivity : AppCompatActivity() {
             isVerticalScrollBarEnabled = true
             scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
             
-            // Agregar separadores sutiles entre elementos
-            val divider = androidx.recyclerview.widget.DividerItemDecoration(
-                this@WorkerActivity, 
-                androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-            )
-            // Personalizar el drawable del divisor para que sea más sutil
-            divider.setDrawable(
+            // Agregar separadores sutiles entre elementos (solo si hay drawable disponible)
+            try {
+                val divider = androidx.recyclerview.widget.DividerItemDecoration(
+                    this@WorkerActivity, 
+                    androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
+                )
+                // Usar drawable por defecto si no existe el personalizado
                 androidx.core.content.ContextCompat.getDrawable(
                     this@WorkerActivity, 
-                    com.workstation.rotation.R.drawable.recycler_divider
-                ) ?: androidx.core.content.ContextCompat.getDrawable(
-                    this@WorkerActivity, 
                     android.R.drawable.divider_horizontal_bright
-                )!!
-            )
-            addItemDecoration(divider)
+                )?.let { drawable ->
+                    divider.setDrawable(drawable)
+                    addItemDecoration(divider)
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("WorkerActivity", "No se pudo agregar divisor: ${e.message}")
+            }
         }
         
         // Setup training system
@@ -181,20 +190,46 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val workstations = viewModel.getActiveWorkstationsSync()
+                
+                // Debug: Log workstation count
+                android.util.Log.d("WorkerActivity", "Cargadas ${workstations.size} estaciones activas")
+                
+                if (workstations.isEmpty()) {
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "⚠️ No hay estaciones activas. Crea estaciones primero.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    // Debug: Log workstation names
+                    workstations.forEach { station ->
+                        android.util.Log.d("WorkerActivity", "Estación: ${station.name} (ID: ${station.id}, Activa: ${station.isActive})")
+                    }
+                }
+                
                 val checkItems = workstations.map { WorkstationCheckItem(it, false) }
+                android.util.Log.d("WorkerActivity", "Enviando ${checkItems.size} items al adapter")
                 workstationAdapter.submitList(checkItems)
+                
+                // Verificar que el adapter recibió los datos
+                android.util.Log.d("WorkerActivity", "Adapter tiene ${workstationAdapter.itemCount} items después de submitList")
                 
                 // Setup training workstation spinner
                 val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
                 val spinnerAdapter = ArrayAdapter(this@WorkerActivity, android.R.layout.simple_spinner_item, workstationNames)
                 spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 dialogBinding.spinnerTrainingWorkstation.adapter = spinnerAdapter
+                
+                // Debug: Confirm adapter setup
+                android.util.Log.d("WorkerActivity", "Adapter configurado con ${workstationNames.size} elementos")
+                
             } catch (e: Exception) {
                 // Handle error loading workstations
+                android.util.Log.e("WorkerActivity", "Error cargando estaciones", e)
                 android.widget.Toast.makeText(
                     this@WorkerActivity,
                     "Error cargando estaciones: ${e.message}",
-                    android.widget.Toast.LENGTH_SHORT
+                    android.widget.Toast.LENGTH_LONG
                 ).show()
             }
         }
@@ -602,16 +637,33 @@ class WorkerActivity : AppCompatActivity() {
             try {
                 val assignedIds = viewModel.getWorkerWorkstationIds(worker.id)
                 val workstations = viewModel.getActiveWorkstationsSync()
+                
+                // Debug: Log workstation count for edit dialog
+                android.util.Log.d("WorkerActivity", "Edición - Cargadas ${workstations.size} estaciones activas")
+                android.util.Log.d("WorkerActivity", "Edición - Trabajador ${worker.name} tiene ${assignedIds.size} estaciones asignadas")
+                
+                if (workstations.isEmpty()) {
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "⚠️ No hay estaciones activas disponibles",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                
                 val checkItems = workstations.map { workstation ->
-                    WorkstationCheckItem(workstation, assignedIds.contains(workstation.id))
+                    val isAssigned = assignedIds.contains(workstation.id)
+                    android.util.Log.d("WorkerActivity", "Estación ${workstation.name}: asignada = $isAssigned")
+                    WorkstationCheckItem(workstation, isAssigned)
                 }
                 workstationAdapter.submitList(checkItems)
+                
             } catch (e: Exception) {
                 // Handle error loading workstations
+                android.util.Log.e("WorkerActivity", "Error cargando estaciones en edición", e)
                 android.widget.Toast.makeText(
                     this@WorkerActivity,
                     "Error cargando estaciones: ${e.message}",
-                    android.widget.Toast.LENGTH_SHORT
+                    android.widget.Toast.LENGTH_LONG
                 ).show()
             }
         }

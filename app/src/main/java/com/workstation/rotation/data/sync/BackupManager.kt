@@ -52,7 +52,8 @@ class BackupManager(private val context: Context) {
         val appVersion: String,
         val workers: List<SerializableWorker>,
         val workstations: List<SerializableWorkstation>,
-        val workerWorkstations: List<SerializableWorkerWorkstation>
+        val workerWorkstations: List<SerializableWorkerWorkstation>,
+        val workerRestrictions: List<SerializableWorkerRestriction> = emptyList() // Default para compatibilidad
     )
     
     @Serializable
@@ -85,6 +86,17 @@ class BackupManager(private val context: Context) {
     data class SerializableWorkerWorkstation(
         val workerId: Long,
         val workstationId: Long
+    )
+    
+    @Serializable
+    data class SerializableWorkerRestriction(
+        val workerId: Long,
+        val workstationId: Long,
+        val restrictionType: String, // Serializar como String para compatibilidad
+        val notes: String,
+        val isActive: Boolean,
+        val createdAt: Long,
+        val expiresAt: Long?
     )
     
 
