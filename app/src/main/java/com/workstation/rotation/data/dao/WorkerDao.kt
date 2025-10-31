@@ -104,4 +104,7 @@ interface WorkerDao {
     
     @Query("SELECT COUNT(*) > 0 FROM workers WHERE trainerId = :trainerId AND isTrainee = 1")
     suspend fun hasTrainees(trainerId: Long): Boolean
+    
+    @Query("SELECT * FROM workers WHERE isTrainee = 1 AND isActive = 1 ORDER BY name")
+    suspend fun getWorkersInTraining(): List<Worker>
 }

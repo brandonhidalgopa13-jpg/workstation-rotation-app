@@ -73,22 +73,37 @@ class WorkerViewModel(
      * El trabajador pasa de "en entrenamiento" a "trabajador normal".
      */
     suspend fun certifyWorker(workerId: Long) {
+        android.util.Log.d("WorkerViewModel", "=== CERTIFICANDO TRABAJADOR $workerId ===")
         val worker = workerDao.getWorkerById(workerId)
         worker?.let {
+            android.util.Log.d("WorkerViewModel", "Trabajador antes: ${it.name} - isTrainee: ${it.isTrainee}, trainerId: ${it.trainerId}")
             val certifiedWorker = it.copy(
                 isTrainee = false,
+                isCertified = true,
                 trainerId = null,
-                trainingWorkstationId = null
+                trainingWorkstationId = null,
+                certificationDate = System.currentTimeMillis()
             )
             workerDao.updateWorker(certifiedWorker)
+            android.util.Log.d("WorkerViewModel", "Trabajador después: ${certifiedWorker.name} - isTrainee: ${certifiedWorker.isTrainee}, isCertified: ${certifiedWorker.isCertified}")
+        } ?: run {
+            android.util.Log.e("WorkerViewModel", "ERROR: No se encontró trabajador con ID $workerId")
         }
+        android.util.Log.d("WorkerViewModel", "=======================================")
     }
     
     /**
      * Obtiene todos los trabajadores que están en entrenamiento.
      */
     suspend fun getWorkersInTraining(): List<Worker> {
-        return workerDao.getAllWorkers().first().filter { it.isTrainee && it.isActive }
+        android.util.Log.d("WorkerViewModel", "=== OBTENIENDO TRABAJADORES EN ENTRENAMIENTO ===")
+        val workersInTraining = workerDao.getWorkersInTraining()
+        android.util.Log.d("WorkerViewModel", "Trabajadores en entrenamiento encontrados: ${workersInTraining.size}")
+        workersInTraining.forEach { worker ->
+            android.util.Log.d("WorkerViewModel", "- ${worker.name} (ID: ${worker.id}, Entrenador: ${worker.trainerId}, Estación: ${worker.trainingWorkstationId})")
+        }
+        android.util.Log.d("WorkerViewModel", "================================================")
+        return workersInTraining
     }
     
     /**
