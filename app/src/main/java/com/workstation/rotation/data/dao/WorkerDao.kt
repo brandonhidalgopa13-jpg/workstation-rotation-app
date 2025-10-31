@@ -104,4 +104,14 @@ interface WorkerDao {
     
     @Query("SELECT * FROM workers WHERE isTrainee = 1 AND isActive = 1 ORDER BY name")
     suspend fun getWorkersInTraining(): List<Worker>
+    
+    // Métodos para sistema de liderazgo
+    @Query("SELECT * FROM workers WHERE isLeader = 1 AND isActive = 1 ORDER BY name")
+    suspend fun getLeaders(): List<Worker>
+    
+    @Query("SELECT * FROM workers WHERE isLeader = 1 AND leaderWorkstationId = :workstationId AND isActive = 1")
+    suspend fun getLeadersForWorkstation(workstationId: Long): List<Worker>
+    
+    @Query("UPDATE workers SET isLeader = :isLeader, leaderWorkstationId = :workstationId, leadershipType = :leadershipType WHERE id = :workerId")
+    suspend fun updateWorkerLeadership(workerId: Long, isLeader: Boolean, workstationId: Long?, leadershipType: String)
 }

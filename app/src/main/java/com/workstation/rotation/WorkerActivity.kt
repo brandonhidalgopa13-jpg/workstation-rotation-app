@@ -245,11 +245,14 @@ class WorkerActivity : AppCompatActivity() {
                 val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
                 val isTrainer = dialogBinding.checkboxIsTrainer.isChecked
                 val isTrainee = dialogBinding.checkboxIsTrainee.isChecked
+                val isLeader = dialogBinding.checkboxIsLeader.isChecked
                 
                 var trainerId: Long? = null
                 var trainingWorkstationId: Long? = null
+                var leaderWorkstationId: Long? = null
+                var leadershipType = "BOTH"
                 
-                // Handle training data synchronously to avoid concurrency issues
+                // Handle training and leadership data synchronously to avoid concurrency issues
                 lifecycleScope.launch {
                     if (isTrainee) {
                         // Get selected trainer and workstation
@@ -276,6 +279,24 @@ class WorkerActivity : AppCompatActivity() {
                         }
                     }
                     
+                    if (isLeader) {
+                        // Get selected leadership workstation
+                        val leaderWorkstationPosition = dialogBinding.spinnerLeaderWorkstation.selectedItemPosition
+                        if (leaderWorkstationPosition > 0) {
+                            val workstations = viewModel.getActiveWorkstationsSync()
+                            if (leaderWorkstationPosition <= workstations.size) {
+                                leaderWorkstationId = workstations[leaderWorkstationPosition - 1].id
+                            }
+                        }
+                        
+                        // Get leadership type
+                        leadershipType = when (dialogBinding.radioGroupLeadershipType.checkedRadioButtonId) {
+                            dialogBinding.radioLeadershipFirst.id -> "FIRST_HALF"
+                            dialogBinding.radioLeadershipSecond.id -> "SECOND_HALF"
+                            else -> "BOTH"
+                        }
+                    }
+                    
                     // Validate and save worker data
                     if (name.isNotEmpty()) {
                         val selectedWorkstations = workstationAdapter.currentList
@@ -291,7 +312,10 @@ class WorkerActivity : AppCompatActivity() {
                                 isTrainer = isTrainer,
                                 isTrainee = isTrainee,
                                 trainerId = trainerId,
-                                trainingWorkstationId = trainingWorkstationId
+                                trainingWorkstationId = trainingWorkstationId,
+                                isLeader = isLeader,
+                                leaderWorkstationId = leaderWorkstationId,
+                                leadershipType = leadershipType
                             ),
                             selectedWorkstations
                         )
@@ -323,6 +347,46 @@ class WorkerActivity : AppCompatActivity() {
                     checkboxIsTrainee.isChecked = false
                     layoutTrainingDetails.visibility = View.GONE
                 }
+            }
+            
+            // Setup leadership system
+            setupLeadershipSystem(dialogBinding)
+        }
+    }
+    
+    /**
+     * Sets up the leadership system UI components and their interactions.
+     */
+    private fun setupLeadershipSystem(dialogBinding: DialogAddWorkerBinding) {
+        with(dialogBinding) {
+            // Setup leader checkbox listener
+            checkboxIsLeader.setOnCheckedChangeListener { _, isChecked ->
+                layoutLeadershipDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+                
+                if (isChecked) {
+                    loadWorkstationsForLeadershipSpinner(dialogBinding)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Loads available workstations for leadership assignment.
+     */
+    private fun loadWorkstationsForLeadershipSpinner(dialogBinding: DialogAddWorkerBinding) {
+        lifecycleScope.launch {
+            try {
+                val workstations = viewModel.getActiveWorkstationsSync()
+                val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+                val leaderWorkstationAdapter = ArrayAdapter(
+                    this@WorkerActivity,
+                    android.R.layout.simple_spinner_item,
+                    workstationNames
+                )
+                leaderWorkstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                dialogBinding.spinnerLeaderWorkstation.adapter = leaderWorkstationAdapter
+            } catch (e: Exception) {
+                android.util.Log.e("WorkerActivity", "Error loading workstations for leadership", e)
             }
         }
     }
@@ -1124,6 +1188,236 @@ class WorkerActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+    
+    /**
+     * Muestra el diálogo de edición para un trabajador específico.
+     */
+    private fun showEditDialog(worker: Worker) {
+        val dialogBinding = DialogAddWorkerBinding.inflate(layoutInflater)
+        val workstationAdapter = WorkstationCheckboxAdapter { item, isChecked ->
+            item.isChecked = isChecked
+        }
+        
+        // Pre-llenar los campos con los datos actuales del trabajador
+        dialogBinding.apply {
+            etWorkerName.setText(worker.name)
+            etAvailabilityPercentage.setText(worker.availabilityPercentage.toString())
+            etRestrictionNotes.setText(worker.restrictionNotes)
+            checkboxIsTrainer.isChecked = worker.isTrainer
+            checkboxIsTrainee.isChecked = worker.isTrainee
+            checkboxIsCertified.isChecked = worker.isCertified
+            checkboxIsLeader.isChecked = worker.isLeader
+        }
+        
+        // Configurar RecyclerView
+        dialogBinding.recyclerViewWorkstations.apply {
+            layoutManager = LinearLayoutManager(this@WorkerActivity)
+            adapter = workstationAdapter
+            isNestedScrollingEnabled = true
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            isVerticalScrollBarEnabled = true
+            scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
+        }
+        
+        // Setup training and leadership systems
+        setupTrainingSystem(dialogBinding)
+        
+        // Mostrar sección de certificación si aplica
+        if (worker.canBeCertified()) {
+            dialogBinding.cardCertification.visibility = View.VISIBLE
+        } else {
+            dialogBinding.cardCertification.visibility = View.GONE
+        }
+        
+        // Cargar datos
+        lifecycleScope.launch {
+            try {
+                val assignedIds = viewModel.getWorkerWorkstationIds(worker.id)
+                val workstations = viewModel.getActiveWorkstationsSync()
+                
+                val checkItems = workstations.map { workstation ->
+                    WorkstationCheckItem(workstation, assignedIds.contains(workstation.id))
+                }
+                workstationAdapter.submitList(checkItems)
+                
+                // Setup spinners
+                setupEditSpinners(dialogBinding, worker, workstations)
+                
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando datos: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+        
+        AlertDialog.Builder(this)
+            .setTitle("Editar Trabajador")
+            .setView(dialogBinding.root)
+            .setPositiveButton("Guardar") { _, _ ->
+                saveEditedWorker(dialogBinding, worker, workstationAdapter)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Configura los spinners para el diálogo de edición.
+     */
+    private suspend fun setupEditSpinners(
+        dialogBinding: DialogAddWorkerBinding,
+        worker: Worker,
+        workstations: List<Workstation>
+    ) {
+        // Setup training workstation spinner
+        val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        dialogBinding.spinnerTrainingWorkstation.adapter = spinnerAdapter
+        
+        // Setup leadership workstation spinner
+        dialogBinding.spinnerLeaderWorkstation.adapter = spinnerAdapter
+        
+        // Set current selections
+        worker.trainingWorkstationId?.let { trainingId ->
+            val trainingIndex = workstations.indexOfFirst { it.id == trainingId } + 1
+            if (trainingIndex > 0) {
+                dialogBinding.spinnerTrainingWorkstation.setSelection(trainingIndex)
+            }
+        }
+        
+        worker.leaderWorkstationId?.let { leaderId ->
+            val leaderIndex = workstations.indexOfFirst { it.id == leaderId } + 1
+            if (leaderIndex > 0) {
+                dialogBinding.spinnerLeaderWorkstation.setSelection(leaderIndex)
+            }
+        }
+        
+        // Set leadership type
+        when (worker.leadershipType) {
+            "FIRST_HALF" -> dialogBinding.radioLeadershipFirst.isChecked = true
+            "SECOND_HALF" -> dialogBinding.radioLeadershipSecond.isChecked = true
+            else -> dialogBinding.radioLeadershipBoth.isChecked = true
+        }
+        
+        // Setup trainer spinner if needed
+        if (worker.isTrainee) {
+            loadTrainersForSpinner(dialogBinding)
+            worker.trainerId?.let { trainerId ->
+                val trainers = viewModel.getTrainers()
+                val trainerIndex = trainers.indexOfFirst { it.id == trainerId } + 1
+                if (trainerIndex > 0) {
+                    dialogBinding.spinnerTrainer.setSelection(trainerIndex)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Guarda los cambios del trabajador editado.
+     */
+    private fun saveEditedWorker(
+        dialogBinding: DialogAddWorkerBinding,
+        originalWorker: Worker,
+        workstationAdapter: WorkstationCheckboxAdapter
+    ) {
+        lifecycleScope.launch {
+            try {
+                val name = dialogBinding.etWorkerName.text.toString().trim()
+                val availabilityText = dialogBinding.etAvailabilityPercentage.text.toString().trim()
+                val availability = availabilityText.toIntOrNull()?.coerceIn(0, 100) ?: 100
+                val restrictionNotes = dialogBinding.etRestrictionNotes.text.toString().trim()
+                val isTrainer = dialogBinding.checkboxIsTrainer.isChecked
+                val isTrainee = dialogBinding.checkboxIsTrainee.isChecked
+                val isCertified = dialogBinding.checkboxIsCertified.isChecked
+                val isLeader = dialogBinding.checkboxIsLeader.isChecked
+                
+                var trainerId: Long? = null
+                var trainingWorkstationId: Long? = null
+                var leaderWorkstationId: Long? = null
+                var leadershipType = "BOTH"
+                
+                // Handle training data
+                if (isTrainee) {
+                    val trainerPosition = dialogBinding.spinnerTrainer.selectedItemPosition
+                    val workstationPosition = dialogBinding.spinnerTrainingWorkstation.selectedItemPosition
+                    
+                    if (trainerPosition > 0) {
+                        val trainers = viewModel.getTrainers()
+                        if (trainerPosition <= trainers.size) {
+                            trainerId = trainers[trainerPosition - 1].id
+                        }
+                    }
+                    
+                    if (workstationPosition > 0) {
+                        val workstations = viewModel.getActiveWorkstationsSync()
+                        if (workstationPosition <= workstations.size) {
+                            trainingWorkstationId = workstations[workstationPosition - 1].id
+                        }
+                    }
+                }
+                
+                // Handle leadership data
+                if (isLeader) {
+                    val leaderWorkstationPosition = dialogBinding.spinnerLeaderWorkstation.selectedItemPosition
+                    if (leaderWorkstationPosition > 0) {
+                        val workstations = viewModel.getActiveWorkstationsSync()
+                        if (leaderWorkstationPosition <= workstations.size) {
+                            leaderWorkstationId = workstations[leaderWorkstationPosition - 1].id
+                        }
+                    }
+                    
+                    leadershipType = when (dialogBinding.radioGroupLeadershipType.checkedRadioButtonId) {
+                        dialogBinding.radioLeadershipFirst.id -> "FIRST_HALF"
+                        dialogBinding.radioLeadershipSecond.id -> "SECOND_HALF"
+                        else -> "BOTH"
+                    }
+                }
+                
+                if (name.isNotEmpty()) {
+                    val selectedWorkstations = workstationAdapter.currentList
+                        .filter { it.isChecked }
+                        .map { it.workstation.id }
+                    
+                    val updatedWorker = originalWorker.copy(
+                        name = name,
+                        availabilityPercentage = availability,
+                        restrictionNotes = restrictionNotes,
+                        isTrainer = isTrainer,
+                        isTrainee = isTrainee,
+                        trainerId = trainerId,
+                        trainingWorkstationId = trainingWorkstationId,
+                        isCertified = isCertified,
+                        isLeader = isLeader,
+                        leaderWorkstationId = leaderWorkstationId,
+                        leadershipType = leadershipType,
+                        certificationDate = if (isCertified && !originalWorker.isCertified) {
+                            System.currentTimeMillis()
+                        } else {
+                            originalWorker.certificationDate
+                        }
+                    )
+                    
+                    viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
+                    
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "Trabajador actualizado correctamente",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("Error")
+                    .setMessage("No se pudo actualizar el trabajador: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
     }
 
 }

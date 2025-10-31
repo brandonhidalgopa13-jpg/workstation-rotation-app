@@ -78,6 +78,10 @@ data class Worker(
     val isActive: Boolean = true,
     val isCertified: Boolean = false,
     val certificationDate: Long? = null,
+    // Campos para sistema de liderazgo
+    val isLeader: Boolean = false,
+    val leaderWorkstationId: Long? = null,
+    val leadershipType: String = "BOTH", // "BOTH", "FIRST_HALF", "SECOND_HALF"
     // Campos para seguimiento de rotación
     val currentWorkstationId: Long? = null,
     val rotationsInCurrentStation: Int = 0,
@@ -88,6 +92,7 @@ data class Worker(
      */
     fun getDisplayName(): String {
         val status = when {
+            isLeader -> " 👑"
             isTrainer -> " 👨‍🏫"
             isTrainee -> " 🎯"
             isCertified -> " 🏆"
@@ -140,12 +145,41 @@ data class Worker(
      */
     fun getRotationPriority(): Int {
         return when {
-            // Trained workers who have been in same station too long get highest priority
+            // Leaders get highest priority for their assigned station
+            isLeader -> 200
+            // Trained workers who have been in same station too long get high priority
             isTrainedWorker() && needsToRotate() -> 100 + rotationsInCurrentStation
             // Regular trained workers get medium priority
             isTrainedWorker() -> 50
             // Trainers and trainees get lower priority (they have other constraints)
             else -> 10
+        }
+    }
+    
+    /**
+     * Checks if this worker should be leader in the given rotation half.
+     * @param isFirstHalf true for first half of rotation, false for second half
+     */
+    fun shouldBeLeaderInRotation(isFirstHalf: Boolean): Boolean {
+        if (!isLeader) return false
+        
+        return when (leadershipType) {
+            "BOTH" -> true
+            "FIRST_HALF" -> isFirstHalf
+            "SECOND_HALF" -> !isFirstHalf
+            else -> false
+        }
+    }
+    
+    /**
+     * Gets the leadership type as a descriptive string.
+     */
+    fun getLeadershipTypeDescription(): String {
+        return when (leadershipType) {
+            "BOTH" -> "Ambas partes"
+            "FIRST_HALF" -> "Primera parte"
+            "SECOND_HALF" -> "Segunda parte"
+            else -> "No definido"
         }
     }
 }

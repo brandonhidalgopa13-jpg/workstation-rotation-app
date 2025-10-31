@@ -210,6 +210,37 @@ class WorkerViewModel(
         android.util.Log.d("WorkerViewModel", "==========================================")
         return workstations
     }
+    
+    /**
+     * Obtiene todos los líderes activos.
+     */
+    suspend fun getLeaders(): List<Worker> {
+        android.util.Log.d("WorkerViewModel", "=== OBTENIENDO LÍDERES ===")
+        val leaders = workerDao.getLeaders()
+        android.util.Log.d("WorkerViewModel", "Líderes encontrados: ${leaders.size}")
+        leaders.forEach { leader ->
+            android.util.Log.d("WorkerViewModel", "- ${leader.name} (Estación: ${leader.leaderWorkstationId}, Tipo: ${leader.leadershipType})")
+        }
+        android.util.Log.d("WorkerViewModel", "==========================")
+        return leaders
+    }
+    
+    /**
+     * Obtiene los líderes para una estación específica.
+     */
+    suspend fun getLeadersForWorkstation(workstationId: Long): List<Worker> {
+        return workerDao.getLeadersForWorkstation(workstationId)
+    }
+    
+    /**
+     * Actualiza el liderazgo de un trabajador.
+     */
+    suspend fun updateWorkerLeadership(workerId: Long, isLeader: Boolean, workstationId: Long?, leadershipType: String) {
+        android.util.Log.d("WorkerViewModel", "=== ACTUALIZANDO LIDERAZGO ===")
+        android.util.Log.d("WorkerViewModel", "Trabajador: $workerId, Líder: $isLeader, Estación: $workstationId, Tipo: $leadershipType")
+        workerDao.updateWorkerLeadership(workerId, isLeader, workstationId, leadershipType)
+        android.util.Log.d("WorkerViewModel", "==============================")
+    }
 }
 
 class WorkerViewModelFactory(

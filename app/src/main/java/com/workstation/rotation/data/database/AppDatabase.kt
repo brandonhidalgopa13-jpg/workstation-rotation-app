@@ -61,7 +61,7 @@ import com.workstation.rotation.data.dao.WorkerRestrictionDao
 
 @Database(
     entities = [Worker::class, Workstation::class, WorkerWorkstation::class, WorkerRestriction::class],
-    version = Constants.DATABASE_VERSION + 1, // Incrementar versión para la nueva entidad
+    version = 8, // Incrementar versión para los nuevos campos de liderazgo
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

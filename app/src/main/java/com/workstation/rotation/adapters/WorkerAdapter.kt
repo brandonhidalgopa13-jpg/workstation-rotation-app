@@ -87,6 +87,12 @@ class WorkerAdapter(
             binding.apply {
                 tvTrainerStatus.visibility = if (worker.isTrainer) android.view.View.VISIBLE else android.view.View.GONE
                 tvTraineeStatus.visibility = if (worker.isTrainee) android.view.View.VISIBLE else android.view.View.GONE
+                tvLeaderStatus.visibility = if (worker.isLeader) android.view.View.VISIBLE else android.view.View.GONE
+                
+                // Mostrar información adicional del liderazgo
+                if (worker.isLeader && worker.leaderWorkstationId != null) {
+                    tvLeaderStatus.text = "👑 LÍDER (${worker.getLeadershipTypeDescription()})"
+                }
                 
                 // Mostrar botón de certificación solo para trabajadores en entrenamiento
                 btnCertify.visibility = if (worker.isTrainee && worker.isActive) {

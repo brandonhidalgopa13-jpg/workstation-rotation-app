@@ -404,10 +404,19 @@ class RotationViewModel(
                 
                 println("DEBUG: Found ${availableWorkers.size} available workers for ${station.name}")
                 
-                val sortedWorkers = availableWorkers.sortedWith(
+                // Separate leaders for this station from other workers
+                val leadersForThisStation = availableWorkers.filter { worker ->
+                    worker.isLeader && worker.leaderWorkstationId == station.id
+                }
+                val otherWorkers = availableWorkers.filter { worker ->
+                    !(worker.isLeader && worker.leaderWorkstationId == station.id)
+                }
+                
+                // Sort workers with leaders getting highest priority
+                val sortedWorkers = (leadersForThisStation + otherWorkers.sortedWith(
                     compareByDescending<Worker> { it.isTrainer }
                         .thenByDescending { it.availabilityPercentage }
-                )
+                ))
                 
                 val workersToAssign = minOf(remainingCapacity, sortedWorkers.size)
                 val assignedWorkers = sortedWorkers.take(workersToAssign)
@@ -415,6 +424,9 @@ class RotationViewModel(
                 assignments[station.id]?.addAll(assignedWorkers)
                 
                 println("DEBUG: Assigned ${assignedWorkers.size} workers to ${station.name}: ${assignedWorkers.map { it.name }}")
+                if (leadersForThisStation.isNotEmpty()) {
+                    println("DEBUG: Leaders assigned to ${station.name}: ${leadersForThisStation.map { it.name }}")
+                }
             }
         }
     }
@@ -439,9 +451,10 @@ class RotationViewModel(
         // Then handle forced rotation for trained workers
         assignTrainedWorkersWithRotation(normalWorkstations, unassignedWorkers, assignments)
         
-        // Finally assign remaining workers
+        // Finally assign remaining workers with leadership priority
         val sortedWorkers = unassignedWorkers.sortedWith(
-            compareByDescending<Worker> { it.isTrainer }
+            compareByDescending<Worker> { it.isLeader }
+                .thenByDescending { it.isTrainer }
                 .thenByDescending { worker ->
                     worker.availabilityPercentage + Random.nextInt(0, 30)
                 }
@@ -547,6 +560,17 @@ class RotationViewModel(
         println("DEBUG: Found ${compatibleStations.size} compatible stations for ${worker.name}")
         
         val targetStation = when {
+            worker.isLeader && worker.leaderWorkstationId != null -> {
+                println("DEBUG: Worker ${worker.name} is leader, looking for leadership station ID: ${worker.leaderWorkstationId}")
+                val leadershipStation = compatibleStations.find { it.id == worker.leaderWorkstationId }
+                if (leadershipStation != null) {
+                    println("DEBUG: Found leadership station ${leadershipStation.name} for leader ${worker.name}")
+                    leadershipStation
+                } else {
+                    println("DEBUG: Leadership station not available, using station with least workers")
+                    compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                }
+            }
             worker.isTrainee && worker.trainingWorkstationId != null -> {
                 println("DEBUG: Worker ${worker.name} is trainee, looking for training station ID: ${worker.trainingWorkstationId}")
                 val trainingStation = compatibleStations.find { it.id == worker.trainingWorkstationId }
@@ -1071,6 +1095,7 @@ class RotationViewModel(
         val availabilityStatus = getAvailabilityStatus(worker)
         val restrictionStatus = if (worker.restrictionNotes.isNotEmpty()) " 🔒" else ""
         val trainingStatus = getTrainingStatus(worker, currentWorkers)
+        val leadershipStatus = getLeadershipStatus(worker, currentStation, nextStation)
         val rotationStatus = getRotationStatus(currentStation, nextStation, worker)
         
         val baseName = if (isPriorityWorker) {
@@ -1079,7 +1104,28 @@ class RotationViewModel(
             worker.name
         }
         
-        return "$baseName$availabilityStatus$restrictionStatus$trainingStatus$rotationStatus"
+        return "$baseName$availabilityStatus$restrictionStatus$trainingStatus$leadershipStatus$rotationStatus"
+    }
+    
+    /**
+     * Gets leadership status indicator for workers who are leaders.
+     */
+    private fun getLeadershipStatus(
+        worker: Worker,
+        currentStation: Workstation,
+        nextStation: Workstation
+    ): String {
+        if (!worker.isLeader || worker.leaderWorkstationId == null) return ""
+        
+        val isLeaderInCurrent = worker.leaderWorkstationId == currentStation.id
+        val isLeaderInNext = worker.leaderWorkstationId == nextStation.id
+        
+        return when {
+            isLeaderInCurrent && isLeaderInNext -> " 👑 [LÍDER]"
+            isLeaderInCurrent -> " 👑 [LÍDER ACTUAL]"
+            isLeaderInNext -> " 👑 [LÍDER SIGUIENTE]"
+            else -> ""
+        }
     }
     
     /**
@@ -1094,6 +1140,8 @@ class RotationViewModel(
             // Trainer-trainee pairs are exempt from rotation indicators
             worker.isTrainee && worker.trainerId != null -> ""
             worker.isTrainer -> ""
+            // Leaders get special rotation status
+            worker.isLeader -> ""
             // Show rotation status for regular workers
             currentStation.id != nextStation.id -> " 🔄 [ROTANDO]"
             else -> " 📍 [PERMANECE]"
