@@ -1034,8 +1034,7 @@ class WorkerActivity : AppCompatActivity() {
             .show()
     }
 
-}   
- /**
+    /**
      * Muestra el diálogo de certificación para un trabajador específico.
      */
     private fun showCertifyWorkerDialog(worker: Worker) {
