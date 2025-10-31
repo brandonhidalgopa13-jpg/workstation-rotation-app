@@ -96,9 +96,6 @@ interface WorkerDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateWorker(worker: Worker): Long
     
-    @Query("SELECT * FROM workers WHERE isTrainee = 1 AND trainerId IS NOT NULL")
-    suspend fun getWorkersInTraining(): List<Worker>
-    
     @Query("UPDATE workers SET isTrainee = 0, trainerId = NULL, trainingWorkstationId = NULL WHERE id = :workerId")
     suspend fun certifyWorker(workerId: Long)
     
