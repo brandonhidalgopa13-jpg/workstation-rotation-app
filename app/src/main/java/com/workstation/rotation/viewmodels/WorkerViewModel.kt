@@ -156,10 +156,30 @@ class WorkerViewModel(
      * Obtiene las estaciones donde puede trabajar un entrenador específico.
      */
     suspend fun getTrainerWorkstations(trainerId: Long): List<Workstation> {
+        android.util.Log.d("WorkerViewModel", "=== OBTENIENDO ESTACIONES DEL ENTRENADOR $trainerId ===")
+        
         val trainerWorkstationIds = getWorkerWorkstationIds(trainerId)
-        return workstationDao.getAllActiveWorkstations().first().filter { workstation ->
+        android.util.Log.d("WorkerViewModel", "Entrenador $trainerId tiene asignadas las estaciones: $trainerWorkstationIds")
+        
+        if (trainerWorkstationIds.isEmpty()) {
+            android.util.Log.w("WorkerViewModel", "WARNING: Entrenador $trainerId no tiene estaciones asignadas")
+            return emptyList()
+        }
+        
+        val allActiveWorkstations = workstationDao.getAllActiveWorkstations().first()
+        android.util.Log.d("WorkerViewModel", "Total de estaciones activas: ${allActiveWorkstations.size}")
+        
+        val trainerWorkstations = allActiveWorkstations.filter { workstation ->
             trainerWorkstationIds.contains(workstation.id)
         }
+        
+        android.util.Log.d("WorkerViewModel", "Estaciones filtradas para entrenador $trainerId: ${trainerWorkstations.size}")
+        trainerWorkstations.forEach { station ->
+            android.util.Log.d("WorkerViewModel", "- ${station.name} (ID: ${station.id})")
+        }
+        android.util.Log.d("WorkerViewModel", "===============================================")
+        
+        return trainerWorkstations
     }
     
     /**

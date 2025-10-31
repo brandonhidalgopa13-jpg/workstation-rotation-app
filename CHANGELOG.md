@@ -1,4 +1,68 @@
-# 📋 CHANGELOG - Sistema de Rotación Inteligente
+# 📋 CHANGELOG - REWS (Rotation and Workstation System)
+
+## [2.2.0] - 2024-10-30
+
+### 🎯 **CAMBIO DE MARCA Y FUNCIONALIDADES AVANZADAS**
+
+#### 🏷️ **Rebranding Completo a REWS**
+- **Nuevo Nombre**: "REWS - Rotation and Workstation System"
+- **Identidad Visual**: Actualización completa de temas y nombres
+- **Compatibilidad**: Mantiene todos los datos existentes
+- **Profesionalización**: Nombre más conciso y fácil de recordar
+
+#### 🎓 **Sistema de Entrenamiento Avanzado**
+- **Filtrado Inteligente**: Solo aparecen estaciones del entrenador seleccionado
+- **Validaciones Automáticas**: Previene asignaciones imposibles
+- **Gestión Completa**: Crear, editar y certificar trabajadores en cualquier momento
+- **Parejas Permanentes**: Entrenador y entrenado siempre juntos con prioridad absoluta
+- **Certificación Automática**: Activa estación de entrenamiento al certificar
+
+#### 🚫 **Sistema de Restricciones Específicas por Estación**
+- **Control Granular**: Restricciones específicas por trabajador y estación
+- **Tipos de Restricción**: PROHIBIDO, LIMITADO, TEMPORAL
+- **Interfaz Intuitiva**: Diálogo dedicado con checkboxes por estación
+- **Integración Completa**: El algoritmo respeta automáticamente las restricciones
+- **Gestión Flexible**: Crear, editar y eliminar restricciones dinámicamente
+
+#### 📷 **Sistema Avanzado de Captura de Pantalla**
+- **Captura Inteligente**: Detecta y captura contenido scrolleable completo
+- **Guardado Automático**: Almacena en galería con nombres únicos
+- **Compartir Instantáneo**: Integración con WhatsApp, Email, Drive, etc.
+- **Optimización de Memoria**: Maneja tablas grandes sin errores
+- **Calidad Profesional**: PNG de alta resolución para documentación
+
+#### 📚 **Manual de Usuario Completamente Renovado**
+- **Guía Exhaustiva**: Documentación completa de todas las funcionalidades
+- **Casos de Uso**: Ejemplos prácticos para cada función
+- **Flujo Profesional**: Metodología de trabajo optimizada
+- **Solución de Problemas**: Troubleshooting específico para cada función
+
+### 🔧 **Correcciones Críticas**
+
+#### ✅ **Filtrado de Estaciones por Entrenador**
+- **Problema Resuelto**: Estaciones no aparecían correctamente al seleccionar entrenador
+- **Causa**: Error en funciones de guardado usando todas las estaciones en lugar de filtradas
+- **Solución**: Implementación correcta del filtrado en creación y edición
+- **Validaciones**: Logs de debug y manejo de errores mejorado
+
+#### ✅ **Sistema de Entrenamiento Completo**
+- **Edición Completa**: Ahora se puede cambiar estado de entrenamiento en cualquier momento
+- **Validaciones Cruzadas**: Previene conflictos entre roles (entrenador/entrenado)
+- **Persistencia Correcta**: Guarda correctamente todos los datos de entrenamiento
+
+### 🎨 **Mejoras de Interfaz**
+- **Temas Actualizados**: Theme.REWS con colores optimizados
+- **Iconografía Consistente**: Iconos específicos para cada tipo de trabajador
+- **Mensajes Informativos**: Feedback claro para todas las acciones
+- **Navegación Mejorada**: Flujo más intuitivo entre pantallas
+
+### 📊 **Mejoras de Rendimiento**
+- **Logs de Debug**: Sistema completo de logging para troubleshooting
+- **Validaciones Robustas**: Verificaciones en tiempo real
+- **Manejo de Errores**: Gestión graceful de casos especiales
+- **Optimización de Memoria**: Mejor gestión de recursos
+
+---
 
 ## [2.1.0] - 2024-10-26
 

@@ -263,9 +263,13 @@ class WorkerActivity : AppCompatActivity() {
                         }
                         
                         if (workstationPosition > 0) {
-                            viewModel.activeWorkstations.value?.let { workstations ->
-                                if (workstationPosition <= workstations.size) {
-                                    trainingWorkstationId = workstations[workstationPosition - 1].id
+                            // Obtener las estaciones del entrenador seleccionado
+                            val trainers = viewModel.getTrainers()
+                            if (trainerPosition <= trainers.size) {
+                                val selectedTrainer = trainers[trainerPosition - 1]
+                                val trainerWorkstations = viewModel.getTrainerWorkstations(selectedTrainer.id)
+                                if (workstationPosition <= trainerWorkstations.size) {
+                                    trainingWorkstationId = trainerWorkstations[workstationPosition - 1].id
                                 }
                             }
                         }
@@ -380,16 +384,43 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
-                val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
-                val workstationAdapter = ArrayAdapter<String>(
-                    this@WorkerActivity,
-                    android.R.layout.simple_spinner_item,
-                    workstationNames
-                )
-                workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+                android.util.Log.d("WorkerActivity", "Entrenador $trainerId tiene ${trainerWorkstations.size} estaciones disponibles")
+                trainerWorkstations.forEach { station ->
+                    android.util.Log.d("WorkerActivity", "- Estación: ${station.name} (ID: ${station.id})")
+                }
+                
+                if (trainerWorkstations.isEmpty()) {
+                    // Si el entrenador no tiene estaciones asignadas
+                    val emptyAdapter = ArrayAdapter(
+                        this@WorkerActivity,
+                        android.R.layout.simple_spinner_item,
+                        listOf("El entrenador no tiene estaciones asignadas")
+                    )
+                    emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    dialogBinding.spinnerTrainingWorkstation.adapter = emptyAdapter
+                    
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "⚠️ El entrenador seleccionado no tiene estaciones asignadas",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                    val workstationAdapter = ArrayAdapter<String>(
+                        this@WorkerActivity,
+                        android.R.layout.simple_spinner_item,
+                        workstationNames
+                    )
+                    workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+                }
             } catch (e: Exception) {
-                // Handle error loading trainer workstations
+                android.util.Log.e("WorkerActivity", "Error cargando estaciones del entrenador", e)
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando estaciones del entrenador: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -512,24 +543,59 @@ class WorkerActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val trainerWorkstations = viewModel.getTrainerWorkstations(trainerId)
-                val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
-                val workstationAdapter = ArrayAdapter<String>(
-                    this@WorkerActivity,
-                    android.R.layout.simple_spinner_item,
-                    workstationNames
-                )
-                workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+                android.util.Log.d("WorkerActivity", "Edición - Entrenador $trainerId tiene ${trainerWorkstations.size} estaciones disponibles")
+                trainerWorkstations.forEach { station ->
+                    android.util.Log.d("WorkerActivity", "- Estación: ${station.name} (ID: ${station.id})")
+                }
                 
-                // Select current training workstation if exists and is available for this trainer
-                worker.trainingWorkstationId?.let { trainingWorkstationId ->
-                    val workstationIndex = trainerWorkstations.indexOfFirst { it.id == trainingWorkstationId }
-                    if (workstationIndex >= 0) {
-                        dialogBinding.spinnerTrainingWorkstation.setSelection(workstationIndex + 1) // +1 because of "Seleccionar..." option
+                if (trainerWorkstations.isEmpty()) {
+                    // Si el entrenador no tiene estaciones asignadas
+                    val emptyAdapter = ArrayAdapter(
+                        this@WorkerActivity,
+                        android.R.layout.simple_spinner_item,
+                        listOf("El entrenador no tiene estaciones asignadas")
+                    )
+                    emptyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    dialogBinding.spinnerTrainingWorkstation.adapter = emptyAdapter
+                    
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "⚠️ El entrenador seleccionado no tiene estaciones asignadas",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    val workstationNames: List<String> = listOf("Seleccionar estación...") + trainerWorkstations.map { it.name }
+                    val workstationAdapter = ArrayAdapter<String>(
+                        this@WorkerActivity,
+                        android.R.layout.simple_spinner_item,
+                        workstationNames
+                    )
+                    workstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                    dialogBinding.spinnerTrainingWorkstation.adapter = workstationAdapter
+                    
+                    // Select current training workstation if exists and is available for this trainer
+                    worker.trainingWorkstationId?.let { trainingWorkstationId ->
+                        val workstationIndex = trainerWorkstations.indexOfFirst { it.id == trainingWorkstationId }
+                        if (workstationIndex >= 0) {
+                            android.util.Log.d("WorkerActivity", "Seleccionando estación actual: ${trainerWorkstations[workstationIndex].name}")
+                            dialogBinding.spinnerTrainingWorkstation.setSelection(workstationIndex + 1) // +1 because of "Seleccionar..." option
+                        } else {
+                            android.util.Log.w("WorkerActivity", "La estación de entrenamiento actual (ID: $trainingWorkstationId) no está disponible para este entrenador")
+                            android.widget.Toast.makeText(
+                                this@WorkerActivity,
+                                "⚠️ La estación de entrenamiento actual no está disponible para este entrenador",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             } catch (e: Exception) {
-                // Handle error loading trainer workstations
+                android.util.Log.e("WorkerActivity", "Error cargando estaciones del entrenador para edición", e)
+                android.widget.Toast.makeText(
+                    this@WorkerActivity,
+                    "Error cargando estaciones del entrenador: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -722,9 +788,13 @@ class WorkerActivity : AppCompatActivity() {
                             }
                             
                             if (workstationPosition > 0) {
-                                viewModel.activeWorkstations.value?.let { workstations ->
-                                    if (workstationPosition <= workstations.size) {
-                                        trainingWorkstationId = workstations[workstationPosition - 1].id
+                                // Obtener las estaciones del entrenador seleccionado
+                                val trainers = viewModel.getTrainers()
+                                if (trainerPosition <= trainers.size) {
+                                    val selectedTrainer = trainers[trainerPosition - 1]
+                                    val trainerWorkstations = viewModel.getTrainerWorkstations(selectedTrainer.id)
+                                    if (workstationPosition <= trainerWorkstations.size) {
+                                        trainingWorkstationId = trainerWorkstations[workstationPosition - 1].id
                                     }
                                 }
                             }

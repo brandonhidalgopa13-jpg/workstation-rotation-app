@@ -1,6 +1,6 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
-# 🚀 SCRIPT DE BUILD PARA RELEASE - SISTEMA DE ROTACIÓN INTELIGENTE
+# 🚀 SCRIPT DE BUILD PARA RELEASE - REWS v2.2.0
 # ═══════════════════════════════════════════════════════════════════════════════════════════════
 # Automatiza el proceso completo de testing, calidad y generación de APK
 
@@ -8,7 +8,7 @@ set -e  # Exit on any error
 
 echo ""
 echo "═══════════════════════════════════════════════════════════════════════════════════════════════"
-echo "🏭 SISTEMA DE ROTACIÓN INTELIGENTE - BUILD PARA RELEASE"
+echo "🏭 REWS - ROTATION AND WORKSTATION SYSTEM - BUILD PARA RELEASE"
 echo "═══════════════════════════════════════════════════════════════════════════════════════════════"
 echo ""
 
@@ -131,7 +131,7 @@ if [ -f "$APK_PATH" ]; then
     APK_SIZE=$(stat -f%z "$APK_PATH" 2>/dev/null || stat -c%s "$APK_PATH" 2>/dev/null || echo "N/A")
     echo "   📦 Tamaño: $APK_SIZE bytes"
     echo "   📅 Generada: $(date)"
-    echo "   🏷️  Versión: 2.1.0"
+    echo "   🏷️  Versión: 2.2.0"
     echo "   🎯 Target SDK: 34"
     echo "   📱 Min SDK: 24"
 fi

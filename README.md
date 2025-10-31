@@ -1,6 +1,6 @@
-# 🏭 Sistema de Rotación Inteligente de Estaciones de Trabajo
+# 🏭 REWS - Rotation and Workstation System
 
-**Versión 2.0.0** - Una aplicación Android avanzada para gestionar estaciones de trabajo y rotación inteligente de trabajadores con sistema de entrenamiento integrado.
+**Versión 2.3.0** - Una aplicación Android avanzada para gestionar estaciones de trabajo y rotación inteligente de trabajadores con sistema de entrenamiento integrado.
 
 ## ✨ Características Principales
 
@@ -104,7 +104,7 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 ## 👨‍💻 Desarrollador
 
 **Brandon Josué Hidalgo Paz**  
-*Sistema de Rotación Inteligente v2.0.0*
+*REWS - Rotation and Workstation System v2.3.0*
 
 ## 📞 Contacto
 
@@ -117,7 +117,7 @@ Si tienes preguntas, sugerencias o encuentras algún problema, no dudes en:
 
 ## 📊 Estadísticas del Proyecto
 
-- **Versión Actual**: 2.0.0
+- **Versión Actual**: 2.3.0
 - **Lenguaje Principal**: Kotlin (100%)
 - **Arquitectura**: MVVM + Room Database
 - **Funcionalidades**: 25+ características implementadas
