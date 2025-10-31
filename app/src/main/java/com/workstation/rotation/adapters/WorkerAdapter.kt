@@ -17,6 +17,7 @@ class WorkerAdapter(
     private val onEditClick: (Worker) -> Unit,
     private val onDeleteClick: (Worker) -> Unit,
     private val onRestrictionsClick: (Worker) -> Unit,
+    private val onCertifyClick: (Worker) -> Unit,
     private val onStatusChange: (Worker, Boolean) -> Unit
 ) : ListAdapter<WorkerWithWorkstationCount, WorkerAdapter.WorkerViewHolder>(WorkerDiffCallback()) {
 
@@ -80,12 +81,19 @@ class WorkerAdapter(
         }
         
         /**
-         * Binds training status badges.
+         * Binds training status badges and certification button.
          */
         private fun bindTrainingStatus(worker: Worker) {
             binding.apply {
                 tvTrainerStatus.visibility = if (worker.isTrainer) android.view.View.VISIBLE else android.view.View.GONE
                 tvTraineeStatus.visibility = if (worker.isTrainee) android.view.View.VISIBLE else android.view.View.GONE
+                
+                // Mostrar botón de certificación solo para trabajadores en entrenamiento
+                btnCertify.visibility = if (worker.isTrainee && worker.isActive) {
+                    android.view.View.VISIBLE
+                } else {
+                    android.view.View.GONE
+                }
             }
         }
         
@@ -118,6 +126,10 @@ class WorkerAdapter(
                 
                 btnRestrictions.setOnClickListener {
                     onRestrictionsClick(worker)
+                }
+                
+                btnCertify.setOnClickListener {
+                    onCertifyClick(worker)
                 }
                 
                 btnDelete.setOnClickListener {

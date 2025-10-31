@@ -108,6 +108,7 @@ class WorkerActivity : AppCompatActivity() {
             onEditClick = { worker -> showEditDialog(worker) },
             onDeleteClick = { worker -> showDeleteWorkerDialog(worker) },
             onRestrictionsClick = { worker -> showRestrictionsDialog(worker) },
+            onCertifyClick = { worker -> showCertifyWorkerDialog(worker) },
             onStatusChange = { worker, isActive -> 
                 lifecycleScope.launch {
                     viewModel.updateWorkerStatus(worker.id, isActive)
@@ -1024,6 +1025,69 @@ class WorkerActivity : AppCompatActivity() {
                         AlertDialog.Builder(this@WorkerActivity)
                             .setTitle("Error")
                             .setMessage("No se pudieron guardar las restricciones: ${e.message}")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+}   
+ /**
+     * Muestra el diálogo de certificación para un trabajador específico.
+     */
+    private fun showCertifyWorkerDialog(worker: Worker) {
+        // Verificar que el trabajador esté en entrenamiento
+        if (!worker.isTrainee) {
+            android.widget.Toast.makeText(
+                this,
+                "Este trabajador no está en entrenamiento",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🎓 Certificar Trabajador")
+            .setMessage(
+                "¿Deseas certificar a '${worker.name}'?\n\n" +
+                "✅ Al certificar, el trabajador:\n" +
+                "• Deja de estar 'en entrenamiento'\n" +
+                "• Ya no necesita estar con su entrenador\n" +
+                "• Puede participar normalmente en rotaciones\n" +
+                "• Se convierte en trabajador completamente capacitado\n" +
+                "• Se marca como certificado 🏆\n\n" +
+                "Esta acción se puede revertir editando el trabajador."
+            )
+            .setIcon(android.R.drawable.ic_dialog_info)
+            .setPositiveButton("🎓 Certificar") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        // Certificar el trabajador
+                        viewModel.certifyWorker(worker.id)
+                        
+                        // Mostrar mensaje de éxito
+                        androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
+                            .setTitle("✅ Certificación Completada")
+                            .setMessage(
+                                "¡Felicitaciones! 🎉\n\n" +
+                                "'${worker.name}' ha sido certificado exitosamente.\n\n" +
+                                "El trabajador:\n" +
+                                "✅ Ya no está en entrenamiento\n" +
+                                "✅ Puede participar normalmente en rotaciones\n" +
+                                "✅ Es considerado completamente capacitado\n" +
+                                "✅ Tiene fecha de certificación registrada\n\n" +
+                                "Los cambios se aplicarán en la próxima rotación generada."
+                            )
+                            .setPositiveButton("🎉 ¡Excelente!", null)
+                            .show()
+                        
+                    } catch (e: Exception) {
+                        androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
+                            .setTitle("❌ Error")
+                            .setMessage("No se pudo certificar el trabajador: ${e.message}")
                             .setPositiveButton("OK", null)
                             .show()
                     }

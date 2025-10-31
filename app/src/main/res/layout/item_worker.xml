@@ -131,6 +131,17 @@
                 android:tint="@android:color/holo_orange_dark" />
 
             <ImageButton
+                android:id="@+id/btnCertify"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_certification"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:layout_marginTop="4dp"
+                android:contentDescription="Certificar trabajador"
+                android:tint="@color/accent_green"
+                android:visibility="gone" />
+
+            <ImageButton
                 android:id="@+id/btnDelete"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
