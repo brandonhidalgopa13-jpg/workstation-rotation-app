@@ -1057,15 +1057,44 @@ class WorkerActivity : AppCompatActivity() {
                 "• Ya no necesita estar con su entrenador\n" +
                 "• Puede participar normalmente en rotaciones\n" +
                 "• Se convierte en trabajador completamente capacitado\n" +
-                "• Se marca como certificado 🏆\n\n" +
+                "• Se marca como certificado 🏆\n" +
+                "• La estación de entrenamiento se agrega automáticamente\n\n" +
                 "Esta acción se puede revertir editando el trabajador."
             )
             .setIcon(android.R.drawable.ic_dialog_info)
             .setPositiveButton("🎓 Certificar") { _, _ ->
                 lifecycleScope.launch {
                     try {
+                        // Obtener estaciones actuales del trabajador
+                        val currentWorkstationIds = viewModel.getWorkerWorkstationIds(worker.id).toMutableList()
+                        
+                        // Agregar la estación de entrenamiento si no está ya asignada
+                        worker.trainingWorkstationId?.let { trainingStationId ->
+                            if (!currentWorkstationIds.contains(trainingStationId)) {
+                                currentWorkstationIds.add(trainingStationId)
+                                android.util.Log.d("WorkerActivity", "Agregando estación de entrenamiento $trainingStationId a trabajador ${worker.id}")
+                            }
+                        }
+                        
                         // Certificar el trabajador
                         viewModel.certifyWorker(worker.id)
+                        
+                        // Actualizar las estaciones asignadas incluyendo la de entrenamiento
+                        viewModel.updateWorkerWithWorkstations(
+                            worker.copy(
+                                isTrainee = false,
+                                isCertified = true,
+                                trainerId = null,
+                                trainingWorkstationId = null,
+                                certificationDate = System.currentTimeMillis()
+                            ),
+                            currentWorkstationIds
+                        )
+                        
+                        // Obtener nombre de la estación de entrenamiento para el mensaje
+                        val trainingStationName = worker.trainingWorkstationId?.let { stationId ->
+                            viewModel.getWorkstationById(stationId)?.name
+                        }
                         
                         // Mostrar mensaje de éxito
                         androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
@@ -1077,8 +1106,9 @@ class WorkerActivity : AppCompatActivity() {
                                 "✅ Ya no está en entrenamiento\n" +
                                 "✅ Puede participar normalmente en rotaciones\n" +
                                 "✅ Es considerado completamente capacitado\n" +
-                                "✅ Tiene fecha de certificación registrada\n\n" +
-                                "Los cambios se aplicarán en la próxima rotación generada."
+                                "✅ Tiene fecha de certificación registrada\n" +
+                                (if (trainingStationName != null) "✅ Estación '$trainingStationName' agregada automáticamente\n" else "") +
+                                "\nLos cambios se aplicarán en la próxima rotación generada."
                             )
                             .setPositiveButton("🎉 ¡Excelente!", null)
                             .show()
