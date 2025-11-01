@@ -74,7 +74,7 @@ interface RotationDao {
      * Obtiene parejas de entrenamiento activas (entrenador + entrenado).
      */
     @Query("""
-        SELECT trainee.*, trainer.name as trainerName
+        SELECT trainee.*
         FROM workers trainee
         INNER JOIN workers trainer ON trainee.trainerId = trainer.id
         WHERE trainee.isActive = 1 
