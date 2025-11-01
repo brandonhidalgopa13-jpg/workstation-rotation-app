@@ -1,5 +1,43 @@
 # 📋 CHANGELOG - REWS (Rotation and Workstation System)
 
+## [2.5.1] - 2024-10-31
+
+### 🔧 **CORRECCIONES DE ERRORES Y ESTABILIZACIÓN**
+
+#### ✅ **Errores Críticos Corregidos**
+- **Referencias a Recursos Inexistentes**: Corregidas todas las referencias a colores y estilos no definidos
+- **Dependencia Faltante**: Agregada librería `dotsindicator` para indicadores visuales del onboarding
+- **Método Deprecado**: Anotado correctamente `onBackPressed()` con `@Deprecated`
+- **Strings Faltantes**: Reemplazadas referencias a strings inexistentes con texto directo
+- **Layouts Inconsistentes**: Corregidos estilos y colores en layouts de onboarding
+
+#### 🎨 **Mejoras de Consistencia Visual**
+- **Colores Unificados**: Uso de `background_light`, `text_primary`, `text_secondary` existentes
+- **Estilos Coherentes**: Aplicación de `PrimaryButtonStyle` y `SecondaryButtonStyle` definidos
+- **Recursos Válidos**: Eliminadas todas las referencias a recursos inexistentes
+- **Diseño Consistente**: Apariencia visual unificada en todo el sistema de onboarding
+
+#### 🔧 **Estabilidad del Sistema**
+- **Compilación Exitosa**: Sin errores de compilación ni warnings críticos
+- **Funcionalidad Completa**: Sistema de onboarding completamente operativo
+- **Navegación Fluida**: Transiciones y botones funcionando correctamente
+- **Indicadores Visuales**: Dots indicator operativo con colores apropiados
+
+#### 📊 **Archivos Corregidos**
+- `OnboardingActivity.kt` - Referencias a colores y anotación de deprecación
+- `activity_onboarding.xml` - Colores y estilos actualizados
+- `item_onboarding_page.xml` - Estilos inline implementados
+- `activity_main.xml` - String watermark corregido
+- `build.gradle` - Dependencia dotsindicator agregada
+
+### 🚀 **Impacto de las Correcciones**
+- **Estabilidad**: Sistema robusto sin errores de compilación
+- **Funcionalidad**: Onboarding completamente operativo
+- **Consistencia**: Diseño visual unificado y profesional
+- **Confiabilidad**: Código más limpio y mantenible
+
+---
+
 ## [2.5.0] - 2024-10-31
 
 ### 🎨 **DISEÑO GRÁFICO MODERNO Y SISTEMA DE ONBOARDING**
