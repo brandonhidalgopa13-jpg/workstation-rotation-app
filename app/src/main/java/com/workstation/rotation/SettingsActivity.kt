@@ -1302,7 +1302,6 @@ class SettingsActivity : AppCompatActivity() {
         val title: String,
         val content: String
     )
-}    
 
     /**
      * Genera un reporte de rendimiento completo
@@ -1857,7 +1856,7 @@ class SettingsActivity : AppCompatActivity() {
                     database.workerDao().getAllWorkerWorkstationsSync().size
                 }
                 
-                val dbFile = getDatabasePath("rotation_database")
+                val dbFile = this@SettingsActivity.getDatabasePath("rotation_database")
                 val dbSize = if (dbFile.exists()) dbFile.length() / 1024 else 0 // KB
                 
                 val info = """
@@ -1872,7 +1871,7 @@ class SettingsActivity : AppCompatActivity() {
                     🏭 Estaciones: $workstationCount
                     🔗 Relaciones: $relationshipCount
                     
-                    📅 Versión: ${AppDatabase.DATABASE_VERSION}
+                    📅 Versión: 8
                 """.trimIndent()
                 
                 androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
@@ -1981,7 +1980,7 @@ class SettingsActivity : AppCompatActivity() {
                     relationships.forEach { rel ->
                         if (workers.none { it.id == rel.workerId } || 
                             workstations.none { it.id == rel.workstationId }) {
-                            database.workerDao().deleteWorkerWorkstation(rel.workerId, rel.workstationId)
+                            database.workerDao().deleteWorkerWorkstation(rel)
                             cleanedItems++
                         }
                     }
@@ -2195,7 +2194,7 @@ class SettingsActivity : AppCompatActivity() {
         val workersCreated = prefs.getInt("workers_created", 0)
         val workstationsCreated = prefs.getInt("workstations_created", 0)
         
-        val daysSinceInstall = (System.currentTimeMillis() - appInstallTime) / (1000 * 60 * 60 * 24)
+        val daysSinceInstall = (System.currentTimeMillis() - appInstallTime) / (1000L * 60L * 60L * 24L)
         
         val statistics = """
             📊 Estadísticas de Uso:
@@ -2392,7 +2391,7 @@ class SettingsActivity : AppCompatActivity() {
                     workers.forEach { worker ->
                         val updatedWorker = worker.copy(
                             rotationsInCurrentStation = 0,
-                            lastRotationTimestamp = null
+                            lastRotationTimestamp = 0L
                         )
                         database.workerDao().updateWorker(updatedWorker)
                     }
@@ -2568,4 +2567,6 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
+    }    }
+
+}
