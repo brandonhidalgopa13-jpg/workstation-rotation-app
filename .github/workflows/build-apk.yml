@@ -32,20 +32,23 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Setup Gradle
+    - name: 🔧 Setup Gradle and regenerate wrapper
       uses: gradle/gradle-build-action@v2
       with:
-        gradle-version: 8.0
+        gradle-version: 8.0.2
+        
+    - name: 🔄 Regenerate Gradle wrapper
+      run: gradle wrapper --gradle-version 8.0.2
         
     - name: 🧪 Run unit tests
-      run: gradle testDebugUnitTest --no-daemon --stacktrace
+      run: ./gradlew testDebugUnitTest --no-daemon --stacktrace
         
     - name: 🔍 Run lint
-      run: gradle lintDebug --no-daemon --stacktrace
+      run: ./gradlew lintDebug --no-daemon --stacktrace
       continue-on-error: true
         
     - name: 📊 Generate test report
-      run: gradle jacocoTestReport --no-daemon --stacktrace
+      run: ./gradlew jacocoTestReport --no-daemon --stacktrace
       continue-on-error: true
       
     - name: 📤 Upload test results
@@ -77,13 +80,16 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Setup Gradle
+    - name: 🔧 Setup Gradle and regenerate wrapper
       uses: gradle/gradle-build-action@v2
       with:
-        gradle-version: 8.0
+        gradle-version: 8.0.2
+        
+    - name: 🔄 Regenerate Gradle wrapper
+      run: gradle wrapper --gradle-version 8.0.2
         
     - name: 🔨 Build debug APK
-      run: gradle assembleDebug --no-daemon --stacktrace
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
       
     - name: 📤 Upload debug APK
       uses: actions/upload-artifact@v4
@@ -131,13 +137,16 @@ jobs:
           echo "⚠️ Keystore secrets not configured, building unsigned APK"
         fi
       
-    - name: 🔧 Setup Gradle
+    - name: 🔧 Setup Gradle and regenerate wrapper
       uses: gradle/gradle-build-action@v2
       with:
-        gradle-version: 8.0
+        gradle-version: 8.0.2
+        
+    - name: 🔄 Regenerate Gradle wrapper
+      run: gradle wrapper --gradle-version 8.0.2
         
     - name: 🚀 Build release APK
-      run: gradle assembleRelease --no-daemon --stacktrace
+      run: ./gradlew assembleRelease --no-daemon --stacktrace
       
     - name: 📝 Get version name
       id: version
@@ -236,13 +245,16 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Setup Gradle
+    - name: 🔧 Setup Gradle and regenerate wrapper
       uses: gradle/gradle-build-action@v2
       with:
-        gradle-version: 8.0
+        gradle-version: 8.0.2
+        
+    - name: 🔄 Regenerate Gradle wrapper
+      run: gradle wrapper --gradle-version 8.0.2
         
     - name: ⚡ Run performance tests
-      run: gradle testDebugUnitTest --tests="*PerformanceTest*" --no-daemon --stacktrace
+      run: ./gradlew testDebugUnitTest --tests="*PerformanceTest*" --no-daemon --stacktrace
       continue-on-error: true
       
     - name: 📊 Upload performance results
