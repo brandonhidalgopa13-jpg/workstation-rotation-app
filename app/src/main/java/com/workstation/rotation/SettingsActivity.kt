@@ -2567,6 +2567,5 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }    }
-
+    }
 }
