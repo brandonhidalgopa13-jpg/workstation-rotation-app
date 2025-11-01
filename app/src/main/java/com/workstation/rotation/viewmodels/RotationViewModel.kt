@@ -546,13 +546,25 @@ class RotationViewModel(
                     println("DEBUG: - ${leader.name}: Tipo=${leader.leadershipType}, Activo=${shouldBeActive}")
                 }
                 
-                val leadersForThisStation = availableWorkers.filter { worker ->
+                // CRITICAL FIX: Separate BOTH leaders from other leaders
+                val bothLeadersForStation = availableWorkers.filter { worker ->
                     worker.isLeader && 
                     worker.leaderWorkstationId == station.id &&
+                    worker.leadershipType == "BOTH"
+                }
+                
+                val activeLeadersForStation = availableWorkers.filter { worker ->
+                    worker.isLeader && 
+                    worker.leaderWorkstationId == station.id &&
+                    worker.leadershipType != "BOTH" &&
                     worker.shouldBeLeaderInRotation(isFirstHalfRotation)
                 }
+                
+                // Combine BOTH leaders (always active) with active leaders for this rotation
+                val leadersForThisStation = bothLeadersForStation + activeLeadersForStation
+                
                 val otherWorkers = availableWorkers.filter { worker ->
-                    !(worker.isLeader && worker.leaderWorkstationId == station.id && worker.shouldBeLeaderInRotation(isFirstHalfRotation))
+                    !leadersForThisStation.contains(worker)
                 }
                 
                 println("DEBUG: Líderes activos: ${leadersForThisStation.size}")
@@ -612,11 +624,20 @@ class RotationViewModel(
         println("DEBUG: === ASIGNACIÓN DE TRABAJADORES RESTANTES ===")
         println("DEBUG: Trabajadores sin asignar: ${unassignedWorkers.size}")
         
-        val leadersToAssign = unassignedWorkers.filter { worker ->
-            worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)
+        // CRITICAL FIX: Include BOTH leaders always, plus active leaders for current rotation
+        val bothLeaders = unassignedWorkers.filter { worker ->
+            worker.isLeader && worker.leadershipType == "BOTH"
         }
+        
+        val activeLeaders = unassignedWorkers.filter { worker ->
+            worker.isLeader && 
+            worker.leadershipType != "BOTH" && 
+            worker.shouldBeLeaderInRotation(isFirstHalfRotation)
+        }
+        
+        val leadersToAssign = bothLeaders + activeLeaders
         val regularWorkers = unassignedWorkers.filter { worker ->
-            !(worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation))
+            !leadersToAssign.contains(worker)
         }
         
         println("DEBUG: Líderes activos sin asignar: ${leadersToAssign.size}")
@@ -626,10 +647,15 @@ class RotationViewModel(
         
         val sortedWorkers = unassignedWorkers.sortedWith(
             compareByDescending<Worker> { worker ->
-                // Priorizar líderes que deben estar activos en esta parte de la rotación
-                if (worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)) 1 else 0
+                // HIGHEST PRIORITY: BOTH leaders (always active)
+                if (worker.isLeader && worker.leadershipType == "BOTH") 3
+                // HIGH PRIORITY: Active leaders for current rotation
+                else if (worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)) 2
+                // MEDIUM PRIORITY: Trainers
+                else if (worker.isTrainer) 1
+                // NORMAL PRIORITY: Regular workers
+                else 0
             }
-                .thenByDescending { it.isTrainer }
                 .thenByDescending { worker ->
                     worker.availabilityPercentage + Random.nextInt(0, 30)
                 }
@@ -737,17 +763,31 @@ class RotationViewModel(
         println("DEBUG: Found ${compatibleStations.size} compatible stations for ${worker.name}")
         
         val targetStation = when {
+            // HIGHEST PRIORITY: BOTH leaders - ALWAYS go to their leadership station
+            worker.isLeader && worker.leaderWorkstationId != null && worker.leadershipType == "BOTH" -> {
+                println("DEBUG: Worker ${worker.name} is BOTH leader (ALWAYS ACTIVE), looking for leadership station ID: ${worker.leaderWorkstationId}")
+                val leadershipStation = compatibleStations.find { it.id == worker.leaderWorkstationId }
+                if (leadershipStation != null) {
+                    println("DEBUG: ✅ Found leadership station ${leadershipStation.name} for BOTH leader ${worker.name}")
+                    leadershipStation
+                } else {
+                    println("DEBUG: ⚠️ Leadership station not available for BOTH leader ${worker.name}, using station with least workers")
+                    compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
+                }
+            }
+            // HIGH PRIORITY: Active leaders for current rotation half
             worker.isLeader && worker.leaderWorkstationId != null && worker.shouldBeLeaderInRotation(isFirstHalfRotation) -> {
                 println("DEBUG: Worker ${worker.name} is ACTIVE leader for ${getCurrentRotationHalf()}, looking for leadership station ID: ${worker.leaderWorkstationId}")
                 val leadershipStation = compatibleStations.find { it.id == worker.leaderWorkstationId }
                 if (leadershipStation != null) {
-                    println("DEBUG: Found leadership station ${leadershipStation.name} for active leader ${worker.name}")
+                    println("DEBUG: ✅ Found leadership station ${leadershipStation.name} for active leader ${worker.name}")
                     leadershipStation
                 } else {
-                    println("DEBUG: Leadership station not available for ${worker.name}, using station with least workers")
+                    println("DEBUG: ⚠️ Leadership station not available for ${worker.name}, using station with least workers")
                     compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
                 }
             }
+            // INACTIVE leaders - assign to any compatible station
             worker.isLeader && worker.leaderWorkstationId != null && !worker.shouldBeLeaderInRotation(isFirstHalfRotation) -> {
                 println("DEBUG: Worker ${worker.name} is INACTIVE leader for ${getCurrentRotationHalf()} (${worker.leadershipType}), assigning to any compatible station")
                 compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
@@ -1115,46 +1155,62 @@ class RotationViewModel(
         val allCurrentWorkers = currentAssignments.values.flatten()
         val workersToRotate = allCurrentWorkers.filter { remainingWorkers.contains(it) }
         
-        // PRIORITY: Assign leaders to their designated stations first
-        val leadersToAssign = workersToRotate.filter { worker ->
-            worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)
-        }
-        
         println("DEBUG: === ASIGNANDO LÍDERES A PRÓXIMA ROTACIÓN ===")
-        println("DEBUG: Líderes activos para ${getCurrentRotationHalf()}: ${leadersToAssign.size}")
+        println("DEBUG: Rotación actual: ${getCurrentRotationHalf()}")
         
-        for (leader in leadersToAssign) {
-            leader.leaderWorkstationId?.let { leaderStationId ->
+        // CRITICAL: Handle ALL leaders, but with different priorities
+        val allLeaders = workersToRotate.filter { it.isLeader }
+        
+        // HIGHEST PRIORITY: Leaders type "BOTH" - MUST be in their station in BOTH rotations
+        val bothTypeLeaders = allLeaders.filter { it.leadershipType == "BOTH" }
+        println("DEBUG: Líderes tipo BOTH (máxima prioridad): ${bothTypeLeaders.size}")
+        
+        for (bothLeader in bothTypeLeaders) {
+            bothLeader.leaderWorkstationId?.let { leaderStationId ->
                 val leaderStation = allWorkstations.find { it.id == leaderStationId }
                 leaderStation?.let { station ->
-                    if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
-                        nextAssignments[station.id]?.add(leader)
-                        println("DEBUG: Líder ${leader.name} (${leader.leadershipType}) asignado a su estación ${station.name}")
+                    // FORCE assignment - BOTH leaders MUST be in their station
+                    if (nextAssignments[station.id]?.contains(bothLeader) != true) {
+                        // For BOTH leaders, we FORCE assignment even if station is full
+                        nextAssignments[station.id]?.add(bothLeader)
+                        println("DEBUG: ✅ Líder BOTH ${bothLeader.name} FORZADO en ${station.name} (AMBAS ROTACIONES)")
                     } else {
-                        println("DEBUG: WARNING: Estación de liderazgo ${station.name} llena para ${leader.name}")
+                        println("DEBUG: ✅ Líder BOTH ${bothLeader.name} ya asignado en ${station.name}")
                     }
                 }
             }
         }
         
-        // SPECIAL CASE: For leaders with "BOTH" type, ensure they appear in both rotations
-        val bothTypeLeaders = workersToRotate.filter { worker ->
-            worker.isLeader && worker.leadershipType == "BOTH"
+        // HIGH PRIORITY: Leaders active in current rotation half
+        val activeLeaders = allLeaders.filter { leader ->
+            leader.leadershipType != "BOTH" && leader.shouldBeLeaderInRotation(isFirstHalfRotation)
         }
+        println("DEBUG: Líderes activos para ${getCurrentRotationHalf()}: ${activeLeaders.size}")
         
-        println("DEBUG: Líderes tipo BOTH encontrados: ${bothTypeLeaders.size}")
-        for (bothLeader in bothTypeLeaders) {
-            bothLeader.leaderWorkstationId?.let { leaderStationId ->
+        for (leader in activeLeaders) {
+            leader.leaderWorkstationId?.let { leaderStationId ->
                 val leaderStation = allWorkstations.find { it.id == leaderStationId }
                 leaderStation?.let { station ->
-                    // Ensure BOTH leaders are in next rotation regardless of current assignment
-                    if (nextAssignments[station.id]?.contains(bothLeader) != true) {
+                    if (nextAssignments[station.id]?.contains(leader) != true) {
                         if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
-                            nextAssignments[station.id]?.add(bothLeader)
-                            println("DEBUG: Líder BOTH ${bothLeader.name} forzado en próxima rotación en ${station.name}")
+                            nextAssignments[station.id]?.add(leader)
+                            println("DEBUG: ✅ Líder ${leader.name} (${leader.leadershipType}) asignado a ${station.name}")
+                        } else {
+                            println("DEBUG: ⚠️ Estación ${station.name} llena para líder ${leader.name}")
                         }
                     }
                 }
+            }
+        }
+        
+        // Log inactive leaders for debugging
+        val inactiveLeaders = allLeaders.filter { leader ->
+            leader.leadershipType != "BOTH" && !leader.shouldBeLeaderInRotation(isFirstHalfRotation)
+        }
+        if (inactiveLeaders.isNotEmpty()) {
+            println("DEBUG: Líderes INACTIVOS para ${getCurrentRotationHalf()}: ${inactiveLeaders.size}")
+            inactiveLeaders.forEach { leader ->
+                println("DEBUG: - ${leader.name} (${leader.leadershipType}) - NO asignado")
             }
         }
         

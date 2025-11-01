@@ -192,130 +192,112 @@
 
             </LinearLayout>
 
-            <!-- Contenido Scrolleable - Scroll Vertical y Horizontal -->
+            <!-- Contenido Scrolleable Mejorado -->
             <ScrollView
                 android:id="@+id/scrollViewVertical"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1"
                 android:fillViewport="true"
-                android:scrollbars="vertical">
+                android:scrollbars="vertical"
+                android:fadeScrollbars="false">
                 
                 <HorizontalScrollView
                     android:id="@+id/scrollViewRotation"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="16dp"
+                    android:padding="8dp"
                     android:scrollbars="horizontal"
-                    android:fadeScrollbars="false">
+                    android:fadeScrollbars="false"
+                    android:background="@color/table_background">
 
-                <LinearLayout
-                    android:id="@+id/layoutRotationTable"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:orientation="vertical"
-                    android:background="@android:color/white">
-
-                    <!-- Headers de Estaciones -->
                     <LinearLayout
-                        android:id="@+id/layoutWorkstationHeaders"
+                        android:id="@+id/layoutRotationTable"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingVertical="12dp" />
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:background="@color/table_background"
+                        android:minWidth="800dp">
 
-                    <!-- Capacidades Requeridas -->
-                    <LinearLayout
-                        android:id="@+id/layoutCapacityRequirements"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingBottom="16dp" />
+                        <!-- Título Principal Mejorado -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:background="@drawable/gradient_primary"
+                            android:padding="16dp"
+                            android:layout_marginBottom="16dp"
+                            android:gravity="center">
 
-                    <!-- Separador Elegante -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="2dp"
-                        android:background="@drawable/gradient_primary"
-                        android:layout_marginVertical="8dp" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🏭"
+                                android:textSize="24sp"
+                                android:layout_marginEnd="12dp" />
 
-                    <!-- Fase Actual -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:background="@color/current_phase_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="ESTACIONES DE TRABAJO"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@android:color/white"
+                                android:gravity="center" />
 
-                        <TextView
+                            <TextView
+                                android:id="@+id/tvRotationTimestamp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text=""
+                                android:textSize="12sp"
+                                android:textColor="@android:color/white"
+                                android:alpha="0.8"
+                                android:visibility="gone" />
+
+                        </LinearLayout>
+
+                        <!-- Contenedor de Estaciones Mejorado -->
+                        <LinearLayout
+                            android:id="@+id/layoutWorkstationColumns"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="🔵"
-                            android:textSize="16sp"
-                            android:layout_marginEnd="8dp" />
+                            android:orientation="horizontal"
+                            android:gravity="top"
+                            android:padding="8dp" />
 
-                        <TextView
-                            android:layout_width="0dp"
+                        <!-- Información de Ayuda -->
+                        <LinearLayout
+                            android:id="@+id/layoutHelpInfo"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="ROTACIÓN ACTUAL"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/current_phase_color" />
+                            android:orientation="vertical"
+                            android:background="@color/info_background"
+                            android:padding="16dp"
+                            android:layout_marginTop="16dp"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="💡 Guía Visual"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary"
+                                android:layout_marginBottom="8dp" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="🔵 Rotación Actual  •  🟠 Próxima Rotación  •  👑 Líder  •  👨‍🏫 Entrenador  •  🎯 En Entrenamiento  •  🏆 Certificado"
+                                android:textSize="12sp"
+                                android:textColor="@color/text_secondary"
+                                android:lineSpacingExtra="2dp" />
+
+                        </LinearLayout>
 
                     </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutCurrentPhase"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:minHeight="150dp"
-                        android:paddingBottom="16dp" />
-
-                    <!-- Separador -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/border_medium"
-                        android:layout_marginVertical="12dp" />
-
-                    <!-- Próxima Fase -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:background="@color/next_phase_background"
-                        android:padding="12dp"
-                        android:layout_marginBottom="8dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="🟠"
-                            android:textSize="16sp"
-                            android:layout_marginEnd="8dp" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="PRÓXIMA ROTACIÓN"
-                            android:textSize="16sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/next_phase_color" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutNextPhase"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:minHeight="150dp" />
-
-                </LinearLayout>
 
                 </HorizontalScrollView>
                 
