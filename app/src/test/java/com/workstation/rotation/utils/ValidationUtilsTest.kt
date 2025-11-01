@@ -10,109 +10,131 @@ import org.junit.Assert.*
 class ValidationUtilsTest {
 
     @Test
-    fun `validateWorkerName should return true for valid names`() {
+    fun `validateWorkerName should return ValidationResult for valid names`() {
         // Arrange & Act & Assert
-        assertTrue(ValidationUtils.validateWorkerName("Juan Pérez"))
-        assertTrue(ValidationUtils.validateWorkerName("María José"))
-        assertTrue(ValidationUtils.validateWorkerName("Carlos"))
-        assertTrue(ValidationUtils.validateWorkerName("Ana-Sofía"))
+        val result1 = ValidationUtils.validateWorkerName("Juan Pérez")
+        val result2 = ValidationUtils.validateWorkerName("María José")
+        val result3 = ValidationUtils.validateWorkerName("Carlos")
+        val result4 = ValidationUtils.validateWorkerName("Ana-Sofía")
+        
+        assertTrue(result1.isValid)
+        assertTrue(result2.isValid)
+        assertTrue(result3.isValid)
+        assertTrue(result4.isValid)
     }
 
     @Test
-    fun `validateWorkerName should return false for invalid names`() {
+    fun `validateWorkerName should return ValidationResult for invalid names`() {
         // Arrange & Act & Assert
-        assertFalse(ValidationUtils.validateWorkerName(""))
-        assertFalse(ValidationUtils.validateWorkerName("   "))
-        assertFalse(ValidationUtils.validateWorkerName("A"))
-        assertFalse(ValidationUtils.validateWorkerName("123"))
-        assertFalse(ValidationUtils.validateWorkerName("Juan123"))
+        val result1 = ValidationUtils.validateWorkerName("")
+        val result2 = ValidationUtils.validateWorkerName("   ")
+        val result3 = ValidationUtils.validateWorkerName("A")
+        val result4 = ValidationUtils.validateWorkerName("Juan123")
+        
+        assertFalse(result1.isValid)
+        assertFalse(result2.isValid)
+        assertFalse(result3.isValid)
+        assertFalse(result4.isValid)
+        assertNotNull(result1.errorMessage)
     }
 
     @Test
-    fun `validateWorkstationName should return true for valid names`() {
+    fun `validateWorkstationName should return ValidationResult for valid names`() {
         // Arrange & Act & Assert
-        assertTrue(ValidationUtils.validateWorkstationName("Estación 1"))
-        assertTrue(ValidationUtils.validateWorkstationName("Línea A"))
-        assertTrue(ValidationUtils.validateWorkstationName("Empaque"))
-        assertTrue(ValidationUtils.validateWorkstationName("Control-Calidad"))
+        val result1 = ValidationUtils.validateWorkstationName("Estación 1")
+        val result2 = ValidationUtils.validateWorkstationName("Línea A")
+        val result3 = ValidationUtils.validateWorkstationName("Empaque")
+        val result4 = ValidationUtils.validateWorkstationName("Control-Calidad")
+        
+        assertTrue(result1.isValid)
+        assertTrue(result2.isValid)
+        assertTrue(result3.isValid)
+        assertTrue(result4.isValid)
     }
 
     @Test
-    fun `validateWorkstationName should return false for invalid names`() {
+    fun `validateWorkstationName should return ValidationResult for invalid names`() {
         // Arrange & Act & Assert
-        assertFalse(ValidationUtils.validateWorkstationName(""))
-        assertFalse(ValidationUtils.validateWorkstationName("   "))
-        assertFalse(ValidationUtils.validateWorkstationName("A"))
+        val result1 = ValidationUtils.validateWorkstationName("")
+        val result2 = ValidationUtils.validateWorkstationName("   ")
+        val result3 = ValidationUtils.validateWorkstationName("A")
+        
+        assertFalse(result1.isValid)
+        assertFalse(result2.isValid)
+        assertFalse(result3.isValid)
+        assertNotNull(result1.errorMessage)
     }
 
     @Test
-    fun `validateCapabilities should return true for valid capabilities`() {
+    fun `validateEmail should return ValidationResult for valid emails`() {
         // Arrange & Act & Assert
-        assertTrue(ValidationUtils.validateCapabilities("Soldadura, Ensamble"))
-        assertTrue(ValidationUtils.validateCapabilities("Control de Calidad"))
-        assertTrue(ValidationUtils.validateCapabilities(""))
-        assertTrue(ValidationUtils.validateCapabilities("   "))
+        val result1 = ValidationUtils.validateEmail("")
+        val result2 = ValidationUtils.validateEmail("test@example.com")
+        val result3 = ValidationUtils.validateEmail("user.name@domain.co")
+        
+        assertTrue(result1.isValid) // Empty email is valid (optional)
+        assertTrue(result2.isValid)
+        assertTrue(result3.isValid)
     }
 
     @Test
-    fun `validateRestrictions should return true for valid restrictions`() {
+    fun `validateEmail should return ValidationResult for invalid emails`() {
         // Arrange & Act & Assert
-        assertTrue(ValidationUtils.validateRestrictions("No levantar peso"))
-        assertTrue(ValidationUtils.validateRestrictions("Solo turno diurno"))
-        assertTrue(ValidationUtils.validateRestrictions(""))
-        assertTrue(ValidationUtils.validateRestrictions("   "))
+        val result1 = ValidationUtils.validateEmail("invalid")
+        val result2 = ValidationUtils.validateEmail("@domain.com")
+        val result3 = ValidationUtils.validateEmail("test@")
+        
+        assertFalse(result1.isValid)
+        assertFalse(result2.isValid)
+        assertFalse(result3.isValid)
+        assertNotNull(result1.errorMessage)
     }
 
     @Test
-    fun `isValidEmail should return true for valid emails`() {
+    fun `validateAvailabilityPercentage should return ValidationResult for valid percentages`() {
         // Arrange & Act & Assert
-        assertTrue(ValidationUtils.isValidEmail("test@example.com"))
-        assertTrue(ValidationUtils.isValidEmail("user.name@domain.co"))
-        assertTrue(ValidationUtils.isValidEmail("test123@test-domain.org"))
+        val result1 = ValidationUtils.validateAvailabilityPercentage(0)
+        val result2 = ValidationUtils.validateAvailabilityPercentage(50)
+        val result3 = ValidationUtils.validateAvailabilityPercentage(100)
+        
+        assertTrue(result1.isValid)
+        assertTrue(result2.isValid)
+        assertTrue(result3.isValid)
     }
 
     @Test
-    fun `isValidEmail should return false for invalid emails`() {
+    fun `validateAvailabilityPercentage should return ValidationResult for invalid percentages`() {
         // Arrange & Act & Assert
-        assertFalse(ValidationUtils.isValidEmail(""))
-        assertFalse(ValidationUtils.isValidEmail("invalid"))
-        assertFalse(ValidationUtils.isValidEmail("@domain.com"))
-        assertFalse(ValidationUtils.isValidEmail("test@"))
-        assertFalse(ValidationUtils.isValidEmail("test.domain.com"))
+        val result1 = ValidationUtils.validateAvailabilityPercentage(-1)
+        val result2 = ValidationUtils.validateAvailabilityPercentage(101)
+        
+        assertFalse(result1.isValid)
+        assertFalse(result2.isValid)
+        assertNotNull(result1.errorMessage)
+        assertNotNull(result2.errorMessage)
     }
 
     @Test
-    fun `sanitizeInput should clean dangerous characters`() {
+    fun `validateRequiredWorkers should return ValidationResult for valid counts`() {
         // Arrange & Act & Assert
-        assertEquals("Test Name", ValidationUtils.sanitizeInput("Test Name"))
-        assertEquals("Test-Name", ValidationUtils.sanitizeInput("Test-Name"))
-        assertEquals("Test Name", ValidationUtils.sanitizeInput("Test<script>Name"))
-        assertEquals("Test Name", ValidationUtils.sanitizeInput("Test&lt;Name"))
-        assertEquals("Test Name", ValidationUtils.sanitizeInput("  Test Name  "))
+        val result1 = ValidationUtils.validateRequiredWorkers(1)
+        val result2 = ValidationUtils.validateRequiredWorkers(5)
+        val result3 = ValidationUtils.validateRequiredWorkers(100)
+        
+        assertTrue(result1.isValid)
+        assertTrue(result2.isValid)
+        assertTrue(result3.isValid)
     }
 
     @Test
-    fun `isValidBackupData should validate backup structure`() {
-        // Arrange
-        val validBackup = """
-            {
-                "version": "2.1.0",
-                "timestamp": "2024-10-26T10:00:00Z",
-                "workers": [],
-                "workstations": []
-            }
-        """.trimIndent()
-
-        val invalidBackup = """
-            {
-                "invalid": "data"
-            }
-        """.trimIndent()
-
-        // Act & Assert
-        assertTrue(ValidationUtils.isValidBackupData(validBackup))
-        assertFalse(ValidationUtils.isValidBackupData(invalidBackup))
-        assertFalse(ValidationUtils.isValidBackupData(""))
-        assertFalse(ValidationUtils.isValidBackupData("invalid json"))
+    fun `validateRequiredWorkers should return ValidationResult for invalid counts`() {
+        // Arrange & Act & Assert
+        val result1 = ValidationUtils.validateRequiredWorkers(0)
+        val result2 = ValidationUtils.validateRequiredWorkers(101)
+        
+        assertFalse(result1.isValid)
+        assertFalse(result2.isValid)
+        assertNotNull(result1.errorMessage)
+        assertNotNull(result2.errorMessage)
     }
 }

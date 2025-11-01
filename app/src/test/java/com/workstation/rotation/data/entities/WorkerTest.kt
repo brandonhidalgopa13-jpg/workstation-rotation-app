@@ -14,36 +14,36 @@ class WorkerTest {
         // Arrange & Act
         val worker = Worker(
             name = "Juan Pérez",
-            capabilities = "Soldadura, Ensamble",
-            restrictions = "No levantar peso"
+            email = "juan@example.com",
+            restrictionNotes = "No levantar peso"
         )
 
         // Assert
         assertEquals("Juan Pérez", worker.name)
-        assertEquals("Soldadura, Ensamble", worker.capabilities)
-        assertEquals("No levantar peso", worker.restrictions)
-        assertTrue(worker.isAvailable)
-        assertFalse(worker.isInTraining)
+        assertEquals("juan@example.com", worker.email)
+        assertEquals("No levantar peso", worker.restrictionNotes)
+        assertTrue(worker.isActive)
+        assertFalse(worker.isTrainee)
         assertNull(worker.trainerId)
-        assertNull(worker.lastWorkstationId)
-        assertTrue(worker.createdAt > 0)
-        assertTrue(worker.updatedAt > 0)
+        assertNull(worker.currentWorkstationId)
+        assertEquals(100, worker.availabilityPercentage)
+        assertFalse(worker.isCertified)
     }
 
     @Test
     fun `worker in training should have trainer id`() {
         // Arrange & Act
-        val trainer = Worker(name = "Trainer", capabilities = "Experto")
+        val trainer = Worker(name = "Trainer", isTrainer = true)
         val trainee = Worker(
             name = "Aprendiz",
-            capabilities = "",
-            isInTraining = true,
+            isTrainee = true,
             trainerId = trainer.id
         )
 
         // Assert
-        assertTrue(trainee.isInTraining)
+        assertTrue(trainee.isTrainee)
         assertEquals(trainer.id, trainee.trainerId)
+        assertTrue(trainer.isTrainer)
     }
 
     @Test
@@ -51,22 +51,23 @@ class WorkerTest {
         // Arrange
         val worker = Worker(
             name = "Aprendiz",
-            capabilities = "",
-            isInTraining = true,
+            isTrainee = true,
             trainerId = 1L
         )
 
         // Act - Simulate graduation
         val graduatedWorker = worker.copy(
-            isInTraining = false,
+            isTrainee = false,
             trainerId = null,
-            capabilities = "Soldadura Básica"
+            isCertified = true,
+            certificationDate = System.currentTimeMillis()
         )
 
         // Assert
-        assertFalse(graduatedWorker.isInTraining)
+        assertFalse(graduatedWorker.isTrainee)
         assertNull(graduatedWorker.trainerId)
-        assertEquals("Soldadura Básica", graduatedWorker.capabilities)
+        assertTrue(graduatedWorker.isCertified)
+        assertNotNull(graduatedWorker.certificationDate)
     }
 
     @Test
@@ -74,44 +75,46 @@ class WorkerTest {
         // Arrange
         val worker = Worker(name = "Test Worker")
 
-        // Act & Assert - Initially available
-        assertTrue(worker.isAvailable)
+        // Act & Assert - Initially active
+        assertTrue(worker.isActive)
 
-        // Act - Make unavailable
-        val unavailableWorker = worker.copy(isAvailable = false)
-        assertFalse(unavailableWorker.isAvailable)
+        // Act - Make inactive
+        val inactiveWorker = worker.copy(isActive = false)
+        assertFalse(inactiveWorker.isActive)
 
-        // Act - Make available again
-        val availableWorker = unavailableWorker.copy(isAvailable = true)
-        assertTrue(availableWorker.isAvailable)
+        // Act - Make active again
+        val activeWorker = inactiveWorker.copy(isActive = true)
+        assertTrue(activeWorker.isActive)
     }
 
     @Test
-    fun `worker should track last workstation`() {
+    fun `worker should track current workstation`() {
         // Arrange
         val worker = Worker(name = "Test Worker")
         val workstationId = 5L
 
         // Act
-        val updatedWorker = worker.copy(lastWorkstationId = workstationId)
+        val updatedWorker = worker.copy(currentWorkstationId = workstationId)
 
         // Assert
-        assertEquals(workstationId, updatedWorker.lastWorkstationId)
+        assertEquals(workstationId, updatedWorker.currentWorkstationId)
     }
 
     @Test
-    fun `worker capabilities should be stored as string`() {
+    fun `worker display name should include status icons`() {
         // Arrange & Act
-        val worker = Worker(
-            name = "Multi-skill Worker",
-            capabilities = "Soldadura, Ensamble, Control de Calidad, Empaque"
-        )
+        val leader = Worker(name = "Leader", isLeader = true)
+        val trainer = Worker(name = "Trainer", isTrainer = true)
+        val trainee = Worker(name = "Trainee", isTrainee = true)
+        val certified = Worker(name = "Certified", isCertified = true)
+        val regular = Worker(name = "Regular")
 
         // Assert
-        assertTrue(worker.capabilities.contains("Soldadura"))
-        assertTrue(worker.capabilities.contains("Ensamble"))
-        assertTrue(worker.capabilities.contains("Control de Calidad"))
-        assertTrue(worker.capabilities.contains("Empaque"))
+        assertEquals("Leader 👑", leader.getDisplayName())
+        assertEquals("Trainer 👨‍🏫", trainer.getDisplayName())
+        assertEquals("Trainee 🎯", trainee.getDisplayName())
+        assertEquals("Certified 🏆", certified.getDisplayName())
+        assertEquals("Regular", regular.getDisplayName())
     }
 
     @Test
@@ -119,32 +122,58 @@ class WorkerTest {
         // Arrange & Act
         val workerWithRestrictions = Worker(
             name = "Restricted Worker",
-            restrictions = "No levantar peso, Solo turno diurno"
+            restrictionNotes = "No levantar peso, Solo turno diurno"
         )
         
         val workerWithoutRestrictions = Worker(
-            name = "Unrestricted Worker",
-            restrictions = ""
+            name = "Unrestricted Worker"
         )
 
         // Assert
-        assertEquals("No levantar peso, Solo turno diurno", workerWithRestrictions.restrictions)
-        assertEquals("", workerWithoutRestrictions.restrictions)
+        assertTrue(workerWithRestrictions.hasRestrictions())
+        assertFalse(workerWithoutRestrictions.hasRestrictions())
+        assertEquals("No levantar peso, Solo turno diurno", workerWithRestrictions.restrictionNotes)
+        assertEquals("", workerWithoutRestrictions.restrictionNotes)
     }
 
     @Test
-    fun `worker timestamps should be set on creation`() {
-        // Arrange
-        val beforeCreation = System.currentTimeMillis()
-        
-        // Act
-        val worker = Worker(name = "Test Worker")
-        
+    fun `worker availability status should be descriptive`() {
+        // Arrange & Act
+        val highAvailability = Worker(name = "High", availabilityPercentage = 90)
+        val mediumAvailability = Worker(name = "Medium", availabilityPercentage = 65)
+        val lowAvailability = Worker(name = "Low", availabilityPercentage = 30)
+
         // Assert
-        val afterCreation = System.currentTimeMillis()
-        assertTrue(worker.createdAt >= beforeCreation)
-        assertTrue(worker.createdAt <= afterCreation)
-        assertTrue(worker.updatedAt >= beforeCreation)
-        assertTrue(worker.updatedAt <= afterCreation)
+        assertEquals("Alta", highAvailability.getAvailabilityStatus())
+        assertEquals("Media", mediumAvailability.getAvailabilityStatus())
+        assertEquals("Baja", lowAvailability.getAvailabilityStatus())
+    }
+
+    @Test
+    fun `worker rotation priority should be calculated correctly`() {
+        // Arrange & Act
+        val leader = Worker(name = "Leader", isLeader = true)
+        val trainedWorker = Worker(name = "Trained", rotationsInCurrentStation = 3)
+        val regularWorker = Worker(name = "Regular")
+        val trainer = Worker(name = "Trainer", isTrainer = true)
+
+        // Assert
+        assertEquals(200, leader.getRotationPriority())
+        assertEquals(103, trainedWorker.getRotationPriority()) // 100 + 3 rotations
+        assertEquals(50, regularWorker.getRotationPriority())
+        assertEquals(10, trainer.getRotationPriority())
+    }
+
+    @Test
+    fun `worker leadership type should be descriptive`() {
+        // Arrange & Act
+        val bothHalves = Worker(name = "Both", isLeader = true, leadershipType = "BOTH")
+        val firstHalf = Worker(name = "First", isLeader = true, leadershipType = "FIRST_HALF")
+        val secondHalf = Worker(name = "Second", isLeader = true, leadershipType = "SECOND_HALF")
+
+        // Assert
+        assertEquals("Ambas partes", bothHalves.getLeadershipTypeDescription())
+        assertEquals("Primera parte", firstHalf.getLeadershipTypeDescription())
+        assertEquals("Segunda parte", secondHalf.getLeadershipTypeDescription())
     }
 }

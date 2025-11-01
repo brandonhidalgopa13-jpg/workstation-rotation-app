@@ -14,30 +14,27 @@ class WorkstationTest {
         // Arrange & Act
         val workstation = Workstation(
             name = "Estación de Soldadura",
-            requiredCapabilities = "Soldadura",
-            priority = 3
+            requiredWorkers = 2
         )
 
         // Assert
         assertEquals("Estación de Soldadura", workstation.name)
-        assertEquals("Soldadura", workstation.requiredCapabilities)
-        assertEquals(3, workstation.priority)
+        assertEquals(2, workstation.requiredWorkers)
+        assertFalse(workstation.isPriority)
         assertTrue(workstation.isActive)
-        assertTrue(workstation.createdAt > 0)
-        assertTrue(workstation.updatedAt > 0)
     }
 
     @Test
-    fun `workstation priority should be within valid range`() {
+    fun `workstation priority should be manageable`() {
         // Arrange & Act
-        val lowPriority = Workstation(name = "Low Priority", priority = 1)
-        val mediumPriority = Workstation(name = "Medium Priority", priority = 3)
-        val highPriority = Workstation(name = "High Priority", priority = 5)
+        val regularStation = Workstation(name = "Regular Station", isPriority = false)
+        val priorityStation = Workstation(name = "Priority Station", isPriority = true)
 
         // Assert
-        assertEquals(1, lowPriority.priority)
-        assertEquals(3, mediumPriority.priority)
-        assertEquals(5, highPriority.priority)
+        assertFalse(regularStation.isPriority)
+        assertTrue(priorityStation.isPriority)
+        assertEquals("Normal", regularStation.getPriorityLevel())
+        assertEquals("Alta Prioridad", priorityStation.getPriorityLevel())
     }
 
     @Test
@@ -58,62 +55,48 @@ class WorkstationTest {
     }
 
     @Test
-    fun `workstation required capabilities should be stored as string`() {
+    fun `workstation display name should include priority indicator`() {
         // Arrange & Act
-        val workstation = Workstation(
-            name = "Multi-skill Station",
-            requiredCapabilities = "Soldadura, Control de Calidad"
-        )
+        val regularStation = Workstation(name = "Regular Station")
+        val priorityStation = Workstation(name = "Priority Station", isPriority = true)
 
         // Assert
-        assertTrue(workstation.requiredCapabilities.contains("Soldadura"))
-        assertTrue(workstation.requiredCapabilities.contains("Control de Calidad"))
+        assertEquals("Regular Station", regularStation.getDisplayName())
+        assertEquals("Priority Station ⭐", priorityStation.getDisplayName())
     }
 
     @Test
-    fun `workstation can have empty required capabilities`() {
+    fun `workstation capacity info should be formatted correctly`() {
         // Arrange & Act
-        val workstation = Workstation(
-            name = "General Station",
-            requiredCapabilities = ""
-        )
+        val workstation = Workstation(name = "Test Station", requiredWorkers = 3)
 
         // Assert
-        assertEquals("", workstation.requiredCapabilities)
+        assertEquals("(0/3)", workstation.getCapacityInfo(0))
+        assertEquals("(2/3)", workstation.getCapacityInfo(2))
+        assertEquals("(3/3)", workstation.getCapacityInfo(3))
     }
 
     @Test
-    fun `workstation timestamps should be set on creation`() {
-        // Arrange
-        val beforeCreation = System.currentTimeMillis()
-        
-        // Act
-        val workstation = Workstation(name = "Test Station")
-        
+    fun `workstation should detect when at capacity`() {
+        // Arrange & Act
+        val workstation = Workstation(name = "Test Station", requiredWorkers = 2)
+
         // Assert
-        val afterCreation = System.currentTimeMillis()
-        assertTrue(workstation.createdAt >= beforeCreation)
-        assertTrue(workstation.createdAt <= afterCreation)
-        assertTrue(workstation.updatedAt >= beforeCreation)
-        assertTrue(workstation.updatedAt <= afterCreation)
+        assertFalse(workstation.isAtCapacity(0))
+        assertFalse(workstation.isAtCapacity(1))
+        assertTrue(workstation.isAtCapacity(2))
+        assertTrue(workstation.isAtCapacity(3)) // Over capacity
     }
 
     @Test
-    fun `workstation priority should affect sorting order`() {
-        // Arrange
-        val stations = listOf(
-            Workstation(name = "Low", priority = 1),
-            Workstation(name = "High", priority = 5),
-            Workstation(name = "Medium", priority = 3)
-        )
-
-        // Act - Sort by priority descending (high priority first)
-        val sortedStations = stations.sortedByDescending { it.priority }
+    fun `workstation should handle different required worker counts`() {
+        // Arrange & Act
+        val singleWorker = Workstation(name = "Single", requiredWorkers = 1)
+        val multiWorker = Workstation(name = "Multi", requiredWorkers = 5)
 
         // Assert
-        assertEquals("High", sortedStations[0].name)
-        assertEquals("Medium", sortedStations[1].name)
-        assertEquals("Low", sortedStations[2].name)
+        assertEquals(1, singleWorker.requiredWorkers)
+        assertEquals(5, multiWorker.requiredWorkers)
     }
 
     @Test
@@ -121,7 +104,7 @@ class WorkstationTest {
         // Arrange & Act
         val workstation = Workstation(
             name = "Estación #1 - Control/Calidad (Área A)",
-            requiredCapabilities = "Control de Calidad"
+            requiredWorkers = 2
         )
 
         // Assert
@@ -133,25 +116,23 @@ class WorkstationTest {
         // Arrange
         val originalWorkstation = Workstation(
             name = "Original Station",
-            requiredCapabilities = "Original Skills",
-            priority = 2,
+            requiredWorkers = 2,
+            isPriority = false,
             isActive = true
         )
 
         // Act - Update workstation
         val updatedWorkstation = originalWorkstation.copy(
             name = "Updated Station",
-            priority = 4,
-            updatedAt = System.currentTimeMillis()
+            isPriority = true
         )
 
-        // Assert - ID and creation time should remain the same
+        // Assert - ID should remain the same
         assertEquals(originalWorkstation.id, updatedWorkstation.id)
-        assertEquals(originalWorkstation.createdAt, updatedWorkstation.createdAt)
         
         // Assert - Updated fields should change
         assertEquals("Updated Station", updatedWorkstation.name)
-        assertEquals(4, updatedWorkstation.priority)
-        assertTrue(updatedWorkstation.updatedAt > originalWorkstation.updatedAt)
+        assertTrue(updatedWorkstation.isPriority)
+        assertEquals(originalWorkstation.requiredWorkers, updatedWorkstation.requiredWorkers)
     }
 }
