@@ -1,5 +1,65 @@
 # 📋 CHANGELOG - REWS (Rotation and Workstation System)
 
+## [2.5.0] - 2024-10-31
+
+### 🎨 **DISEÑO GRÁFICO MODERNO Y SISTEMA DE ONBOARDING**
+
+#### 🎯 **Sistema de Onboarding Interactivo Completo**
+- **Tutorial de 5 Páginas**: Guía paso a paso para nuevos usuarios
+- **Navegación Fluida**: ViewPager2 con indicadores de progreso visuales
+- **Ejecución Automática**: Se ejecuta automáticamente en primera instalación
+- **Acceso Posterior**: Disponible desde configuraciones para consulta
+- **Animaciones Suaves**: Transiciones elegantes entre páginas
+- **Diseño Responsive**: Adaptado a diferentes tamaños de pantalla
+
+#### 🎨 **Renovación Visual Completa**
+- **Gradientes Modernos**: 5 gradientes dinámicos para diferentes contextos
+- **Botones Elegantes**: Diseño moderno con efectos y bordes redondeados
+- **Cards Elevadas**: Sombras profesionales y diseño Material Design 3
+- **Paleta Expandida**: +20 colores nuevos para mejor categorización
+- **Iconos Personalizados**: 5 iconos ilustrativos para el onboarding
+- **Fondos Coloridos**: Círculos categorizados para mejor organización visual
+
+#### 📱 **Mejoras de Interfaz de Usuario**
+- **Header Renovado**: Gradiente dinámico con información de versión
+- **Cards de Navegación**: Diseño mejorado con iconos coloridos y descripciones
+- **Estilos Modernos**: 10+ estilos nuevos para texto y componentes
+- **Efectos Visuales**: Hover effects, ripple animations y transiciones
+- **Accesibilidad**: Colores contrastantes y texto legible mejorado
+
+#### 🔧 **Mejoras Técnicas Implementadas**
+- **OnboardingActivity**: Actividad completa para tutorial interactivo
+- **OnboardingAdapter**: Adaptador personalizado para gestión de páginas
+- **OnboardingPage**: Modelo de datos para páginas del tutorial
+- **Persistencia**: Sistema de SharedPreferences para estado de onboarding
+- **Dependencias**: Integración de dotsindicator para indicadores visuales
+
+#### 📊 **Experiencia de Usuario Mejorada**
+- **Primera Impresión**: Tutorial profesional que reduce curva de aprendizaje
+- **Navegación Intuitiva**: Flujo lógico y fácil de seguir
+- **Diseño Empresarial**: Apariencia moderna y profesional
+- **Feedback Visual**: Indicadores claros de progreso y estado
+- **Accesibilidad**: Mejoras en contraste y legibilidad
+
+### 🔧 **Archivos Nuevos Creados**
+- **OnboardingActivity.kt**: Tutorial interactivo principal
+- **OnboardingAdapter.kt**: Gestión de páginas del tutorial
+- **OnboardingPage.kt**: Modelo de datos para páginas
+- **activity_onboarding.xml**: Layout principal del onboarding
+- **item_onboarding_page.xml**: Layout de página individual
+- **15+ Recursos Gráficos**: Gradientes, botones, iconos y fondos modernos
+- **ARCHITECTURE.md**: Documentación técnica completa del sistema
+- **INSTALLATION_GUIDE.md**: Guía detallada de instalación
+- **MEJORAS_DISENO_GRAFICO_v2.5.0.md**: Documentación de mejoras visuales
+
+### 📈 **Impacto en el Producto**
+- **Profesionalismo**: Elevación significativa de la percepción de calidad
+- **Adopción**: Reducción de la curva de aprendizaje para nuevos usuarios
+- **Retención**: Mejor experiencia de primera impresión
+- **Escalabilidad**: Base sólida para futuras mejoras visuales
+
+---
+
 ## [2.4.0] - 2024-10-31
 
 ### 🎉 **SISTEMA DE LIDERAZGO COMPLETAMENTE IMPLEMENTADO**
