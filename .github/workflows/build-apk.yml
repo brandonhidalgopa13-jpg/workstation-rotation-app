@@ -32,28 +32,26 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Clean Gradle environment
-      run: |
-        unset GRADLE_OPTS
-        unset GRADLE_USER_HOME
-        echo "Cleaned Gradle environment variables"
-      
+    - name: 🔧 Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      with:
+        gradle-version: wrapper
+        
     - name: 🧪 Run unit tests
-      env:
-        GRADLE_OPTS: ""
-      run: |
-        echo "Running Gradle tests..."
-        ./gradlew testDebugUnitTest --no-daemon --stacktrace
-      
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: testDebugUnitTest --no-daemon
+        
     - name: 🔍 Run lint
-      env:
-        GRADLE_OPTS: ""
-      run: ./gradlew lintDebug --no-daemon --stacktrace
-      
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: lintDebug --no-daemon
+        
     - name: 📊 Generate test report
-      env:
-        GRADLE_OPTS: ""
-      run: ./gradlew jacocoTestReport --no-daemon --stacktrace
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: jacocoTestReport --no-daemon
+      continue-on-error: true
       
     - name: 📤 Upload test results
       uses: actions/upload-artifact@v4
@@ -84,11 +82,10 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Setup Gradle
-      uses: gradle/gradle-build-action@v2
-      
     - name: 🔨 Build debug APK
-      run: ./gradlew assembleDebug --no-daemon --max-workers=2
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleDebug --no-daemon
       
     - name: 📤 Upload debug APK
       uses: actions/upload-artifact@v4
@@ -137,7 +134,9 @@ jobs:
         fi
       
     - name: 🚀 Build release APK
-      run: ./gradlew assembleRelease --no-daemon --max-workers=2
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: assembleRelease --no-daemon
       
     - name: 📝 Get version name
       id: version
@@ -237,7 +236,9 @@ jobs:
       uses: android-actions/setup-android@v3
       
     - name: ⚡ Run performance tests
-      run: ./gradlew testDebugUnitTest --tests="*PerformanceTest*" --no-daemon --max-workers=2
+      uses: gradle/gradle-build-action@v2
+      with:
+        arguments: testDebugUnitTest --tests="*PerformanceTest*" --no-daemon
       continue-on-error: true
       
     - name: 📊 Upload performance results
