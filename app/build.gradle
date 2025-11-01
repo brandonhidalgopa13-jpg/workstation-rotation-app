@@ -38,13 +38,8 @@ android {
                 storePassword keystoreProperties['storePassword']
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
-            } else {
-                // Fallback for CI/CD or when keystore.properties doesn't exist
-                storeFile file('debug.keystore')
-                storePassword 'android'
-                keyAlias 'androiddebugkey'
-                keyPassword 'android'
             }
+            // If no keystore.properties, don't configure signing (will use debug signing)
         }
     }
 
@@ -57,7 +52,13 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            
+            // Only use release signing if keystore.properties exists
+            def keystorePropertiesFile = rootProject.file("keystore.properties")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+            // If no keystore.properties, will use debug signing automatically
             
             // Optimizations for release
             debuggable false
