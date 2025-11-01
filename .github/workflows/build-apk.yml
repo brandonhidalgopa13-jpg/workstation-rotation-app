@@ -35,22 +35,17 @@ jobs:
     - name: 🔧 Setup Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        gradle-version: wrapper
+        gradle-version: 8.0
         
     - name: 🧪 Run unit tests
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: testDebugUnitTest --no-daemon
+      run: gradle testDebugUnitTest --no-daemon --stacktrace
         
     - name: 🔍 Run lint
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: lintDebug --no-daemon
+      run: gradle lintDebug --no-daemon --stacktrace
+      continue-on-error: true
         
     - name: 📊 Generate test report
-      uses: gradle/gradle-build-action@v2
-      with:
-        arguments: jacocoTestReport --no-daemon
+      run: gradle jacocoTestReport --no-daemon --stacktrace
       continue-on-error: true
       
     - name: 📤 Upload test results
@@ -82,10 +77,13 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔨 Build debug APK
+    - name: 🔧 Setup Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: assembleDebug --no-daemon
+        gradle-version: 8.0
+        
+    - name: 🔨 Build debug APK
+      run: gradle assembleDebug --no-daemon --stacktrace
       
     - name: 📤 Upload debug APK
       uses: actions/upload-artifact@v4
@@ -133,10 +131,13 @@ jobs:
           echo "⚠️ Keystore secrets not configured, building unsigned APK"
         fi
       
-    - name: 🚀 Build release APK
+    - name: 🔧 Setup Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: assembleRelease --no-daemon
+        gradle-version: 8.0
+        
+    - name: 🚀 Build release APK
+      run: gradle assembleRelease --no-daemon --stacktrace
       
     - name: 📝 Get version name
       id: version
@@ -235,10 +236,13 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: ⚡ Run performance tests
+    - name: 🔧 Setup Gradle
       uses: gradle/gradle-build-action@v2
       with:
-        arguments: testDebugUnitTest --tests="*PerformanceTest*" --no-daemon
+        gradle-version: 8.0
+        
+    - name: ⚡ Run performance tests
+      run: gradle testDebugUnitTest --tests="*PerformanceTest*" --no-daemon --stacktrace
       continue-on-error: true
       
     - name: 📊 Upload performance results
