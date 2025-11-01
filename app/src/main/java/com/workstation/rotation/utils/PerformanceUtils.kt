@@ -17,7 +17,7 @@ object PerformanceUtils {
     /**
      * Mide el tiempo de ejecución de una operación
      */
-    inline fun <T> measureExecutionTime(
+    internal inline fun <T> measureExecutionTime(
         operationName: String,
         operation: () -> T
     ): T {
@@ -37,7 +37,7 @@ object PerformanceUtils {
     /**
      * Mide el tiempo de ejecución de una operación suspendida
      */
-    suspend inline fun <T> measureSuspendExecutionTime(
+    internal suspend inline fun <T> measureSuspendExecutionTime(
         operationName: String,
         crossinline operation: suspend () -> T
     ): T = withContext(Dispatchers.Default) {
