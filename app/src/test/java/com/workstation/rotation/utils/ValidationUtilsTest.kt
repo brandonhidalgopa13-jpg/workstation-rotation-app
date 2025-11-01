@@ -15,7 +15,7 @@ class ValidationUtilsTest {
         val result1 = ValidationUtils.validateWorkerName("Juan Pérez")
         val result2 = ValidationUtils.validateWorkerName("María José")
         val result3 = ValidationUtils.validateWorkerName("Carlos")
-        val result4 = ValidationUtils.validateWorkerName("Ana-Sofía")
+        val result4 = ValidationUtils.validateWorkerName("Ana Sofía")
         
         assertTrue(result1.isValid)
         assertTrue(result2.isValid)

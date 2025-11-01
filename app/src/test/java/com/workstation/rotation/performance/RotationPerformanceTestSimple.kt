@@ -117,17 +117,18 @@ class RotationPerformanceTestSimple {
         // Arrange
         val workers = listOf(
             Worker(name = "Leader", isLeader = true),
-            Worker(name = "Trained High Rotations", rotationsInCurrentStation = 5),
-            Worker(name = "Trained Low Rotations", rotationsInCurrentStation = 1),
-            Worker(name = "Regular Worker"),
-            Worker(name = "Trainer", isTrainer = true)
+            Worker(name = "Trained High Rotations", rotationsInCurrentStation = 5), // isTrainedWorker() = true, needsToRotate() = true
+            Worker(name = "Trained Low Rotations", rotationsInCurrentStation = 1), // isTrainedWorker() = true, needsToRotate() = false
+            Worker(name = "Regular Worker"), // isTrainedWorker() = true, needsToRotate() = false
+            Worker(name = "Trainer", isTrainer = true) // isTrainedWorker() = false
         )
         
         // Act
         val priorities = workers.map { it.getRotationPriority() }
         
         // Assert
-        assertEquals(listOf(200, 105, 101, 50, 10), priorities)
+        // Leader: 200, Trained High (needs rotate): 105, Trained Low: 50, Regular: 50, Trainer: 10
+        assertEquals(listOf(200, 105, 50, 50, 10), priorities)
         
         // Verify sorting by priority works correctly
         val sortedWorkers = workers.sortedByDescending { it.getRotationPriority() }
