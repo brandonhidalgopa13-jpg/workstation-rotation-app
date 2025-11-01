@@ -194,7 +194,7 @@ class RotationActivity : AppCompatActivity() {
             
             // Asegurar que el texto no se corte
             maxLines = 2
-            ellipsize = android.text.TextUtils.TruncateAt.NONE
+            ellipsize = null
             isSingleLine = false
             
             // Ajustar el ancho mínimo para nombres largos
@@ -322,7 +322,7 @@ class RotationActivity : AppCompatActivity() {
                 
                 // Asegurar que el nombre no se corte
                 maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.NONE
+                ellipsize = null
                 isSingleLine = false
                 minWidth = 200 // Ancho mínimo en pixels
             }
@@ -339,7 +339,7 @@ class RotationActivity : AppCompatActivity() {
                     
                     // Asegurar que el estado no se corte
                     maxLines = 2
-                    ellipsize = android.text.TextUtils.TruncateAt.NONE
+                    ellipsize = null
                     isSingleLine = false
                 }
                 addView(statusView)
