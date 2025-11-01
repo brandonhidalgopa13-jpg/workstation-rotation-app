@@ -8,6 +8,7 @@ import android.content.Context
 import com.workstation.rotation.utils.Constants
 import com.workstation.rotation.data.dao.WorkerDao
 import com.workstation.rotation.data.dao.WorkstationDao
+import com.workstation.rotation.data.dao.RotationDao
 import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.data.entities.WorkerWorkstation
@@ -69,6 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workerDao(): WorkerDao
     abstract fun workstationDao(): WorkstationDao
     abstract fun workerRestrictionDao(): WorkerRestrictionDao
+    abstract fun rotationDao(): RotationDao
     
     companion object {
         @Volatile
