@@ -28,7 +28,7 @@
     </style>
     
     <!-- Card style with elevation and rounded corners -->
-    <style name="CardStyle" parent="Widget.Material3.CardView.Elevated">
+    <style name="CardStyle" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">8dp</item>
         <item name="cardBackgroundColor">@color/background_card</item>
@@ -36,7 +36,7 @@
     </style>
     
     <!-- Dark theme card style -->
-    <style name="CardStyleDark" parent="Widget.Material3.CardView.Elevated">
+    <style name="CardStyleDark" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">8dp</item>
         <item name="cardBackgroundColor">@color/background_card_dark</item>
