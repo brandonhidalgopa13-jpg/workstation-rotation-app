@@ -680,14 +680,14 @@ class RotationViewModel(
         
         val sortedWorkers = unassignedWorkers.sortedWith(
             compareByDescending<Worker> { worker ->
-                // HIGHEST PRIORITY: BOTH leaders (always active)
-                if (worker.isLeader && worker.leadershipType == "BOTH") 3
+                // HIGHEST PRIORITY: BOTH leaders (always active) - BUT they should already be assigned in Phase 0.5
+                if (worker.isLeader && worker.leadershipType == "BOTH") 4
                 // HIGH PRIORITY: Active leaders for current rotation
-                else if (worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)) 2
+                else if (worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)) 3
                 // MEDIUM PRIORITY: Trainers
-                else if (worker.isTrainer) 1
+                else if (worker.isTrainer) 2
                 // NORMAL PRIORITY: Regular workers
-                else 0
+                else 1
             }
                 .thenByDescending { worker ->
                     worker.availabilityPercentage + Random.nextInt(0, 30)
@@ -1205,6 +1205,10 @@ class RotationViewModel(
         // This happens BEFORE any other assignment, including priority workstations
         val allUnassignedWorkers = eligibleWorkers.toMutableList()
         assignTrainerTraineePairsWithPriority(eligibleWorkers, currentAssignments, allWorkstations, allUnassignedWorkers)
+        
+        // PHASE 0.5: CRITICAL FIX - Force assign BOTH leaders to current rotation
+        // This ensures BOTH leaders are ALWAYS in their station in CURRENT rotation
+        assignBothLeadersToCurrentRotation(eligibleWorkers, currentAssignments, allWorkstations)
             
         // Phase 1: Assign remaining workers to PRIORITY workstations (current positions)
         assignPriorityWorkstations(priorityWorkstations, eligibleWorkers, currentAssignments)
@@ -1221,6 +1225,54 @@ class RotationViewModel(
         val rotationTable = createRotationTable(allWorkstations, currentAssignments, nextAssignments)
         
         return Pair(rotationItems, rotationTable)
+    }
+
+    /**
+     * Assigns BOTH type leaders to their designated stations with ABSOLUTE PRIORITY.
+     * This ensures BOTH leaders are ALWAYS in their station in CURRENT rotation.
+     * CRITICAL FIX: Addresses the issue where BOTH leaders were not guaranteed in current rotation.
+     */
+    private suspend fun assignBothLeadersToCurrentRotation(
+        eligibleWorkers: List<Worker>,
+        currentAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        println("DEBUG: === ASIGNACIÓN FORZADA DE LÍDERES BOTH (ROTACIÓN ACTUAL) ===")
+        println("DEBUG: Rotación actual: ${getCurrentRotationHalf()}")
+        
+        val bothTypeLeaders = eligibleWorkers.filter { 
+            it.isLeader && it.leadershipType == "BOTH" && it.leaderWorkstationId != null 
+        }
+        
+        println("DEBUG: Líderes BOTH encontrados: ${bothTypeLeaders.size}")
+        
+        for (bothLeader in bothTypeLeaders) {
+            bothLeader.leaderWorkstationId?.let { leaderStationId ->
+                val leaderStation = allWorkstations.find { it.id == leaderStationId }
+                leaderStation?.let { station ->
+                    // Check if leader is already assigned
+                    val alreadyAssigned = currentAssignments.values.any { it.contains(bothLeader) }
+                    
+                    if (!alreadyAssigned) {
+                        // FORCE assignment - BOTH leaders override capacity limits
+                        currentAssignments[station.id]?.add(bothLeader)
+                        println("DEBUG: ✅ Líder BOTH ${bothLeader.name} FORZADO en ${station.name} (ROTACIÓN ACTUAL)")
+                        println("DEBUG: Nueva capacidad: ${currentAssignments[station.id]?.size}/${station.requiredWorkers}")
+                        
+                        // Log if we exceeded capacity (this is acceptable for BOTH leaders)
+                        if ((currentAssignments[station.id]?.size ?: 0) > station.requiredWorkers) {
+                            println("DEBUG: ⚠️ CAPACIDAD EXCEDIDA en ${station.name} por líder BOTH (ACEPTABLE)")
+                        }
+                    } else {
+                        println("DEBUG: ✅ Líder BOTH ${bothLeader.name} ya asignado en rotación actual")
+                    }
+                } ?: run {
+                    println("DEBUG: ❌ ERROR - Estación de liderazgo ${leaderStationId} no encontrada para ${bothLeader.name}")
+                }
+            }
+        }
+        
+        println("DEBUG: ========================================================")
     }
 
     /**

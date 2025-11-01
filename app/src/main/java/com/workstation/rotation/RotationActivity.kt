@@ -121,12 +121,12 @@ class RotationActivity : AppCompatActivity() {
         val nextTotal = rotationTable.nextPhase.values.sumOf { it.size }
         println("DEBUG: Current phase workers: $currentTotal, Next phase workers: $nextTotal")
         
-        val columnWidth = 200
+        val columnWidth = 280 // Aumentar ancho base para nombres largos
         val layoutParams = LinearLayout.LayoutParams(
             columnWidth,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(4, 4, 4, 4)
+            setMargins(6, 6, 6, 6)
         }
         
         setupWorkstationHeaders(workstations, layoutParams)
@@ -141,7 +141,7 @@ class RotationActivity : AppCompatActivity() {
     private fun setupWorkstationHeaders(workstations: List<com.workstation.rotation.data.entities.Workstation>, layoutParams: LinearLayout.LayoutParams) {
         workstations.forEach { workstation ->
             val headerView = createWorkstationHeader(workstation, layoutParams)
-            binding.layoutWorkstationHeaders?.addView(headerView)
+            binding.layoutWorkstationHeaders.addView(headerView)
         }
     }
     
@@ -153,7 +153,7 @@ class RotationActivity : AppCompatActivity() {
         workstations.forEach { workstation ->
             val currentWorkers = rotationTable.currentPhase[workstation.id] ?: emptyList()
             val capacityView = createCapacityRequirement(workstation, currentWorkers, layoutParams)
-            binding.layoutCapacityRequirements?.addView(capacityView)
+            binding.layoutCapacityRequirements.addView(capacityView)
         }
     }
     
@@ -166,7 +166,7 @@ class RotationActivity : AppCompatActivity() {
             val workers = rotationTable.currentPhase[workstation.id] ?: emptyList()
             println("DEBUG: Current phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, true)
-            binding.layoutCurrentPhase?.addView(columnView)
+            binding.layoutCurrentPhase.addView(columnView)
         }
     }
     
@@ -179,7 +179,7 @@ class RotationActivity : AppCompatActivity() {
             val workers = rotationTable.nextPhase[workstation.id] ?: emptyList()
             println("DEBUG: Next phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, false)
-            binding.layoutNextPhase?.addView(columnView)
+            binding.layoutNextPhase.addView(columnView)
         }
     }
     
@@ -189,9 +189,22 @@ class RotationActivity : AppCompatActivity() {
             textSize = 14f
             setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
             gravity = android.view.Gravity.CENTER
-            setPadding(8, 12, 8, 12)
+            setPadding(12, 16, 12, 16)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            this.layoutParams = layoutParams
+            
+            // Asegurar que el texto no se corte
+            maxLines = 2
+            ellipsize = android.text.TextUtils.TruncateAt.NONE
+            isSingleLine = false
+            
+            // Ajustar el ancho mínimo para nombres largos
+            val adjustedLayoutParams = LinearLayout.LayoutParams(
+                maxOf(layoutParams.width, 250), // Mínimo 250dp de ancho
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+            this.layoutParams = adjustedLayoutParams
             
             val bgColor = if (workstation.isPriority) R.color.priority_header else R.color.normal_header
             background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.gradient_primary)
@@ -210,17 +223,26 @@ class RotationActivity : AppCompatActivity() {
         
         val capacityLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(8, 8, 8, 8)
-            this.layoutParams = layoutParams
+            setPadding(12, 8, 12, 8)
+            
+            // Usar el mismo ancho que los headers
+            val adjustedLayoutParams = LinearLayout.LayoutParams(
+                maxOf(layoutParams.width, 250), // Mínimo 250dp de ancho
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+            this.layoutParams = adjustedLayoutParams
         }
         
         val capacityView = TextView(this).apply {
             text = "$currentCount/$requiredCount"
-            textSize = 14f
+            textSize = 16f
             setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.white))
             gravity = android.view.Gravity.CENTER
-            setPadding(8, 6, 8, 6)
+            setPadding(12, 8, 12, 8)
             setTypeface(null, android.graphics.Typeface.BOLD)
+            maxLines = 1
             
             val bgColor = if (isFullyStaffed) R.color.status_success else R.color.status_warning
             background = ContextCompat.getDrawable(this@RotationActivity, R.drawable.status_badge_green)
@@ -230,13 +252,14 @@ class RotationActivity : AppCompatActivity() {
         
         val statusView = TextView(this).apply {
             text = if (isFullyStaffed) "COMPLETA" else "INCOMPLETA"
-            textSize = 9f
+            textSize = 10f
             setTextColor(if (isFullyStaffed) 
                 ContextCompat.getColor(this@RotationActivity, R.color.status_success) 
                 else ContextCompat.getColor(this@RotationActivity, R.color.status_warning))
             gravity = android.view.Gravity.CENTER
-            setPadding(4, 2, 4, 2)
+            setPadding(4, 4, 4, 4)
             setTypeface(null, android.graphics.Typeface.BOLD)
+            maxLines = 1
         }
         capacityLayout.addView(statusView)
         
@@ -250,8 +273,16 @@ class RotationActivity : AppCompatActivity() {
     ): LinearLayout {
         val columnLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(4, 4, 4, 4)
-            this.layoutParams = layoutParams
+            setPadding(8, 8, 8, 8)
+            
+            // Usar el mismo ancho que los headers
+            val adjustedLayoutParams = LinearLayout.LayoutParams(
+                maxOf(layoutParams.width, 250), // Mínimo 250dp de ancho
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+            this.layoutParams = adjustedLayoutParams
         }
         
         workers.forEach { worker ->
@@ -265,7 +296,16 @@ class RotationActivity : AppCompatActivity() {
     private fun createWorkerView(worker: Worker, isCurrentPhase: Boolean): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(8, 8, 8, 8)
+            setPadding(12, 12, 12, 12)
+            
+            // Asegurar ancho mínimo para el card del trabajador
+            val cardLayoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(4, 4, 4, 4)
+            }
+            this.layoutParams = cardLayoutParams
             
             val bgColor = if (isCurrentPhase) R.color.current_phase_light else R.color.next_phase_light
             
@@ -274,22 +314,36 @@ class RotationActivity : AppCompatActivity() {
             
             val nameView = TextView(this@RotationActivity).apply {
                 text = worker.name
-                textSize = 13f
+                textSize = 14f
                 setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_primary))
                 gravity = android.view.Gravity.CENTER
                 setTypeface(null, android.graphics.Typeface.BOLD)
-                setPadding(4, 4, 4, 2)
+                setPadding(8, 8, 8, 4)
+                
+                // Asegurar que el nombre no se corte
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.NONE
+                isSingleLine = false
+                minWidth = 200 // Ancho mínimo en pixels
             }
             addView(nameView)
             
-            val statusView = TextView(this@RotationActivity).apply {
-                text = getWorkerStatusIndicators(worker)
-                textSize = 10f
-                setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_secondary))
-                gravity = android.view.Gravity.CENTER
-                setPadding(4, 2, 4, 4)
+            val statusText = getWorkerStatusIndicators(worker)
+            if (statusText.isNotEmpty()) {
+                val statusView = TextView(this@RotationActivity).apply {
+                    text = statusText
+                    textSize = 10f
+                    setTextColor(ContextCompat.getColor(this@RotationActivity, R.color.text_secondary))
+                    gravity = android.view.Gravity.CENTER
+                    setPadding(8, 4, 8, 8)
+                    
+                    // Asegurar que el estado no se corte
+                    maxLines = 2
+                    ellipsize = android.text.TextUtils.TruncateAt.NONE
+                    isSingleLine = false
+                }
+                addView(statusView)
             }
-            addView(statusView)
         }
     }
     
@@ -313,10 +367,10 @@ class RotationActivity : AppCompatActivity() {
     }
     
     private fun clearRotationTable() {
-        binding.layoutWorkstationHeaders?.removeAllViews()
-        binding.layoutCapacityRequirements?.removeAllViews()
-        binding.layoutCurrentPhase?.removeAllViews()
-        binding.layoutNextPhase?.removeAllViews()
+        binding.layoutWorkstationHeaders.removeAllViews()
+        binding.layoutCapacityRequirements.removeAllViews()
+        binding.layoutCurrentPhase.removeAllViews()
+        binding.layoutNextPhase.removeAllViews()
     }
     
     /**
