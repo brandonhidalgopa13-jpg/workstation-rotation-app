@@ -122,11 +122,14 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnWorkstations"
-                    style="@style/Widget.Material3.Button"
+                    style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:text="Abrir"
-                    app:cornerRadius="24dp"
+                    android:layout_height="56dp"
+                    android:text="Gestionar"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="20dp"
+                    android:minWidth="110dp"
+                    app:cornerRadius="28dp"
                     app:backgroundTint="@color/primary_blue" />
 
             </LinearLayout>
@@ -193,11 +196,14 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnWorkers"
-                    style="@style/Widget.Material3.Button"
+                    style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:text="Abrir"
-                    app:cornerRadius="24dp"
+                    android:layout_height="56dp"
+                    android:text="Administrar"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="20dp"
+                    android:minWidth="110dp"
+                    app:cornerRadius="28dp"
                     app:backgroundTint="@color/accent_orange" />
 
             </LinearLayout>
@@ -264,11 +270,14 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRotation"
-                    style="@style/Widget.Material3.Button"
+                    style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
+                    android:layout_height="56dp"
                     android:text="Generar"
-                    app:cornerRadius="24dp"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="20dp"
+                    android:minWidth="110dp"
+                    app:cornerRadius="28dp"
                     app:backgroundTint="@color/accent_green" />
 
             </LinearLayout>
@@ -335,11 +344,14 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSettings"
-                    style="@style/Widget.Material3.Button"
+                    style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="48dp"
-                    android:text="Abrir"
-                    app:cornerRadius="24dp"
+                    android:layout_height="56dp"
+                    android:text="Configurar"
+                    android:textSize="14sp"
+                    android:paddingHorizontal="20dp"
+                    android:minWidth="110dp"
+                    app:cornerRadius="28dp"
                     app:backgroundTint="@color/accent_purple" />
 
             </LinearLayout>

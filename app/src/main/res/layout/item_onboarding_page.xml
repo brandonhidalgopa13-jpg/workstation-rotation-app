@@ -19,25 +19,32 @@
     <!-- Título -->
     <TextView
         android:id="@+id/tvTitle"
-        android:textSize="28sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Título de la página"
+        android:textSize="26sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
         android:gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Título de la página" />
+        android:maxLines="3"
+        android:ellipsize="none"
+        android:layout_marginBottom="16dp"
+        android:layout_marginHorizontal="24dp" />
 
     <!-- Descripción -->
     <TextView
         android:id="@+id/tvDescription"
-        android:textSize="16sp"
-        android:textColor="@color/text_secondary"
-        android:gravity="center"
-        android:lineSpacingExtra="4dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Descripción detallada de la funcionalidad"
-        android:layout_marginHorizontal="16dp" />
+        android:textSize="16sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:lineSpacingExtra="6dp"
+        android:maxLines="5"
+        android:ellipsize="none"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="8dp" />
 
     <!-- Espacio flexible -->
     <View
