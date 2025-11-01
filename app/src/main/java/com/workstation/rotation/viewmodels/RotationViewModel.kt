@@ -232,15 +232,21 @@ class RotationViewModel(
     
     /**
      * Prepares and validates data needed for rotation generation.
+     * CORRECCIÓN: Mejora la verificación de asignaciones y proporciona más información de debug.
      */
     private suspend fun prepareRotationData(): RotationData {
+        println("DEBUG: ===== PREPARANDO DATOS DE ROTACIÓN =====")
+        
         val allWorkers = workerDao.getAllWorkers().first().filter { it.isActive }
         val eligibleWorkers = mutableListOf<Worker>()
         
         // Pre-load all worker-workstation relationships to avoid multiple DB calls
         val workerWorkstationMap = mutableMapOf<Long, List<Long>>()
         
-        println("DEBUG: Preparing rotation data for ${allWorkers.size} active workers")
+        println("DEBUG: Procesando ${allWorkers.size} trabajadores activos")
+        
+        var workersWithAssignments = 0
+        var totalAssignments = 0
         
         for (worker in allWorkers) {
             val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
@@ -254,24 +260,51 @@ class RotationViewModel(
                 worker.isCertified -> "CERTIFICADO"
                 else -> "REGULAR"
             }
-            println("DEBUG: Worker ${worker.name} [$workerType] (ID: ${worker.id}) assigned to ${workstationIds.size} workstations: $workstationIds")
             
             if (workstationIds.isNotEmpty()) {
                 eligibleWorkers.add(worker)
+                workersWithAssignments++
+                totalAssignments += workstationIds.size
+                println("DEBUG: ✅ ${worker.name} [$workerType] → ${workstationIds.size} estaciones: $workstationIds")
             } else {
-                println("DEBUG: Worker ${worker.name} has NO workstation assignments - excluded from rotation")
+                println("DEBUG: ❌ ${worker.name} [$workerType] → SIN ESTACIONES ASIGNADAS - EXCLUIDO")
             }
         }
         
         // Cache the relationships for use in other functions
         workerWorkstationCache = workerWorkstationMap
         
+        println("DEBUG: === RESUMEN DE ASIGNACIONES ===")
+        println("DEBUG: Trabajadores con asignaciones: $workersWithAssignments/${allWorkers.size}")
+        println("DEBUG: Total de asignaciones: $totalAssignments")
+        println("DEBUG: Promedio de estaciones por trabajador: ${if (workersWithAssignments > 0) totalAssignments.toFloat() / workersWithAssignments else 0}")
         println("DEBUG: Caché actualizado con ${workerWorkstationMap.size} trabajadores")
         
         eligibleWorkersCount = eligibleWorkers.size
         val allWorkstations = workstationDao.getAllActiveWorkstations().first()
         
-        println("DEBUG: Found ${eligibleWorkers.size} eligible workers and ${allWorkstations.size} active workstations")
+        println("DEBUG: === ESTACIONES DISPONIBLES ===")
+        allWorkstations.forEach { station ->
+            val assignedWorkers = workerWorkstationMap.count { it.value.contains(station.id) }
+            println("DEBUG: ${station.name} (ID: ${station.id}) → $assignedWorkers trabajadores asignados, requiere ${station.requiredWorkers}")
+        }
+        
+        println("DEBUG: Trabajadores elegibles: ${eligibleWorkers.size}")
+        println("DEBUG: Estaciones activas: ${allWorkstations.size}")
+        
+        if (eligibleWorkers.isEmpty()) {
+            println("DEBUG: ❌ ERROR CRÍTICO - No hay trabajadores elegibles para rotación!")
+            println("DEBUG: Posibles causas:")
+            println("DEBUG:   1. Ningún trabajador tiene estaciones asignadas")
+            println("DEBUG:   2. Todos los trabajadores están inactivos")
+            println("DEBUG:   3. Error en la base de datos")
+        }
+        
+        if (allWorkstations.isEmpty()) {
+            println("DEBUG: ❌ ERROR CRÍTICO - No hay estaciones activas!")
+        }
+        
+        println("DEBUG: ========================================")
         
         return RotationData(eligibleWorkers, allWorkstations)
     }
@@ -739,85 +772,114 @@ class RotationViewModel(
 
     /**
      * Assigns a worker to the most suitable available station.
+     * CORRECCIÓN: Usa getWorkerWorkstationIds para obtener asignaciones actualizadas.
      */
     private suspend fun assignWorkerToOptimalStation(
         worker: Worker,
         availableStations: List<Workstation>,
         assignments: MutableMap<Long, MutableList<Worker>>
     ) {
-        val workerStationIds = workerDao.getWorkerWorkstationIds(worker.id)
+        // CORRECCIÓN: Usar el método que maneja caché correctamente
+        val workerStationIds = getWorkerWorkstationIds(worker.id)
         
-        println("DEBUG: Assigning worker ${worker.name} to optimal station")
-        println("DEBUG: Worker ${worker.name} can work at stations: $workerStationIds")
+        println("DEBUG: === ASIGNANDO TRABAJADOR A ESTACIÓN ÓPTIMA ===")
+        println("DEBUG: Trabajador: ${worker.name} (ID: ${worker.id})")
+        println("DEBUG: Estaciones asignadas al trabajador: $workerStationIds")
+        println("DEBUG: Estaciones disponibles: ${availableStations.map { "${it.name}(${it.id})" }}")
+        
+        if (workerStationIds.isEmpty()) {
+            println("DEBUG: ❌ ERROR - Trabajador ${worker.name} NO tiene estaciones asignadas!")
+            println("DEBUG: Este trabajador no debería estar en la lista de elegibles")
+            return
+        }
         
         val compatibleStations = availableStations.filter { station ->
             val canWorkHere = station.id in workerStationIds
             val hasCapacity = (assignments[station.id]?.size ?: 0) < station.requiredWorkers
             val currentAssigned = assignments[station.id]?.size ?: 0
             
-            println("DEBUG: Station ${station.name} - can work: $canWorkHere, capacity: $currentAssigned/${station.requiredWorkers}, has space: $hasCapacity")
+            println("DEBUG: Estación ${station.name} (ID: ${station.id}):")
+            println("DEBUG:   - Puede trabajar aquí: $canWorkHere")
+            println("DEBUG:   - Capacidad actual: $currentAssigned/${station.requiredWorkers}")
+            println("DEBUG:   - Tiene espacio: $hasCapacity")
             
             canWorkHere && hasCapacity
         }
         
-        println("DEBUG: Found ${compatibleStations.size} compatible stations for ${worker.name}")
+        println("DEBUG: Estaciones compatibles encontradas: ${compatibleStations.size}")
+        compatibleStations.forEach { station ->
+            println("DEBUG:   - ${station.name} (${assignments[station.id]?.size ?: 0}/${station.requiredWorkers})")
+        }
+        
+        if (compatibleStations.isEmpty()) {
+            println("DEBUG: ❌ ERROR - No hay estaciones compatibles para ${worker.name}")
+            println("DEBUG: Posibles causas:")
+            println("DEBUG:   1. Todas las estaciones asignadas están llenas")
+            println("DEBUG:   2. El trabajador no está asignado a ninguna estación disponible")
+            return
+        }
         
         val targetStation = when {
             // HIGHEST PRIORITY: BOTH leaders - ALWAYS go to their leadership station
             worker.isLeader && worker.leaderWorkstationId != null && worker.leadershipType == "BOTH" -> {
-                println("DEBUG: Worker ${worker.name} is BOTH leader (ALWAYS ACTIVE), looking for leadership station ID: ${worker.leaderWorkstationId}")
+                println("DEBUG: Trabajador ${worker.name} es líder BOTH (SIEMPRE ACTIVO)")
+                println("DEBUG: Buscando estación de liderazgo ID: ${worker.leaderWorkstationId}")
                 val leadershipStation = compatibleStations.find { it.id == worker.leaderWorkstationId }
                 if (leadershipStation != null) {
-                    println("DEBUG: ✅ Found leadership station ${leadershipStation.name} for BOTH leader ${worker.name}")
+                    println("DEBUG: ✅ Encontrada estación de liderazgo ${leadershipStation.name}")
                     leadershipStation
                 } else {
-                    println("DEBUG: ⚠️ Leadership station not available for BOTH leader ${worker.name}, using station with least workers")
+                    println("DEBUG: ⚠️ Estación de liderazgo no disponible, usando estación con menos trabajadores")
                     compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
                 }
             }
             // HIGH PRIORITY: Active leaders for current rotation half
             worker.isLeader && worker.leaderWorkstationId != null && worker.shouldBeLeaderInRotation(isFirstHalfRotation) -> {
-                println("DEBUG: Worker ${worker.name} is ACTIVE leader for ${getCurrentRotationHalf()}, looking for leadership station ID: ${worker.leaderWorkstationId}")
+                println("DEBUG: Trabajador ${worker.name} es líder ACTIVO para ${getCurrentRotationHalf()}")
+                println("DEBUG: Buscando estación de liderazgo ID: ${worker.leaderWorkstationId}")
                 val leadershipStation = compatibleStations.find { it.id == worker.leaderWorkstationId }
                 if (leadershipStation != null) {
-                    println("DEBUG: ✅ Found leadership station ${leadershipStation.name} for active leader ${worker.name}")
+                    println("DEBUG: ✅ Encontrada estación de liderazgo ${leadershipStation.name}")
                     leadershipStation
                 } else {
-                    println("DEBUG: ⚠️ Leadership station not available for ${worker.name}, using station with least workers")
+                    println("DEBUG: ⚠️ Estación de liderazgo no disponible, usando estación con menos trabajadores")
                     compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
                 }
             }
             // INACTIVE leaders - assign to any compatible station
             worker.isLeader && worker.leaderWorkstationId != null && !worker.shouldBeLeaderInRotation(isFirstHalfRotation) -> {
-                println("DEBUG: Worker ${worker.name} is INACTIVE leader for ${getCurrentRotationHalf()} (${worker.leadershipType}), assigning to any compatible station")
+                println("DEBUG: Trabajador ${worker.name} es líder INACTIVO para ${getCurrentRotationHalf()} (${worker.leadershipType})")
                 compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
             }
             worker.isTrainee && worker.trainingWorkstationId != null -> {
-                println("DEBUG: Worker ${worker.name} is trainee, looking for training station ID: ${worker.trainingWorkstationId}")
+                println("DEBUG: Trabajador ${worker.name} es entrenado, buscando estación de entrenamiento ID: ${worker.trainingWorkstationId}")
                 val trainingStation = compatibleStations.find { it.id == worker.trainingWorkstationId }
                 if (trainingStation != null) {
-                    println("DEBUG: Found training station ${trainingStation.name} for trainee ${worker.name}")
+                    println("DEBUG: ✅ Encontrada estación de entrenamiento ${trainingStation.name}")
                     trainingStation
                 } else {
-                    println("DEBUG: Training station not available, using station with least workers")
+                    println("DEBUG: ⚠️ Estación de entrenamiento no disponible, usando estación con menos trabajadores")
                     compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
                 }
             }
             else -> {
                 val selected = compatibleStations.minByOrNull { assignments[it.id]?.size ?: 0 }
-                println("DEBUG: Selected station with least workers: ${selected?.name}")
+                println("DEBUG: Trabajador regular, seleccionando estación con menos trabajadores: ${selected?.name}")
                 selected
             }
         }
         
         targetStation?.let { station ->
             assignments[station.id]?.add(worker)
-            println("DEBUG: Successfully assigned ${worker.name} to ${station.name}")
+            println("DEBUG: ✅ ÉXITO - ${worker.name} asignado a ${station.name}")
+            println("DEBUG: Nueva capacidad: ${assignments[station.id]?.size}/${station.requiredWorkers}")
             // Update rotation tracking for all workers
             updateWorkerRotationTracking(worker, station.id)
         } ?: run {
-            println("DEBUG: ERROR - Could not find suitable station for worker ${worker.name}")
+            println("DEBUG: ❌ ERROR CRÍTICO - No se pudo encontrar estación adecuada para ${worker.name}")
         }
+        
+        println("DEBUG: ===============================================")
     }
 
     /**
@@ -948,19 +1010,44 @@ class RotationViewModel(
     /**
      * Obtiene los trabajadores elegibles para una estación específica.
      * Filtra por restricciones específicas y asignaciones de estación.
+     * CORRECCIÓN: Asegura que se carguen las asignaciones desde BD si no están en caché.
      */
     private suspend fun getEligibleWorkersForStation(
         workers: List<Worker>, 
         workstationId: Long
     ): List<Worker> {
-        return workers.filter { worker ->
-            // Verificar de forma síncrona si puede trabajar en esta estación
-            runCatching {
-                // Usar una versión simplificada para evitar suspend en filter
-                val workerWorkstations = workerWorkstationCache[worker.id] ?: emptyList()
-                workerWorkstations.contains(workstationId)
-            }.getOrDefault(false)
+        val eligibleWorkers = mutableListOf<Worker>()
+        
+        for (worker in workers) {
+            // Obtener estaciones asignadas al trabajador (desde caché o BD)
+            val workerWorkstations = getWorkerWorkstationIds(worker.id)
+            
+            // Verificar si el trabajador puede trabajar en esta estación
+            if (workerWorkstations.contains(workstationId)) {
+                // Verificar restricciones adicionales
+                val hasProhibitedRestriction = try {
+                    workerRestrictionDao.hasRestriction(
+                        worker.id, 
+                        workstationId, 
+                        RestrictionType.PROHIBITED
+                    )
+                } catch (e: Exception) {
+                    println("DEBUG: Error verificando restricciones para worker ${worker.id}: ${e.message}")
+                    false
+                }
+                
+                if (!hasProhibitedRestriction) {
+                    eligibleWorkers.add(worker)
+                    println("DEBUG: Worker ${worker.name} es elegible para estación $workstationId")
+                } else {
+                    println("DEBUG: Worker ${worker.name} tiene restricción prohibitiva para estación $workstationId")
+                }
+            } else {
+                println("DEBUG: Worker ${worker.name} NO está asignado a estación $workstationId (asignado a: $workerWorkstations)")
+            }
         }
+        
+        return eligibleWorkers
     }
 
     /**
@@ -1623,13 +1710,14 @@ class RotationViewModel(
     
     /**
      * Método de testing para verificar si un trabajador específico aparecerá en rotaciones.
+     * MEJORADO: Proporciona información más detallada sobre asignaciones y problemas.
      */
     suspend fun debugWorkerEligibilityForRotation(workerId: Long): String {
         println("DEBUG: === VERIFICANDO ELEGIBILIDAD PARA ROTACIÓN ===")
         
         val worker = workerDao.getWorkerById(workerId)
         if (worker == null) {
-            return "ERROR: Trabajador no encontrado"
+            return "❌ ERROR: Trabajador no encontrado con ID: $workerId"
         }
         
         val workstationIds = getWorkerWorkstationIds(workerId)
@@ -1637,41 +1725,172 @@ class RotationViewModel(
         val assignedWorkstations = allWorkstations.filter { workstationIds.contains(it.id) }
         
         val report = StringBuilder()
-        report.append("ELEGIBILIDAD DEL TRABAJADOR PARA ROTACIÓN:\n")
-        report.append("Nombre: ${worker.name}\n")
-        report.append("ID: ${worker.id}\n")
-        report.append("Activo: ${worker.isActive}\n")
-        report.append("Es entrenado: ${worker.isTrainee}\n")
-        report.append("Está certificado: ${worker.isCertified}\n")
-        report.append("Es entrenador: ${worker.isTrainer}\n")
-        report.append("Es líder: ${worker.isLeader}\n")
-        report.append("Estaciones asignadas: ${workstationIds.size}\n")
+        report.append("🔍 DIAGNÓSTICO DE ELEGIBILIDAD PARA ROTACIÓN\n")
+        report.append("=" .repeat(50) + "\n")
+        report.append("👤 INFORMACIÓN DEL TRABAJADOR:\n")
+        report.append("   Nombre: ${worker.name}\n")
+        report.append("   ID: ${worker.id}\n")
+        report.append("   Estado: ${if (worker.isActive) "✅ Activo" else "❌ Inactivo"}\n")
+        report.append("   Disponibilidad: ${worker.availabilityPercentage}%\n")
+        
+        report.append("\n🎭 ROLES Y CARACTERÍSTICAS:\n")
+        report.append("   Es entrenador: ${if (worker.isTrainer) "✅ Sí" else "❌ No"}\n")
+        report.append("   Es entrenado: ${if (worker.isTrainee) "✅ Sí" else "❌ No"}\n")
+        report.append("   Es líder: ${if (worker.isLeader) "✅ Sí (${worker.leadershipType})" else "❌ No"}\n")
+        report.append("   Está certificado: ${if (worker.isCertified) "✅ Sí" else "❌ No"}\n")
+        
+        if (worker.isTrainee && worker.trainerId != null) {
+            val trainer = workerDao.getWorkerById(worker.trainerId!!)
+            report.append("   Entrenador asignado: ${trainer?.name ?: "Desconocido"} (ID: ${worker.trainerId})\n")
+            report.append("   Estación de entrenamiento: ${worker.trainingWorkstationId}\n")
+        }
+        
+        if (worker.isLeader && worker.leaderWorkstationId != null) {
+            val leaderStation = allWorkstations.find { it.id == worker.leaderWorkstationId }
+            report.append("   Estación de liderazgo: ${leaderStation?.name ?: "Desconocida"} (ID: ${worker.leaderWorkstationId})\n")
+        }
+        
+        report.append("\n🏭 ASIGNACIONES DE ESTACIONES:\n")
+        report.append("   Total estaciones asignadas: ${workstationIds.size}\n")
         
         if (workstationIds.isEmpty()) {
-            report.append("❌ NO ELEGIBLE: Sin estaciones asignadas\n")
+            report.append("   ❌ PROBLEMA CRÍTICO: Sin estaciones asignadas\n")
+            report.append("   📝 SOLUCIÓN: Ir a 'Trabajadores' → Editar → Seleccionar estaciones\n")
         } else {
-            report.append("✅ ELEGIBLE: Tiene estaciones asignadas\n")
-            report.append("Estaciones disponibles:\n")
+            report.append("   ✅ Tiene estaciones asignadas:\n")
             assignedWorkstations.forEach { station ->
-                report.append("  - ${station.name} (ID: ${station.id}, Activa: ${station.isActive})\n")
+                val status = if (station.isActive) "✅ Activa" else "❌ Inactiva"
+                val priority = if (station.isPriority) "⭐ Prioritaria" else "📍 Normal"
+                report.append("     - ${station.name} (ID: ${station.id}) - $status - $priority\n")
+                report.append("       Capacidad requerida: ${station.requiredWorkers} trabajadores\n")
             }
         }
         
-        // Verificar si está en caché
+        // Verificar restricciones
+        report.append("\n🚫 VERIFICACIÓN DE RESTRICCIONES:\n")
+        var hasRestrictions = false
+        for (stationId in workstationIds) {
+            try {
+                val hasProhibition = workerRestrictionDao.hasRestriction(
+                    workerId, 
+                    stationId, 
+                    RestrictionType.PROHIBITED
+                )
+                if (hasProhibition) {
+                    val station = allWorkstations.find { it.id == stationId }
+                    report.append("   ⚠️ Restricción prohibitiva en: ${station?.name ?: "ID: $stationId"}\n")
+                    hasRestrictions = true
+                }
+            } catch (e: Exception) {
+                report.append("   ❓ Error verificando restricciones para estación $stationId\n")
+            }
+        }
+        if (!hasRestrictions) {
+            report.append("   ✅ Sin restricciones prohibitivas\n")
+        }
+        
+        // Verificar caché
+        report.append("\n💾 ESTADO DEL CACHÉ:\n")
         val cachedIds = workerWorkstationCache[workerId]
         if (cachedIds != null) {
-            report.append("Caché: $cachedIds\n")
+            report.append("   Caché encontrado: $cachedIds\n")
             if (cachedIds != workstationIds) {
-                report.append("⚠️ ADVERTENCIA: Caché desactualizado!\n")
+                report.append("   ⚠️ ADVERTENCIA: Caché desactualizado!\n")
+                report.append("   BD actual: $workstationIds\n")
+            } else {
+                report.append("   ✅ Caché sincronizado con BD\n")
             }
         } else {
-            report.append("Caché: No encontrado (se cargará desde BD)\n")
+            report.append("   ❌ No encontrado en caché (se cargará desde BD)\n")
         }
         
-        println("DEBUG: $report")
+        // Veredicto final
+        report.append("\n🎯 VEREDICTO FINAL:\n")
+        val isEligible = worker.isActive && workstationIds.isNotEmpty()
+        if (isEligible) {
+            report.append("   ✅ ELEGIBLE PARA ROTACIÓN\n")
+            report.append("   📊 Aparecerá en las rotaciones generadas\n")
+        } else {
+            report.append("   ❌ NO ELEGIBLE PARA ROTACIÓN\n")
+            if (!worker.isActive) {
+                report.append("   📝 Motivo: Trabajador inactivo\n")
+            }
+            if (workstationIds.isEmpty()) {
+                report.append("   📝 Motivo: Sin estaciones asignadas\n")
+            }
+        }
+        
+        report.append("=" .repeat(50) + "\n")
+        
+        val finalReport = report.toString()
+        println("DEBUG: $finalReport")
         println("DEBUG: ============================================")
         
-        return report.toString()
+        return finalReport
+    }
+    
+    /**
+     * Método para diagnosticar problemas comunes en el sistema de rotación.
+     */
+    suspend fun diagnoseRotationIssues(): String {
+        println("DEBUG: === DIAGNÓSTICO GENERAL DEL SISTEMA ===")
+        
+        val report = StringBuilder()
+        report.append("🔧 DIAGNÓSTICO DEL SISTEMA DE ROTACIÓN\n")
+        report.append("=" .repeat(50) + "\n")
+        
+        // Verificar trabajadores
+        val allWorkers = workerDao.getAllWorkers().first()
+        val activeWorkers = allWorkers.filter { it.isActive }
+        val workersWithStations = activeWorkers.filter { worker ->
+            workerDao.getWorkerWorkstationIds(worker.id).isNotEmpty()
+        }
+        
+        report.append("👥 TRABAJADORES:\n")
+        report.append("   Total: ${allWorkers.size}\n")
+        report.append("   Activos: ${activeWorkers.size}\n")
+        report.append("   Con estaciones asignadas: ${workersWithStations.size}\n")
+        report.append("   Elegibles para rotación: ${workersWithStations.size}\n")
+        
+        if (workersWithStations.isEmpty()) {
+            report.append("   ❌ PROBLEMA: Ningún trabajador tiene estaciones asignadas\n")
+        }
+        
+        // Verificar estaciones
+        val allWorkstations = workstationDao.getAllActiveWorkstations().first()
+        val priorityStations = allWorkstations.filter { it.isPriority }
+        
+        report.append("\n🏭 ESTACIONES:\n")
+        report.append("   Total activas: ${allWorkstations.size}\n")
+        report.append("   Prioritarias: ${priorityStations.size}\n")
+        report.append("   Normales: ${allWorkstations.size - priorityStations.size}\n")
+        
+        // Verificar asignaciones
+        var totalAssignments = 0
+        allWorkstations.forEach { station ->
+            val assignedWorkers = activeWorkers.count { worker ->
+                workerDao.getWorkerWorkstationIds(worker.id).contains(station.id)
+            }
+            totalAssignments += assignedWorkers
+            
+            if (assignedWorkers == 0) {
+                report.append("   ⚠️ Estación sin trabajadores: ${station.name}\n")
+            }
+        }
+        
+        report.append("   Total asignaciones: $totalAssignments\n")
+        
+        // Verificar caché
+        report.append("\n💾 CACHÉ:\n")
+        report.append("   Trabajadores en caché: ${workerWorkstationCache.size}\n")
+        if (workerWorkstationCache.isEmpty()) {
+            report.append("   ℹ️ Caché vacío (se cargará en próxima rotación)\n")
+        }
+        
+        val finalReport = report.toString()
+        println("DEBUG: $finalReport")
+        
+        return finalReport
     }
     
     /**
