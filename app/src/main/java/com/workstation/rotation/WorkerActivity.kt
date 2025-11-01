@@ -141,6 +141,10 @@ class WorkerActivity : AppCompatActivity() {
         val dialogBinding = DialogAddWorkerBinding.inflate(layoutInflater)
         val workstationAdapter = WorkstationCheckboxAdapter { item, isChecked ->
             item.isChecked = isChecked
+            // Actualizar spinner de liderazgo cuando cambien las selecciones
+            if (dialogBinding.checkboxIsLeader.isChecked) {
+                loadWorkstationsForLeadershipSpinner(dialogBinding)
+            }
         }
         
         // Configuración básica del RecyclerView
@@ -339,16 +343,44 @@ class WorkerActivity : AppCompatActivity() {
     }
     
     /**
+     * Sets up the training system for editing a worker.
+     */
+    private fun setupTrainingSystemForEdit(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
+        with(dialogBinding) {
+            // Setup trainee checkbox listener
+            checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
+                layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
+                
+                if (isChecked) {
+                    loadTrainersForSpinner(dialogBinding)
+                    setupTrainerSelectionListener(dialogBinding)
+                }
+            }
+            
+            // Prevent trainer and trainee from being selected simultaneously
+            checkboxIsTrainer.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    checkboxIsTrainee.isChecked = false
+                    layoutTrainingDetails.visibility = View.GONE
+                }
+            }
+            
+            // Setup leadership system with worker ID for filtering
+            setupLeadershipSystem(dialogBinding, worker.id)
+        }
+    }
+    
+    /**
      * Sets up the leadership system UI components and their interactions.
      */
-    private fun setupLeadershipSystem(dialogBinding: DialogAddWorkerBinding) {
+    private fun setupLeadershipSystem(dialogBinding: DialogAddWorkerBinding, workerId: Long? = null) {
         with(dialogBinding) {
             // Setup leader checkbox listener
             checkboxIsLeader.setOnCheckedChangeListener { _, isChecked ->
                 layoutLeadershipDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
                 
                 if (isChecked) {
-                    loadWorkstationsForLeadershipSpinner(dialogBinding)
+                    loadWorkstationsForLeadershipSpinner(dialogBinding, workerId)
                 }
             }
         }
@@ -356,12 +388,27 @@ class WorkerActivity : AppCompatActivity() {
     
     /**
      * Loads available workstations for leadership assignment.
+     * Only shows workstations where the worker is assigned.
      */
-    private fun loadWorkstationsForLeadershipSpinner(dialogBinding: DialogAddWorkerBinding) {
+    private fun loadWorkstationsForLeadershipSpinner(dialogBinding: DialogAddWorkerBinding, workerId: Long? = null) {
         lifecycleScope.launch {
             try {
-                val workstations = viewModel.getActiveWorkstationsSync()
-                val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
+                val availableWorkstations = if (workerId != null) {
+                    // Para edición: filtrar solo estaciones asignadas al trabajador
+                    val assignedWorkstationIds = viewModel.getWorkerWorkstationIds(workerId)
+                    val allWorkstations = viewModel.getActiveWorkstationsSync()
+                    allWorkstations.filter { assignedWorkstationIds.contains(it.id) }
+                } else {
+                    // Para nuevo trabajador: mostrar estaciones seleccionadas en el diálogo
+                    val selectedWorkstations = dialogBinding.recyclerViewWorkstations.adapter?.let { adapter ->
+                        if (adapter is WorkstationCheckboxAdapter) {
+                            adapter.currentList.filter { it.isChecked }.map { it.workstation }
+                        } else emptyList()
+                    } ?: emptyList()
+                    selectedWorkstations
+                }
+                
+                val workstationNames = listOf("Seleccionar estación...") + availableWorkstations.map { it.name }
                 val leaderWorkstationAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
@@ -369,6 +416,8 @@ class WorkerActivity : AppCompatActivity() {
                 )
                 leaderWorkstationAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 dialogBinding.spinnerLeaderWorkstation.adapter = leaderWorkstationAdapter
+                
+                android.util.Log.d("WorkerActivity", "Cargadas ${availableWorkstations.size} estaciones para liderazgo")
             } catch (e: Exception) {
                 android.util.Log.e("WorkerActivity", "Error loading workstations for leadership", e)
             }
@@ -954,7 +1003,7 @@ class WorkerActivity : AppCompatActivity() {
         }
         
         // Setup training and leadership systems
-        setupTrainingSystem(dialogBinding)
+        setupTrainingSystemForEdit(dialogBinding, worker)
         
         // Mostrar sección de certificación si aplica
         if (worker.canBeCertified()) {
