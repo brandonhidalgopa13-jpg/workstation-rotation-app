@@ -25,17 +25,27 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sistema de Rotación"
-            android:textSize="24sp"
+            android:text="REWS v2.4.0"
+            android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rotation and Workstation System"
+            android:textSize="14sp"
+            android:textColor="@android:color/white"
+            android:alpha="0.8"
             android:gravity="center"
             android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Gestión inteligente de personal"
+            android:text="Sistema empresarial completo con liderazgo inteligente"
             android:textSize="16sp"
             android:textColor="@android:color/white"
             android:alpha="0.9"

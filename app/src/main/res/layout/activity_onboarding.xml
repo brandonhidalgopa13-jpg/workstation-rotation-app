@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/onboarding_background">
+
+    <!-- ViewPager para las páginas del onboarding -->
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Contenedor de navegación -->
+    <LinearLayout
+        android:id="@+id/navigationContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:background="@color/onboarding_card"
+        android:elevation="8dp">
+
+        <!-- Indicador de puntos -->
+        <com.tbuonomo.viewpagerdotsindicator.DotsIndicator
+            android:id="@+id/dotsIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="24dp"
+            app:dotsColor="@color/onboarding_text_secondary"
+            app:selectedDotColor="@color/onboarding_primary"
+            app:dotsSize="12dp"
+            app:dotsSpacing="8dp"
+            app:dotsCornerRadius="6dp" />
+
+        <!-- Contenedor de botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Botón anterior -->
+            <Button
+                android:id="@+id/btnPrevious"
+                style="@style/ModernSecondaryButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Anterior"
+                android:layout_marginEnd="8dp"
+                android:visibility="invisible" />
+
+            <!-- Botón saltar -->
+            <Button
+                android:id="@+id/btnSkip"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Saltar"
+                android:textColor="@color/onboarding_text_secondary"
+                android:layout_marginHorizontal="8dp" />
+
+            <!-- Botón siguiente -->
+            <Button
+                android:id="@+id/btnNext"
+                style="@style/ModernPrimaryButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Siguiente"
+                android:layout_marginStart="8dp" />
+
+            <!-- Botón comenzar (oculto inicialmente) -->
+            <Button
+                android:id="@+id/btnGetStarted"
+                style="@style/ModernPrimaryButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="2"
+                android:text="¡Comenzar!"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

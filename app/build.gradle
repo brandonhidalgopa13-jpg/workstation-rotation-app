@@ -19,8 +19,8 @@ android {
         applicationId "com.workstation.rotation"
         minSdk 24
         targetSdk 34
-        versionCode 6
-        versionName "2.4.0"
+        versionCode 7
+        versionName "2.5.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -180,6 +180,9 @@ dependencies {
     
     // Fragment testing
     debugImplementation 'androidx.fragment:fragment-testing:1.6.2'
+    
+    // ViewPager2 Dots Indicator for Onboarding
+    implementation 'com.tbuonomo:dotsindicator:5.0'
 }
 
 // Jacoco configuration for code coverage

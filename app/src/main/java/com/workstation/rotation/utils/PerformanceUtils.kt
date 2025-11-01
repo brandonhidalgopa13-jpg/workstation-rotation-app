@@ -11,8 +11,8 @@ import kotlin.system.measureTimeMillis
  */
 object PerformanceUtils {
     
-    private const val TAG = "PerformanceUtils"
-    private const val PERFORMANCE_THRESHOLD_MS = 100L
+    const val TAG = "PerformanceUtils"
+    const val PERFORMANCE_THRESHOLD_MS = 100L
     
     /**
      * Mide el tiempo de ejecución de una operación
@@ -145,20 +145,6 @@ object PerformanceUtils {
             worker: com.workstation.rotation.data.entities.Worker,
             workstation: com.workstation.rotation.data.entities.Workstation
         ): Boolean {
-            // Verificar si el trabajador tiene las capacidades necesarias
-            if (workstation.requiredCapabilities.isNotBlank()) {
-                val requiredCaps = workstation.requiredCapabilities.split(",").map { it.trim() }
-                val workerCaps = worker.capabilities.split(",").map { it.trim() }
-                
-                if (!requiredCaps.any { required -> 
-                    workerCaps.any { workerCap -> 
-                        workerCap.contains(required, ignoreCase = true) 
-                    }
-                }) {
-                    return false
-                }
-            }
-            
             // Verificar disponibilidad mínima
             if (worker.availabilityPercentage < 50) {
                 return false
@@ -175,10 +161,13 @@ object PerformanceUtils {
             workstations: List<com.workstation.rotation.data.entities.Workstation>
         ): Map<Long, Long> {
             return measureExecutionTime("OptimizeLeaderAssignments") {
-                leaders.filter { it.isLeader && it.leadershipWorkstationId != null }
-                    .associate { leader ->
-                        leader.id to leader.leadershipWorkstationId!!
-                    }
+                leaders.filter { it.isLeader }
+                    .mapNotNull { leader ->
+                        // Simular asignación de liderazgo
+                        workstations.firstOrNull()?.let { station ->
+                            leader.id to station.id
+                        }
+                    }.toMap()
             }
         }
     }

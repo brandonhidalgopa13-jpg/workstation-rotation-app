@@ -48,6 +48,12 @@
             android:name=".SettingsActivity"
             android:exported="false" />
             
+        <activity
+            android:name=".OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.REWS"
+            android:screenOrientation="portrait" />
+            
         <!-- FileProvider para compartir archivos de respaldo -->
         <provider
             android:name="androidx.core.content.FileProvider"

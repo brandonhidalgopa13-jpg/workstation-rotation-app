@@ -96,4 +96,38 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_gray">#FFF5F5F5</color>
     <color name="dark_gray">#FF757575</color>
-</resources>
+</resources>    <
+!-- Modern Design Colors v2.4.0 -->
+    <color name="gradient_start_primary">#FF6200EE</color>
+    <color name="gradient_end_primary">#FF3700B3</color>
+    <color name="gradient_start_secondary">#FF03DAC6</color>
+    <color name="gradient_end_secondary">#FF018786</color>
+    
+    <!-- Onboarding Colors -->
+    <color name="onboarding_primary">#FF6200EE</color>
+    <color name="onboarding_secondary">#FF03DAC6</color>
+    <color name="onboarding_background">#FFF8F9FA</color>
+    <color name="onboarding_overlay">#80000000</color>
+    <color name="onboarding_card">#FFFFFFFF</color>
+    <color name="onboarding_text_primary">#FF212121</color>
+    <color name="onboarding_text_secondary">#FF757575</color>
+    
+    <!-- Enhanced Card Colors -->
+    <color name="card_elevated_background">#FFFFFFFF</color>
+    <color name="card_elevated_stroke">#FFE0E0E0</color>
+    <color name="card_shadow">#1A000000</color>
+    
+    <!-- Button Modern Colors -->
+    <color name="button_primary_start">#FF6200EE</color>
+    <color name="button_primary_end">#FF3700B3</color>
+    <color name="button_secondary_stroke">#FF6200EE</color>
+    <color name="button_disabled">#FFCCCCCC</color>
+    
+    <!-- Shimmer Effect -->
+    <color name="shimmer_base">#FFF0F0F0</color>
+    <color name="shimmer_highlight">#FFFFFFFF</color>
+    
+    <!-- Transparent Overlays -->
+    <color name="transparent">#00000000</color>
+    <color name="semi_transparent_black">#80000000</color>
+    <color name="semi_transparent_white">#80FFFFFF</color>

@@ -19,6 +19,14 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Verificar si debe mostrar onboarding
+        if (OnboardingActivity.shouldShowOnboarding(this)) {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+            finish()
+            return
+        }
+        
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         

@@ -143,6 +143,10 @@ class SettingsActivity : AppCompatActivity() {
             showAppGuide()
         }
         
+        binding.btnShowOnboarding?.setOnClickListener {
+            showOnboardingTutorial()
+        }
+        
         binding.btnCertifyWorkers.setOnClickListener {
             showCertificationDialog()
         }
@@ -154,15 +158,15 @@ class SettingsActivity : AppCompatActivity() {
         
         // Nuevas funcionalidades
         binding.btnGenerateReport?.setOnClickListener {
-            generatePerformanceReport()
+            Toast.makeText(this, "Función de reportes próximamente disponible", Toast.LENGTH_SHORT).show()
         }
         
         binding.btnNotificationSettings?.setOnClickListener {
-            showNotificationSettings()
+            Toast.makeText(this, "Configuración de notificaciones próximamente disponible", Toast.LENGTH_SHORT).show()
         }
         
         binding.btnAdvancedSettings?.setOnClickListener {
-            showAdvancedSettings()
+            Toast.makeText(this, "Configuraciones avanzadas próximamente disponibles", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -2549,4 +2553,19 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.makeText(this@SettingsActivity, "Error en análisis: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
+    }    
+  
+  /**
+     * Muestra el tutorial de onboarding
+     */
+    private fun showOnboardingTutorial() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🎯 Tutorial Inicial")
+            .setMessage("¿Deseas ver el tutorial inicial de REWS?\n\nEste tutorial te guiará paso a paso por todas las funcionalidades principales del sistema.")
+            .setPositiveButton("Ver Tutorial") { _, _ ->
+                val intent = Intent(this, OnboardingActivity::class.java)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }

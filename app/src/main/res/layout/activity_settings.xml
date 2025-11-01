@@ -293,6 +293,14 @@
                     android:layout_marginBottom="8dp" />
 
                 <Button
+                    android:id="@+id/btnShowOnboarding"
+                    style="@style/SecondaryButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🎯 Ver Tutorial Inicial"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
                     android:id="@+id/btnCertifyWorkers"
                     style="@style/PrimaryButtonStyle"
                     android:layout_width="match_parent"
