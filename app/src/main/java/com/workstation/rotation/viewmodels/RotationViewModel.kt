@@ -84,16 +84,23 @@ class RotationViewModel(
     
     /**
      * Gets worker workstation IDs from cache or database.
+     * Always loads fresh data if cache is empty.
      */
     private suspend fun getWorkerWorkstationIds(workerId: Long): List<Long> {
         val cachedIds = workerWorkstationCache[workerId]
-        return if (cachedIds != null) {
+        return if (cachedIds != null && workerWorkstationCache.isNotEmpty()) {
             println("DEBUG: Worker $workerId usando caché: $cachedIds")
             cachedIds
         } else {
-            // Si no está en caché, obtener de la base de datos
+            // Si no está en caché o el caché está vacío, obtener de la base de datos
             val ids = workerDao.getWorkerWorkstationIds(workerId)
             println("DEBUG: Worker $workerId cargado desde BD: $ids")
+            
+            // Actualizar caché para este trabajador
+            val mutableCache = workerWorkstationCache.toMutableMap()
+            mutableCache[workerId] = ids
+            workerWorkstationCache = mutableCache
+            
             ids
         }
     }
@@ -239,8 +246,15 @@ class RotationViewModel(
             val workstationIds = workerDao.getWorkerWorkstationIds(worker.id)
             workerWorkstationMap[worker.id] = workstationIds
             
-            // Debug: Log worker assignments
-            println("DEBUG: Worker ${worker.name} (ID: ${worker.id}) assigned to ${workstationIds.size} workstations: $workstationIds")
+            // Debug: Log worker assignments with detailed info
+            val workerType = when {
+                worker.isTrainer -> "ENTRENADOR"
+                worker.isTrainee -> "ENTRENADO"
+                worker.isLeader -> "LÍDER (${worker.leadershipType})"
+                worker.isCertified -> "CERTIFICADO"
+                else -> "REGULAR"
+            }
+            println("DEBUG: Worker ${worker.name} [$workerType] (ID: ${worker.id}) assigned to ${workstationIds.size} workstations: $workstationIds")
             
             if (workstationIds.isNotEmpty()) {
                 eligibleWorkers.add(worker)
@@ -1101,8 +1115,55 @@ class RotationViewModel(
         val allCurrentWorkers = currentAssignments.values.flatten()
         val workersToRotate = allCurrentWorkers.filter { remainingWorkers.contains(it) }
         
+        // PRIORITY: Assign leaders to their designated stations first
+        val leadersToAssign = workersToRotate.filter { worker ->
+            worker.isLeader && worker.shouldBeLeaderInRotation(isFirstHalfRotation)
+        }
+        
+        println("DEBUG: === ASIGNANDO LÍDERES A PRÓXIMA ROTACIÓN ===")
+        println("DEBUG: Líderes activos para ${getCurrentRotationHalf()}: ${leadersToAssign.size}")
+        
+        for (leader in leadersToAssign) {
+            leader.leaderWorkstationId?.let { leaderStationId ->
+                val leaderStation = allWorkstations.find { it.id == leaderStationId }
+                leaderStation?.let { station ->
+                    if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
+                        nextAssignments[station.id]?.add(leader)
+                        println("DEBUG: Líder ${leader.name} (${leader.leadershipType}) asignado a su estación ${station.name}")
+                    } else {
+                        println("DEBUG: WARNING: Estación de liderazgo ${station.name} llena para ${leader.name}")
+                    }
+                }
+            }
+        }
+        
+        // SPECIAL CASE: For leaders with "BOTH" type, ensure they appear in both rotations
+        val bothTypeLeaders = workersToRotate.filter { worker ->
+            worker.isLeader && worker.leadershipType == "BOTH"
+        }
+        
+        println("DEBUG: Líderes tipo BOTH encontrados: ${bothTypeLeaders.size}")
+        for (bothLeader in bothTypeLeaders) {
+            bothLeader.leaderWorkstationId?.let { leaderStationId ->
+                val leaderStation = allWorkstations.find { it.id == leaderStationId }
+                leaderStation?.let { station ->
+                    // Ensure BOTH leaders are in next rotation regardless of current assignment
+                    if (!nextAssignments[station.id]?.contains(bothLeader) == true) {
+                        if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
+                            nextAssignments[station.id]?.add(bothLeader)
+                            println("DEBUG: Líder BOTH ${bothLeader.name} forzado en próxima rotación en ${station.name}")
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Remove assigned leaders from workers to rotate
+        val assignedLeaders = nextAssignments.values.flatten().filter { it.isLeader }.toSet()
+        val remainingWorkersToRotate = workersToRotate.filter { !assignedLeaders.contains(it) }
+        
         // For each remaining worker, try to assign them to a different station
-        for (worker in workersToRotate) {
+        for (worker in remainingWorkersToRotate) {
             val currentStationId = findWorkerCurrentStation(worker, currentAssignments)
             val qualifiedStationIds = getWorkerWorkstationIds(worker.id)
             val qualifiedStations = allWorkstations.filter { it.id in qualifiedStationIds }

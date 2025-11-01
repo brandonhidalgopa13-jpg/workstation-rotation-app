@@ -263,7 +263,7 @@ class WorkerActivity : AppCompatActivity() {
                             }
                         }
                         
-                        if (workstationPosition > 0) {
+                        if (workstationPosition > 0 && trainerPosition > 0) {
                             // Obtener las estaciones del entrenador seleccionado
                             val trainers = viewModel.getTrainers()
                             if (trainerPosition <= trainers.size) {
@@ -271,6 +271,7 @@ class WorkerActivity : AppCompatActivity() {
                                 val trainerWorkstations = viewModel.getTrainerWorkstations(selectedTrainer.id)
                                 if (workstationPosition <= trainerWorkstations.size) {
                                     trainingWorkstationId = trainerWorkstations[workstationPosition - 1].id
+                                    android.util.Log.d("WorkerActivity", "Estación de entrenamiento seleccionada: $trainingWorkstationId")
                                 }
                             }
                         }
@@ -1124,10 +1125,16 @@ class WorkerActivity : AppCompatActivity() {
                         }
                     }
                     
-                    if (workstationPosition > 0) {
-                        val workstations = viewModel.getActiveWorkstationsSync()
-                        if (workstationPosition <= workstations.size) {
-                            trainingWorkstationId = workstations[workstationPosition - 1].id
+                    if (workstationPosition > 0 && trainerPosition > 0) {
+                        // Obtener las estaciones del entrenador seleccionado
+                        val trainers = viewModel.getTrainers()
+                        if (trainerPosition <= trainers.size) {
+                            val selectedTrainer = trainers[trainerPosition - 1]
+                            val trainerWorkstations = viewModel.getTrainerWorkstations(selectedTrainer.id)
+                            if (workstationPosition <= trainerWorkstations.size) {
+                                trainingWorkstationId = trainerWorkstations[workstationPosition - 1].id
+                                android.util.Log.d("WorkerActivity", "Estación de entrenamiento editada: $trainingWorkstationId")
+                            }
                         }
                     }
                 }
