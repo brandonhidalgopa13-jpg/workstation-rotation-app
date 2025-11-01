@@ -81,6 +81,20 @@ class RotationActivity : AppCompatActivity() {
         binding.btnDownloadImage?.setOnClickListener {
             downloadRotationAsImage()
         }
+        
+        // Agregar funcionalidad para alternar tipo de rotación (liderazgo)
+        binding.btnGenerateRotation.setOnLongClickListener {
+            lifecycleScope.launch {
+                viewModel.toggleRotationHalf()
+                val currentHalf = viewModel.getCurrentRotationHalfDescription()
+                Snackbar.make(binding.root, "Cambiado a: $currentHalf", Snackbar.LENGTH_LONG)
+                    .setAction("Ver Líderes") {
+                        showLeadershipInfo()
+                    }
+                    .show()
+            }
+            true
+        }
     }
     
     private fun observeRotation() {
@@ -303,6 +317,27 @@ class RotationActivity : AppCompatActivity() {
         binding.layoutCapacityRequirements.removeAllViews()
         binding.layoutCurrentPhase.removeAllViews()
         binding.layoutNextPhase.removeAllViews()
+    }
+    
+    /**
+     * Muestra información detallada sobre el sistema de liderazgo.
+     */
+    private fun showLeadershipInfo() {
+        lifecycleScope.launch {
+            val leadershipInfo = viewModel.getActiveLeadersInfo()
+            androidx.appcompat.app.AlertDialog.Builder(this@RotationActivity)
+                .setTitle("🔄 Sistema de Liderazgo")
+                .setMessage(leadershipInfo)
+                .setPositiveButton("Entendido", null)
+                .setNeutralButton("Alternar Rotación") { _, _ ->
+                    lifecycleScope.launch {
+                        viewModel.toggleRotationHalf()
+                        val newHalf = viewModel.getCurrentRotationHalfDescription()
+                        Snackbar.make(binding.root, "Cambiado a: $newHalf", Snackbar.LENGTH_SHORT).show()
+                    }
+                }
+                .show()
+        }
     }
     
     private fun updateWorkerCount() {

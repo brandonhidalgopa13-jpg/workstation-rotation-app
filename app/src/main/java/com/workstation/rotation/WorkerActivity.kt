@@ -87,6 +87,15 @@ class WorkerActivity : AppCompatActivity() {
         )
     }
     
+    // RotationViewModel para limpiar caché después de certificación
+    private val rotationViewModel: com.workstation.rotation.viewmodels.RotationViewModel by viewModels {
+        com.workstation.rotation.viewmodels.RotationViewModelFactory(
+            AppDatabase.getDatabase(this).workerDao(),
+            AppDatabase.getDatabase(this).workstationDao(),
+            AppDatabase.getDatabase(this).workerRestrictionDao()
+        )
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityWorkerBinding.inflate(layoutInflater)
@@ -307,6 +316,10 @@ class WorkerActivity : AppCompatActivity() {
                             ),
                             selectedWorkstations
                         )
+                        
+                        // Limpiar caché del RotationViewModel después de crear trabajador
+                        rotationViewModel.clearWorkerWorkstationCache()
+                        android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de crear trabajador")
                     }
                 }
             }
@@ -887,58 +900,59 @@ class WorkerActivity : AppCompatActivity() {
             .setPositiveButton("🎓 Certificar") { _, _ ->
                 lifecycleScope.launch {
                     try {
-                        // Obtener estaciones actuales del trabajador
-                        val currentWorkstationIds = viewModel.getWorkerWorkstationIds(worker.id).toMutableList()
-                        
-                        // Agregar la estación de entrenamiento si no está ya asignada
-                        worker.trainingWorkstationId?.let { trainingStationId ->
-                            if (!currentWorkstationIds.contains(trainingStationId)) {
-                                currentWorkstationIds.add(trainingStationId)
-                                android.util.Log.d("WorkerActivity", "Agregando estación de entrenamiento $trainingStationId a trabajador ${worker.id}")
-                            }
-                        }
-                        
-                        // Certificar el trabajador
-                        viewModel.certifyWorker(worker.id)
-                        
-                        // Actualizar las estaciones asignadas incluyendo la de entrenamiento
-                        viewModel.updateWorkerWithWorkstations(
-                            worker.copy(
-                                isTrainee = false,
-                                isCertified = true,
-                                trainerId = null,
-                                trainingWorkstationId = null,
-                                certificationDate = System.currentTimeMillis()
-                            ),
-                            currentWorkstationIds
-                        )
-                        
-                        // Obtener nombre de la estación de entrenamiento para el mensaje
+                        // Obtener nombre de la estación de entrenamiento antes de certificar
                         val trainingStationName = worker.trainingWorkstationId?.let { stationId ->
                             viewModel.getWorkstationById(stationId)?.name
                         }
                         
-                        // Mostrar mensaje de éxito
-                        androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
-                            .setTitle("✅ Certificación Completada")
-                            .setMessage(
-                                "¡Felicitaciones! 🎉\n\n" +
-                                "'${worker.name}' ha sido certificado exitosamente.\n\n" +
-                                "El trabajador:\n" +
-                                "✅ Ya no está en entrenamiento\n" +
-                                "✅ Puede participar normalmente en rotaciones\n" +
-                                "✅ Es considerado completamente capacitado\n" +
-                                "✅ Tiene fecha de certificación registrada\n" +
-                                (if (trainingStationName != null) "✅ Estación '$trainingStationName' agregada automáticamente\n" else "") +
-                                "\nLos cambios se aplicarán en la próxima rotación generada."
-                            )
-                            .setPositiveButton("🎉 ¡Excelente!", null)
-                            .show()
+                        // Usar el método de certificación completa
+                        val success = viewModel.certifyWorkerComplete(worker.id)
+                        
+                        // CRÍTICO: Limpiar caché del RotationViewModel después de certificación
+                        rotationViewModel.clearWorkerWorkstationCache()
+                        android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de certificación")
+                        
+                        // Debug: Verificar estado después de certificación
+                        val debugReport = viewModel.debugWorkerCertificationState(worker.id)
+                        android.util.Log.d("WorkerActivity", "Estado post-certificación:\n$debugReport")
+                        
+                        if (success) {
+                            // Mostrar mensaje de éxito
+                            androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
+                                .setTitle("✅ Certificación Completada")
+                                .setMessage(
+                                    "¡Felicitaciones! 🎉\n\n" +
+                                    "'${worker.name}' ha sido certificado exitosamente.\n\n" +
+                                    "El trabajador:\n" +
+                                    "✅ Ya no está en entrenamiento\n" +
+                                    "✅ Puede participar normalmente en rotaciones\n" +
+                                    "✅ Es considerado completamente capacitado\n" +
+                                    "✅ Tiene fecha de certificación registrada\n" +
+                                    (if (trainingStationName != null) "✅ Estación '$trainingStationName' agregada automáticamente\n" else "") +
+                                    "\nLos cambios se aplicarán en la próxima rotación generada."
+                                )
+                                .setPositiveButton("🎉 ¡Excelente!", null)
+                                .show()
+                        } else {
+                            // Mostrar mensaje de error
+                            androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
+                                .setTitle("❌ Error en Certificación")
+                                .setMessage(
+                                    "No se pudo completar la certificación de '${worker.name}'.\n\n" +
+                                    "Posibles causas:\n" +
+                                    "• El trabajador no está en entrenamiento\n" +
+                                    "• Error en la base de datos\n" +
+                                    "• Problema con las asignaciones de estaciones\n\n" +
+                                    "Por favor, verifica el estado del trabajador e intenta nuevamente."
+                                )
+                                .setPositiveButton("OK", null)
+                                .show()
+                        }
                         
                     } catch (e: Exception) {
                         androidx.appcompat.app.AlertDialog.Builder(this@WorkerActivity)
                             .setTitle("❌ Error")
-                            .setMessage("No se pudo certificar el trabajador: ${e.message}")
+                            .setMessage("Error inesperado durante la certificación: ${e.message}")
                             .setPositiveButton("OK", null)
                             .show()
                     }
@@ -1160,6 +1174,10 @@ class WorkerActivity : AppCompatActivity() {
                     )
                     
                     viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
+                    
+                    // Limpiar caché del RotationViewModel después de actualizar trabajador
+                    rotationViewModel.clearWorkerWorkstationCache()
+                    android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de actualizar trabajador")
                     
                     android.widget.Toast.makeText(
                         this@WorkerActivity,

@@ -43,11 +43,40 @@ class WorkerViewModel(
     }
     
     suspend fun updateWorkerWithWorkstations(worker: Worker, workstationIds: List<Long>) {
+        android.util.Log.d("WorkerViewModel", "=== ACTUALIZANDO TRABAJADOR CON ESTACIONES ===")
+        android.util.Log.d("WorkerViewModel", "Trabajador: ${worker.name} (ID: ${worker.id})")
+        android.util.Log.d("WorkerViewModel", "Estaciones a asignar: $workstationIds")
+        
+        // Obtener estaciones actuales antes de la actualización
+        val currentStations = workerDao.getWorkerWorkstationIds(worker.id)
+        android.util.Log.d("WorkerViewModel", "Estaciones actuales: $currentStations")
+        
+        // Actualizar trabajador
         workerDao.updateWorker(worker)
+        android.util.Log.d("WorkerViewModel", "Trabajador actualizado en BD")
+        
+        // Eliminar todas las asignaciones actuales
         workerDao.deleteAllWorkerWorkstations(worker.id)
+        android.util.Log.d("WorkerViewModel", "Asignaciones anteriores eliminadas")
+        
+        // Insertar nuevas asignaciones
         workstationIds.forEach { workstationId ->
             workerDao.insertWorkerWorkstation(WorkerWorkstation(worker.id, workstationId))
+            android.util.Log.d("WorkerViewModel", "Asignación insertada: Worker ${worker.id} -> Workstation $workstationId")
         }
+        
+        // Verificar que las asignaciones se guardaron correctamente
+        val finalStations = workerDao.getWorkerWorkstationIds(worker.id)
+        android.util.Log.d("WorkerViewModel", "Estaciones finales: $finalStations")
+        
+        if (finalStations.size != workstationIds.size) {
+            android.util.Log.e("WorkerViewModel", "ERROR: No se guardaron todas las asignaciones!")
+            android.util.Log.e("WorkerViewModel", "Esperadas: ${workstationIds.size}, Guardadas: ${finalStations.size}")
+        } else {
+            android.util.Log.d("WorkerViewModel", "✅ Todas las asignaciones guardadas correctamente")
+        }
+        
+        android.util.Log.d("WorkerViewModel", "===============================================")
     }
     
     suspend fun updateWorkerStatus(id: Long, isActive: Boolean) {
@@ -71,12 +100,19 @@ class WorkerViewModel(
     /**
      * Certifica a un trabajador (remueve el estado de entrenamiento).
      * El trabajador pasa de "en entrenamiento" a "trabajador normal".
+     * IMPORTANTE: Este método solo actualiza el estado del trabajador.
+     * Las estaciones deben actualizarse por separado usando updateWorkerWithWorkstations.
      */
     suspend fun certifyWorker(workerId: Long) {
         android.util.Log.d("WorkerViewModel", "=== CERTIFICANDO TRABAJADOR $workerId ===")
         val worker = workerDao.getWorkerById(workerId)
         worker?.let {
-            android.util.Log.d("WorkerViewModel", "Trabajador antes: ${it.name} - isTrainee: ${it.isTrainee}, trainerId: ${it.trainerId}")
+            android.util.Log.d("WorkerViewModel", "Trabajador antes: ${it.name}")
+            android.util.Log.d("WorkerViewModel", "- isTrainee: ${it.isTrainee}")
+            android.util.Log.d("WorkerViewModel", "- trainerId: ${it.trainerId}")
+            android.util.Log.d("WorkerViewModel", "- trainingWorkstationId: ${it.trainingWorkstationId}")
+            android.util.Log.d("WorkerViewModel", "- isCertified: ${it.isCertified}")
+            
             val certifiedWorker = it.copy(
                 isTrainee = false,
                 isCertified = true,
@@ -85,11 +121,81 @@ class WorkerViewModel(
                 certificationDate = System.currentTimeMillis()
             )
             workerDao.updateWorker(certifiedWorker)
-            android.util.Log.d("WorkerViewModel", "Trabajador después: ${certifiedWorker.name} - isTrainee: ${certifiedWorker.isTrainee}, isCertified: ${certifiedWorker.isCertified}")
+            
+            android.util.Log.d("WorkerViewModel", "Trabajador después: ${certifiedWorker.name}")
+            android.util.Log.d("WorkerViewModel", "- isTrainee: ${certifiedWorker.isTrainee}")
+            android.util.Log.d("WorkerViewModel", "- isCertified: ${certifiedWorker.isCertified}")
+            android.util.Log.d("WorkerViewModel", "- certificationDate: ${certifiedWorker.certificationDate}")
         } ?: run {
             android.util.Log.e("WorkerViewModel", "ERROR: No se encontró trabajador con ID $workerId")
         }
         android.util.Log.d("WorkerViewModel", "=======================================")
+    }
+    
+    /**
+     * Certifica a un trabajador de forma completa, incluyendo la adición automática
+     * de la estación de entrenamiento a sus estaciones asignadas.
+     */
+    suspend fun certifyWorkerComplete(workerId: Long): Boolean {
+        android.util.Log.d("WorkerViewModel", "=== CERTIFICACIÓN COMPLETA TRABAJADOR $workerId ===")
+        
+        return try {
+            val worker = workerDao.getWorkerById(workerId)
+            if (worker == null) {
+                android.util.Log.e("WorkerViewModel", "ERROR: Trabajador no encontrado")
+                return false
+            }
+            
+            if (!worker.isTrainee) {
+                android.util.Log.w("WorkerViewModel", "WARNING: Trabajador no está en entrenamiento")
+                return false
+            }
+            
+            // Obtener estaciones actuales
+            val currentWorkstationIds = getWorkerWorkstationIds(workerId).toMutableList()
+            android.util.Log.d("WorkerViewModel", "Estaciones actuales: $currentWorkstationIds")
+            
+            // Agregar estación de entrenamiento si no está ya incluida
+            worker.trainingWorkstationId?.let { trainingStationId ->
+                if (!currentWorkstationIds.contains(trainingStationId)) {
+                    currentWorkstationIds.add(trainingStationId)
+                    android.util.Log.d("WorkerViewModel", "Agregando estación de entrenamiento: $trainingStationId")
+                } else {
+                    android.util.Log.d("WorkerViewModel", "Estación de entrenamiento ya está asignada: $trainingStationId")
+                }
+            }
+            
+            // Certificar el trabajador
+            certifyWorker(workerId)
+            
+            // Actualizar estaciones asignadas
+            val certifiedWorker = worker.copy(
+                isTrainee = false,
+                isCertified = true,
+                trainerId = null,
+                trainingWorkstationId = null,
+                certificationDate = System.currentTimeMillis()
+            )
+            
+            updateWorkerWithWorkstations(certifiedWorker, currentWorkstationIds)
+            
+            android.util.Log.d("WorkerViewModel", "Estaciones finales: $currentWorkstationIds")
+            android.util.Log.d("WorkerViewModel", "Certificación completa exitosa")
+            android.util.Log.d("WorkerViewModel", "===============================================")
+            
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("WorkerViewModel", "ERROR en certificación completa: ${e.message}", e)
+            false
+        }
+    }
+    
+    /**
+     * Notifica que las asignaciones de trabajadores han cambiado y se debe limpiar cualquier caché.
+     */
+    fun notifyWorkerAssignmentsChanged() {
+        android.util.Log.d("WorkerViewModel", "Notificando cambios en asignaciones de trabajadores")
+        // Este método puede ser usado por otros ViewModels para saber cuándo limpiar sus cachés
     }
     
     /**
@@ -209,6 +315,42 @@ class WorkerViewModel(
         }
         android.util.Log.d("WorkerViewModel", "==========================================")
         return workstations
+    }
+    
+    /**
+     * Método de testing para verificar el estado completo de un trabajador después de certificación.
+     */
+    suspend fun debugWorkerCertificationState(workerId: Long): String {
+        android.util.Log.d("WorkerViewModel", "=== DEBUG ESTADO CERTIFICACIÓN ===")
+        
+        val worker = workerDao.getWorkerById(workerId)
+        if (worker == null) {
+            return "ERROR: Trabajador no encontrado"
+        }
+        
+        val workstationIds = getWorkerWorkstationIds(workerId)
+        val workstations = getActiveWorkstationsSync()
+        val assignedWorkstations = workstations.filter { workstationIds.contains(it.id) }
+        
+        val report = StringBuilder()
+        report.append("ESTADO DEL TRABAJADOR DESPUÉS DE CERTIFICACIÓN:\n")
+        report.append("Nombre: ${worker.name}\n")
+        report.append("ID: ${worker.id}\n")
+        report.append("Es entrenado: ${worker.isTrainee}\n")
+        report.append("Está certificado: ${worker.isCertified}\n")
+        report.append("ID del entrenador: ${worker.trainerId}\n")
+        report.append("ID estación de entrenamiento: ${worker.trainingWorkstationId}\n")
+        report.append("Fecha de certificación: ${worker.certificationDate}\n")
+        report.append("Estaciones asignadas (${workstationIds.size}): $workstationIds\n")
+        report.append("Nombres de estaciones:\n")
+        assignedWorkstations.forEach { station ->
+            report.append("  - ${station.name} (ID: ${station.id})\n")
+        }
+        
+        android.util.Log.d("WorkerViewModel", report.toString())
+        android.util.Log.d("WorkerViewModel", "===============================")
+        
+        return report.toString()
     }
     
     /**
