@@ -96,8 +96,8 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_gray">#FFF5F5F5</color>
     <color name="dark_gray">#FF757575</color>
-</resources>    <
-!-- Modern Design Colors v2.4.0 -->
+    
+    <!-- Modern Design Colors v2.4.0 -->
     <color name="gradient_start_primary">#FF6200EE</color>
     <color name="gradient_end_primary">#FF3700B3</color>
     <color name="gradient_start_secondary">#FF03DAC6</color>
@@ -130,4 +130,5 @@
     <!-- Transparent Overlays -->
     <color name="transparent">#00000000</color>
     <color name="semi_transparent_black">#80000000</color>
-    <color name="semi_transparent_white">#80FFFFFF</color>
+    <color name="semi_transparent_white">#80FFFFFF</color></r
+esources>
