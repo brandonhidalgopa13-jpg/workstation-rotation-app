@@ -32,6 +32,9 @@ interface WorkstationDao {
     @Query("SELECT * FROM workstations ORDER BY name")
     suspend fun getAllWorkstationsSync(): List<Workstation>
     
+    @Query("SELECT * FROM workstations WHERE isActive = 1 ORDER BY name")
+    suspend fun getAllActiveWorkstationsSync(): List<Workstation>
+    
     @Query("DELETE FROM workstations")
     suspend fun deleteAllWorkstations()
     

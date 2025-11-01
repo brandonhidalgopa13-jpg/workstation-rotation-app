@@ -211,10 +211,22 @@ class WorkerActivity : AppCompatActivity() {
                 
                 val checkItems = workstations.map { WorkstationCheckItem(it, false) }
                 android.util.Log.d("WorkerActivity", "Enviando ${checkItems.size} items al adapter")
+                
+                // Verificar que el RecyclerView esté configurado
+                android.util.Log.d("WorkerActivity", "RecyclerView adapter: ${dialogBinding.recyclerViewWorkstations.adapter}")
+                android.util.Log.d("WorkerActivity", "RecyclerView layoutManager: ${dialogBinding.recyclerViewWorkstations.layoutManager}")
+                android.util.Log.d("WorkerActivity", "RecyclerView visibility: ${dialogBinding.recyclerViewWorkstations.visibility}")
+                
                 workstationAdapter.submitList(checkItems)
                 
                 // Verificar que el adapter recibió los datos
                 android.util.Log.d("WorkerActivity", "Adapter tiene ${workstationAdapter.itemCount} items después de submitList")
+                
+                // Forzar actualización del RecyclerView
+                dialogBinding.recyclerViewWorkstations.post {
+                    workstationAdapter.notifyDataSetChanged()
+                    android.util.Log.d("WorkerActivity", "RecyclerView actualizado - Items visibles: ${dialogBinding.recyclerViewWorkstations.childCount}")
+                }
                 
                 // Setup training workstation spinner
                 val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }

@@ -202,7 +202,7 @@ class WorkerViewModel(
      */
     suspend fun getActiveWorkstationsSync(): List<Workstation> {
         android.util.Log.d("WorkerViewModel", "=== OBTENIENDO ESTACIONES ACTIVAS ===")
-        val workstations = workstationDao.getAllActiveWorkstations().first()
+        val workstations = workstationDao.getAllActiveWorkstationsSync()
         android.util.Log.d("WorkerViewModel", "getActiveWorkstationsSync: encontradas ${workstations.size} estaciones")
         workstations.forEachIndexed { index, station ->
             android.util.Log.d("WorkerViewModel", "Estación $index: ${station.name} (ID: ${station.id}, Activa: ${station.isActive}, Requeridos: ${station.requiredWorkers})")
