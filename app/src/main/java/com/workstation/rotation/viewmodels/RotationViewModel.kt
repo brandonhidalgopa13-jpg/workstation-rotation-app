@@ -2265,7 +2265,9 @@ class RotationViewModel(
         if (trainees.isEmpty()) {
             report.append("   2. Si hay personal nuevo, configurar entrenamientos\n")
         }
-        if (invalidTrainingPairs > 0) {
+        // Usar la variable local para evitar problemas de scope
+        val hasInvalidPairs = invalidTrainingPairs > 0
+        if (hasInvalidPairs) {
             report.append("   3. Revisar asignaciones de estaciones para entrenados\n")
             report.append("   4. Asegurar que la estación de entrenamiento esté en las asignaciones del entrenado\n")
         }
