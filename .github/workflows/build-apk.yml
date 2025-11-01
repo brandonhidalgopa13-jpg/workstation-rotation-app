@@ -9,7 +9,12 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-# Removed problematic GRADLE_OPTS that were causing ClassNotFoundException
+# Permissions for GitHub token
+permissions:
+  contents: write
+  packages: write
+  actions: read
+  checks: write
 
 jobs:
   test:
@@ -154,19 +159,26 @@ jobs:
         VERSION=$(grep "versionName" app/build.gradle | awk '{print $2}' | tr -d '"')
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         
+    - name: 🔍 List APK files
+      run: |
+        echo "📁 Listing APK output directory:"
+        ls -la app/build/outputs/apk/release/ || echo "Release directory not found"
+        echo "📁 Searching for APK files:"
+        find app/build/outputs/ -name "*.apk" -type f || echo "No APK files found"
+        
     - name: 📤 Upload release APK
       uses: actions/upload-artifact@v4
       with:
         name: REWS-v${{ steps.version.outputs.version }}-release
-        path: app/build/outputs/apk/release/app-release.apk
+        path: app/build/outputs/apk/release/*.apk
         retention-days: 90
         
     - name: 🏷️ Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/v')
       with:
         files: |
-          app/build/outputs/apk/release/app-release.apk
+          app/build/outputs/apk/release/*.apk
         name: REWS ${{ steps.version.outputs.version }}
         body: |
           🚀 **REWS v${{ steps.version.outputs.version }}** - Sistema de Rotación y Estaciones de Trabajo
@@ -199,6 +211,8 @@ jobs:
           **Desarrollado por Brandon Josué Hidalgo Paz**
         draft: false
         prerelease: false
+        fail_on_unmatched_files: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
