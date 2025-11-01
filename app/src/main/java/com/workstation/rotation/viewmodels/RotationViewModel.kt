@@ -2201,11 +2201,13 @@ class RotationViewModel(
         report.append("\n🎯 ENTRENADOS:\n")
         report.append("   Total: ${trainees.size}\n")
         
+        // Declarar variables fuera del bloque para que estén disponibles después
+        var validTrainingPairs = 0
+        var invalidTrainingPairs = 0
+        
         if (trainees.isEmpty()) {
             report.append("   ℹ️ No hay trabajadores en entrenamiento\n")
         } else {
-            var validTrainingPairs = 0
-            var invalidTrainingPairs = 0
             
             trainees.forEach { trainee ->
                 val trainer = trainers.find { it.id == trainee.trainerId }
