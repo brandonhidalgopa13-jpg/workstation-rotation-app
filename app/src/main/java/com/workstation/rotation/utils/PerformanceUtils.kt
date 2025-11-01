@@ -11,8 +11,8 @@ import kotlin.system.measureTimeMillis
  */
 object PerformanceUtils {
     
-    internal const val TAG = "PerformanceUtils"
-    internal const val PERFORMANCE_THRESHOLD_MS = 100L
+    private const val TAG = "PerformanceUtils"
+    private const val PERFORMANCE_THRESHOLD_MS = 100L
     
     /**
      * Mide el tiempo de ejecución de una operación
