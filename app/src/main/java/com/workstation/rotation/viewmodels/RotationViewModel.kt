@@ -431,16 +431,23 @@ class RotationViewModel(
      * - Guarantees that every trainee with an assigned trainer will be placed together
      * 
      * Training continuity is considered more important than operational efficiency constraints.
+     * 
+     * CORRECCIÓN CRÍTICA: Ahora verifica que la estación de entrenamiento esté en las estaciones
+     * asignadas del entrenado, y si no, usa la primera estación disponible del entrenado.
      */
-    private fun assignTrainerTraineePairsWithPriority(
+    private suspend fun assignTrainerTraineePairsWithPriority(
         eligibleWorkers: List<Worker>,
         assignments: MutableMap<Long, MutableList<Worker>>,
         allWorkstations: List<Workstation>,
         unassignedWorkers: MutableList<Worker>
     ) {
+        println("DEBUG: === ASIGNANDO PAREJAS ENTRENADOR-ENTRENADO ===")
+        
         val traineesWithTrainers = unassignedWorkers.filter { worker ->
-            worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null
+            worker.isTrainee && worker.trainerId != null
         }
+        
+        println("DEBUG: Entrenados con entrenador encontrados: ${traineesWithTrainers.size}")
         
         // Sort trainees by priority: priority workstations first, then normal workstations
         val sortedTrainees = traineesWithTrainers.sortedByDescending { trainee ->
@@ -451,31 +458,102 @@ class RotationViewModel(
         for (trainee in sortedTrainees) {
             val trainer = eligibleWorkers.find { it.id == trainee.trainerId }
             
+            println("DEBUG: Procesando entrenado: ${trainee.name}")
+            println("DEBUG: - Entrenador ID: ${trainee.trainerId}")
+            println("DEBUG: - Estación de entrenamiento solicitada: ${trainee.trainingWorkstationId}")
+            
             if (trainer != null && 
                 unassignedWorkers.contains(trainer) && 
                 unassignedWorkers.contains(trainee)) {
                 
-                val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                println("DEBUG: - Entrenador encontrado: ${trainer.name}")
                 
-                trainingStation?.let { station ->
+                // CORRECCIÓN: Verificar que la estación de entrenamiento sea válida
+                var targetStation: Workstation? = null
+                
+                if (trainee.trainingWorkstationId != null) {
+                    // Verificar que la estación de entrenamiento existe y está activa
+                    val requestedStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                    
+                    if (requestedStation != null) {
+                        // Verificar que el entrenado puede trabajar en esta estación
+                        val traineeStations = getWorkerWorkstationIds(trainee.id)
+                        
+                        if (traineeStations.contains(requestedStation.id)) {
+                            targetStation = requestedStation
+                            println("DEBUG: ✅ Estación de entrenamiento válida: ${requestedStation.name}")
+                        } else {
+                            println("DEBUG: ⚠️ Estación de entrenamiento ${requestedStation.name} NO está asignada al entrenado")
+                            println("DEBUG: Estaciones del entrenado: $traineeStations")
+                            
+                            // Buscar una estación alternativa donde el entrenado pueda trabajar
+                            val alternativeStation = allWorkstations.find { station ->
+                                traineeStations.contains(station.id)
+                            }
+                            
+                            if (alternativeStation != null) {
+                                targetStation = alternativeStation
+                                println("DEBUG: ✅ Usando estación alternativa: ${alternativeStation.name}")
+                            }
+                        }
+                    } else {
+                        println("DEBUG: ❌ Estación de entrenamiento ${trainee.trainingWorkstationId} no encontrada o inactiva")
+                    }
+                }
+                
+                // Si no hay estación de entrenamiento específica, usar la primera estación del entrenado
+                if (targetStation == null) {
+                    println("DEBUG: Buscando primera estación disponible para el entrenado...")
+                    val traineeStations = getWorkerWorkstationIds(trainee.id)
+                    
+                    if (traineeStations.isNotEmpty()) {
+                        targetStation = allWorkstations.find { station ->
+                            traineeStations.contains(station.id)
+                        }
+                        
+                        if (targetStation != null) {
+                            println("DEBUG: ✅ Usando primera estación disponible: ${targetStation.name}")
+                        }
+                    }
+                }
+                
+                targetStation?.let { station ->
                     // FORCE assignment regardless of ALL constraints
-                    // Priority workstations with training get ABSOLUTE priority
                     assignments[station.id]?.addAll(listOf(trainee, trainer))
                     unassignedWorkers.removeAll(listOf(trainee, trainer))
                     
+                    println("DEBUG: ✅ PAREJA ASIGNADA - ${trainee.name} + ${trainer.name} → ${station.name}")
+                    println("DEBUG: Nueva capacidad: ${assignments[station.id]?.size}/${station.requiredWorkers}")
+                    
+                    // Log if we exceeded capacity (acceptable for training)
+                    if ((assignments[station.id]?.size ?: 0) > station.requiredWorkers) {
+                        println("DEBUG: ⚠️ CAPACIDAD EXCEDIDA por entrenamiento (ACEPTABLE)")
+                    }
+                    
                     // Log priority assignment for debugging
                     if (station.isPriority) {
-                        // This is the HIGHEST priority assignment in the entire system
+                        println("DEBUG: 🌟 ENTRENAMIENTO EN ESTACIÓN PRIORITARIA")
                     }
+                } ?: run {
+                    println("DEBUG: ❌ ERROR CRÍTICO - No se encontró estación válida para entrenamiento")
+                    println("DEBUG: Entrenado ${trainee.name} no tiene estaciones asignadas o no están activas")
+                }
+            } else {
+                if (trainer == null) {
+                    println("DEBUG: ❌ Entrenador no encontrado para ${trainee.name} (ID: ${trainee.trainerId})")
+                } else {
+                    println("DEBUG: ⚠️ Entrenador o entrenado ya asignado: ${trainer.name}, ${trainee.name}")
                 }
             }
         }
+        
+        println("DEBUG: ===============================================")
     }
 
     /**
      * Legacy method for backward compatibility - now calls the priority-aware version.
      */
-    private fun assignTrainerTraineePairs(
+    private suspend fun assignTrainerTraineePairs(
         eligibleWorkers: List<Worker>,
         assignments: MutableMap<Long, MutableList<Worker>>,
         allWorkstations: List<Workstation>,
@@ -495,16 +573,22 @@ class RotationViewModel(
      * - They are assigned to their designated training workstation
      * - Training continuity is maintained across rotation cycles
      * - No other constraints can separate a training pair
+     * 
+     * CORRECCIÓN CRÍTICA: Verifica que la estación de entrenamiento sea válida para el entrenado.
      */
-    private fun assignTrainerTraineePairsToNextRotation(
+    private suspend fun assignTrainerTraineePairsToNextRotation(
         eligibleWorkers: List<Worker>,
         nextAssignments: MutableMap<Long, MutableList<Worker>>,
         allWorkstations: List<Workstation>,
         remainingWorkers: MutableList<Worker>
     ) {
+        println("DEBUG: === ASIGNANDO PAREJAS A PRÓXIMA ROTACIÓN ===")
+        
         val traineesWithTrainers = remainingWorkers.filter { worker ->
-            worker.isTrainee && worker.trainerId != null && worker.trainingWorkstationId != null && !worker.isCertified
+            worker.isTrainee && worker.trainerId != null && !worker.isCertified
         }
+        
+        println("DEBUG: Entrenados para próxima rotación: ${traineesWithTrainers.size}")
         
         // Sort trainees by priority: priority workstations first, then normal workstations
         val sortedTrainees = traineesWithTrainers.sortedByDescending { trainee ->
@@ -515,24 +599,82 @@ class RotationViewModel(
         for (trainee in sortedTrainees) {
             val trainer = eligibleWorkers.find { it.id == trainee.trainerId }
             
+            println("DEBUG: Procesando entrenado para próxima: ${trainee.name}")
+            
             if (trainer != null && 
                 remainingWorkers.contains(trainer) && 
                 remainingWorkers.contains(trainee)) {
                 
-                val trainingStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                println("DEBUG: - Entrenador: ${trainer.name}")
                 
-                trainingStation?.let { station ->
+                // CORRECCIÓN: Verificar que la estación de entrenamiento sea válida
+                var targetStation: Workstation? = null
+                
+                if (trainee.trainingWorkstationId != null) {
+                    // Verificar que la estación de entrenamiento existe y está activa
+                    val requestedStation = allWorkstations.find { it.id == trainee.trainingWorkstationId }
+                    
+                    if (requestedStation != null) {
+                        // Verificar que el entrenado puede trabajar en esta estación
+                        val traineeStations = getWorkerWorkstationIds(trainee.id)
+                        
+                        if (traineeStations.contains(requestedStation.id)) {
+                            targetStation = requestedStation
+                            println("DEBUG: ✅ Estación de entrenamiento válida: ${requestedStation.name}")
+                        } else {
+                            println("DEBUG: ⚠️ Estación de entrenamiento ${requestedStation.name} NO está asignada al entrenado")
+                            
+                            // Buscar una estación alternativa donde el entrenado pueda trabajar
+                            val alternativeStation = allWorkstations.find { station ->
+                                traineeStations.contains(station.id)
+                            }
+                            
+                            if (alternativeStation != null) {
+                                targetStation = alternativeStation
+                                println("DEBUG: ✅ Usando estación alternativa: ${alternativeStation.name}")
+                            }
+                        }
+                    } else {
+                        println("DEBUG: ❌ Estación de entrenamiento ${trainee.trainingWorkstationId} no encontrada")
+                    }
+                }
+                
+                // Si no hay estación de entrenamiento específica, usar la primera estación del entrenado
+                if (targetStation == null) {
+                    val traineeStations = getWorkerWorkstationIds(trainee.id)
+                    
+                    if (traineeStations.isNotEmpty()) {
+                        targetStation = allWorkstations.find { station ->
+                            traineeStations.contains(station.id)
+                        }
+                        
+                        if (targetStation != null) {
+                            println("DEBUG: ✅ Usando primera estación disponible: ${targetStation.name}")
+                        }
+                    }
+                }
+                
+                targetStation?.let { station ->
                     // FORCE assignment to next rotation regardless of ALL constraints
                     // Training pairs have ABSOLUTE PRIORITY over capacity limits
                     nextAssignments[station.id]?.addAll(listOf(trainee, trainer))
                     remainingWorkers.removeAll(listOf(trainee, trainer))
                     
+                    println("DEBUG: ✅ PAREJA PRÓXIMA ROTACIÓN - ${trainee.name} + ${trainer.name} → ${station.name}")
+                    
                     // CRITICAL: Training pairs override capacity limits
                     // If this causes the station to exceed capacity, that's acceptable
                     // because training continuity is more important than operational efficiency
+                    if ((nextAssignments[station.id]?.size ?: 0) > station.requiredWorkers) {
+                        println("DEBUG: ⚠️ CAPACIDAD EXCEDIDA en próxima rotación por entrenamiento (ACEPTABLE)")
+                    }
+                } ?: run {
+                    println("DEBUG: ❌ ERROR CRÍTICO - No se encontró estación válida para entrenamiento en próxima rotación")
                 }
             }
         }
+        
+        println("DEBUG: ===============================================")
     }
 
     /**
@@ -1877,6 +2019,117 @@ class RotationViewModel(
         val finalReport = report.toString()
         println("DEBUG: $finalReport")
         println("DEBUG: ============================================")
+        
+        return finalReport
+    }
+    
+    /**
+     * Método específico para diagnosticar el sistema de entrenamiento.
+     */
+    suspend fun diagnoseTrainingSystem(): String {
+        println("DEBUG: === DIAGNÓSTICO SISTEMA DE ENTRENAMIENTO ===")
+        
+        val report = StringBuilder()
+        report.append("🎓 DIAGNÓSTICO DEL SISTEMA DE ENTRENAMIENTO\n")
+        report.append("=" .repeat(50) + "\n")
+        
+        // Obtener todos los trabajadores activos
+        val allWorkers = workerDao.getAllWorkers().first()
+        val activeWorkers = allWorkers.filter { it.isActive }
+        
+        // Analizar entrenadores
+        val trainers = activeWorkers.filter { it.isTrainer }
+        report.append("👨‍🏫 ENTRENADORES:\n")
+        report.append("   Total: ${trainers.size}\n")
+        
+        if (trainers.isEmpty()) {
+            report.append("   ⚠️ No hay entrenadores configurados\n")
+        } else {
+            trainers.forEach { trainer ->
+                val trainees = activeWorkers.filter { it.trainerId == trainer.id }
+                report.append("   - ${trainer.name}: ${trainees.size} entrenados\n")
+                trainees.forEach { trainee ->
+                    report.append("     • ${trainee.name} (Estación: ${trainee.trainingWorkstationId})\n")
+                }
+            }
+        }
+        
+        // Analizar entrenados
+        val trainees = activeWorkers.filter { it.isTrainee }
+        report.append("\n🎯 ENTRENADOS:\n")
+        report.append("   Total: ${trainees.size}\n")
+        
+        if (trainees.isEmpty()) {
+            report.append("   ℹ️ No hay trabajadores en entrenamiento\n")
+        } else {
+            var validTrainingPairs = 0
+            var invalidTrainingPairs = 0
+            
+            trainees.forEach { trainee ->
+                val trainer = trainers.find { it.id == trainee.trainerId }
+                val hasValidTrainer = trainer != null
+                val hasTrainingStation = trainee.trainingWorkstationId != null
+                
+                report.append("   - ${trainee.name}:\n")
+                report.append("     Entrenador: ${trainer?.name ?: "❌ NO ASIGNADO"}\n")
+                report.append("     Estación solicitada: ${trainee.trainingWorkstationId ?: "❌ NO ESPECIFICADA"}\n")
+                
+                // Verificar si la estación de entrenamiento es válida
+                if (hasTrainingStation) {
+                    val traineeStations = getWorkerWorkstationIds(trainee.id)
+                    val canWorkAtTrainingStation = traineeStations.contains(trainee.trainingWorkstationId)
+                    
+                    report.append("     Puede trabajar en estación solicitada: ${if (canWorkAtTrainingStation) "✅ SÍ" else "❌ NO"}\n")
+                    
+                    if (!canWorkAtTrainingStation) {
+                        report.append("     Estaciones asignadas: $traineeStations\n")
+                        report.append("     ⚠️ PROBLEMA: Estación de entrenamiento no está en las asignaciones del trabajador\n")
+                    }
+                }
+                
+                if (hasValidTrainer && hasTrainingStation) {
+                    validTrainingPairs++
+                } else {
+                    invalidTrainingPairs++
+                }
+            }
+            
+            report.append("\n📊 RESUMEN DE ENTRENAMIENTOS:\n")
+            report.append("   Parejas válidas: $validTrainingPairs\n")
+            report.append("   Parejas con problemas: $invalidTrainingPairs\n")
+        }
+        
+        // Verificar trabajadores certificados
+        val certifiedWorkers = activeWorkers.filter { it.isCertified }
+        report.append("\n🏆 TRABAJADORES CERTIFICADOS:\n")
+        report.append("   Total: ${certifiedWorkers.size}\n")
+        
+        if (certifiedWorkers.isNotEmpty()) {
+            certifiedWorkers.forEach { worker ->
+                val certDate = if (worker.certificationDate != null) {
+                    java.text.SimpleDateFormat("dd/MM/yyyy").format(java.util.Date(worker.certificationDate))
+                } else "Fecha no registrada"
+                report.append("   - ${worker.name} (Certificado: $certDate)\n")
+            }
+        }
+        
+        // Recomendaciones
+        report.append("\n💡 RECOMENDACIONES:\n")
+        if (trainers.isEmpty()) {
+            report.append("   1. Configurar al menos un entrenador\n")
+        }
+        if (trainees.isEmpty()) {
+            report.append("   2. Si hay personal nuevo, configurar entrenamientos\n")
+        }
+        if (invalidTrainingPairs > 0) {
+            report.append("   3. Revisar asignaciones de estaciones para entrenados\n")
+            report.append("   4. Asegurar que la estación de entrenamiento esté en las asignaciones del entrenado\n")
+        }
+        
+        report.append("=" .repeat(50) + "\n")
+        
+        val finalReport = report.toString()
+        println("DEBUG: $finalReport")
         
         return finalReport
     }
