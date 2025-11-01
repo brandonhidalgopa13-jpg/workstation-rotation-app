@@ -81,8 +81,7 @@
         <item name="android:paddingVertical">2dp</item>
     </style>
     
-</resources>    <!-- 
-Modern Button Styles v2.4.0 -->
+    <!-- Modern Button Styles v2.4.0 -->
     <style name="ModernPrimaryButton" parent="Widget.Material3.Button">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">56dp</item>
@@ -179,4 +178,7 @@ Modern Button Styles v2.4.0 -->
         <item name="android:textStyle">bold</item>
         <item name="android:padding">8dp</item>
         <item name="android:gravity">center</item>
-    </style>
+    </style> 
+   </style>
+    
+</resources>
