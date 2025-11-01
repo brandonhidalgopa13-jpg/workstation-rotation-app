@@ -94,31 +94,31 @@ class OnboardingActivity : AppCompatActivity() {
                 title = "¡Bienvenido a REWS! 🎉",
                 description = "Sistema de Rotación y Estaciones de Trabajo\n\nOptimiza la gestión de tu equipo con rotaciones inteligentes y herramientas profesionales.",
                 iconRes = R.drawable.ic_onboarding_welcome,
-                backgroundColor = R.color.onboarding_background
+                backgroundColor = R.color.background_light
             ),
             OnboardingPage(
                 title = "Gestiona tu Equipo 👥",
                 description = "Registra trabajadores con roles específicos:\n\n• 👨‍🏫 Entrenadores experimentados\n• 🎯 Trabajadores en entrenamiento\n• 👑 Líderes de estación\n• 📊 Control de disponibilidad",
                 iconRes = R.drawable.ic_onboarding_workers,
-                backgroundColor = R.color.onboarding_background
+                backgroundColor = R.color.background_light
             ),
             OnboardingPage(
                 title = "Configura Estaciones 🏭",
                 description = "Define tus áreas de trabajo:\n\n• 📋 Capacidades requeridas\n• 👥 Número de trabajadores\n• ⭐ Estaciones prioritarias\n• 🔧 Configuración flexible",
                 iconRes = R.drawable.ic_onboarding_workstations,
-                backgroundColor = R.color.onboarding_background
+                backgroundColor = R.color.background_light
             ),
             OnboardingPage(
                 title = "Rotación Inteligente 🔄",
                 description = "Algoritmo avanzado que considera:\n\n• 👑 Prioridad de líderes\n• 🎓 Parejas de entrenamiento\n• 📊 Disponibilidad del personal\n• 🚫 Restricciones específicas",
                 iconRes = R.drawable.ic_onboarding_rotation,
-                backgroundColor = R.color.onboarding_background
+                backgroundColor = R.color.background_light
             ),
             OnboardingPage(
                 title = "¡Todo Listo! ✨",
                 description = "Ya puedes comenzar a usar REWS:\n\n• 🏭 Crea tus estaciones\n• 👥 Registra tu equipo\n• 🔄 Genera rotaciones\n• 📊 Analiza resultados",
                 iconRes = R.drawable.ic_onboarding_complete,
-                backgroundColor = R.color.onboarding_background
+                backgroundColor = R.color.background_light
             )
         )
     }
@@ -210,6 +210,7 @@ class OnboardingActivity : AppCompatActivity() {
         finish()
     }
     
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val currentItem = binding.viewPager.currentItem
         if (currentItem > 0) {

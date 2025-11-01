@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/onboarding_background">
+    android:background="@color/background_light">
 
     <!-- ViewPager para las páginas del onboarding -->
     <androidx.viewpager2.widget.ViewPager2
@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="24dp"
-        android:background="@color/onboarding_card"
+        android:background="@color/background_card"
         android:elevation="8dp">
 
         <!-- Indicador de puntos -->
@@ -30,8 +30,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginBottom="24dp"
-            app:dotsColor="@color/onboarding_text_secondary"
-            app:selectedDotColor="@color/onboarding_primary"
+            app:dotsColor="@color/text_secondary"
+            app:selectedDotColor="@color/primary_blue"
             app:dotsSize="12dp"
             app:dotsSpacing="8dp"
             app:dotsCornerRadius="6dp" />
@@ -46,7 +46,7 @@
             <!-- Botón anterior -->
             <Button
                 android:id="@+id/btnPrevious"
-                style="@style/ModernSecondaryButton"
+                style="@style/SecondaryButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
@@ -61,13 +61,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="48dp"
                 android:text="Saltar"
-                android:textColor="@color/onboarding_text_secondary"
+                android:textColor="@color/text_secondary"
                 android:layout_marginHorizontal="8dp" />
 
             <!-- Botón siguiente -->
             <Button
                 android:id="@+id/btnNext"
-                style="@style/ModernPrimaryButton"
+                style="@style/PrimaryButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="1"
@@ -77,7 +77,7 @@
             <!-- Botón comenzar (oculto inicialmente) -->
             <Button
                 android:id="@+id/btnGetStarted"
-                style="@style/ModernPrimaryButton"
+                style="@style/PrimaryButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="2"

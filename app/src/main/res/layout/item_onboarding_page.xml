@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="32dp"
-    android:background="@color/onboarding_background">
+    android:background="@color/background_light">
 
     <!-- Icono principal -->
     <ImageView
@@ -19,7 +19,10 @@
     <!-- Título -->
     <TextView
         android:id="@+id/tvTitle"
-        style="@style/OnboardingTitle"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Título de la página" />
@@ -27,7 +30,10 @@
     <!-- Descripción -->
     <TextView
         android:id="@+id/tvDescription"
-        style="@style/OnboardingSubtitle"
+        android:textSize="16sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Descripción detallada de la funcionalidad"
