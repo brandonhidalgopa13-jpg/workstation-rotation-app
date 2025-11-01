@@ -1,138 +1,165 @@
-# 🏭 REWS - Rotation and Workstation System
+# 🏭 REWS - Sistema de Rotación y Estaciones de Trabajo
 
-**Versión 2.5.1** - Una aplicación Android avanzada para gestionar estaciones de trabajo y rotación inteligente de trabajadores con sistema de liderazgo, entrenamiento integrado y diseño gráfico moderno estabilizado.
+**Versión 3.0.0** - Aplicación Android profesional para la gestión inteligente de rotaciones de trabajadores en entornos industriales. Desarrollada con las últimas tecnologías de Android, ofrece una solución integral y robusta para la administración eficiente de personal y estaciones de trabajo.
 
-## ✨ Características Principales
+## 🚀 Características Principales
 
-- **🏭 Gestión Avanzada de Estaciones**: Crear, editar y configurar estaciones prioritarias
-- **👥 Sistema Completo de Trabajadores**: Gestión de personal con roles de entrenamiento y liderazgo
-- **👑 Sistema de Liderazgo**: Designación de líderes con identificación visual distintiva
-- **🎓 Sistema de Entrenamiento**: Parejas entrenador-entrenado con prioridad absoluta
-- **🔄 Rotación Inteligente**: Algoritmo avanzado que considera múltiples factores
-- **🏆 Certificación de Trabajadores**: Proceso para completar entrenamientos
-- **🚫 Sistema de Restricciones**: Control granular por trabajador y estación
-- **🎯 Sistema de Onboarding**: Tutorial interactivo de primera instalación
-- **🎨 Diseño Gráfico Moderno**: Interfaz renovada con gradientes y animaciones
-- **📚 Tutorial Interactivo**: Guía paso a paso para nuevos usuarios
-- **💾 Base de Datos Local**: Funciona completamente offline
-- **☁️ Sincronización en la Nube**: Backup y restauración con Firebase
-- **🌙 Modo Oscuro**: Tema adaptativo para mejor experiencia
+### 👑 **Sistema de Liderazgo Inteligente**
+- **Líderes "BOTH"**: Supervisores permanentes que permanecen en su estación en ambas rotaciones
+- **Líderes "FIRST_HALF"**: Activos solo en la primera mitad, rotan normalmente en la segunda
+- **Líderes "SECOND_HALF"**: Activos solo en la segunda mitad, rotan normalmente en la primera
+- **Identificación Visual**: Interfaz distintiva con colores púrpura y iconografía especial
+- **Prioridad Absoluta**: Los líderes pueden superar límites de capacidad cuando es necesario
 
-## 🚀 Funcionalidades Detalladas
+### 🚫 **Sistema de Restricciones Avanzado**
+- **PROHIBITED**: Trabajadores que NO pueden trabajar en estaciones específicas
+- **LIMITED**: Trabajadores con limitaciones especiales en ciertas estaciones
+- **TEMPORARY**: Restricciones temporales con fechas de expiración automática
+- **Aplicación Automática**: Filtrado inteligente en todas las asignaciones
 
-### 🏭 Gestión de Estaciones de Trabajo
-- **Creación y Edición**: Configurar estaciones con capacidades específicas
-- **Estaciones Prioritarias**: Marcar estaciones críticas que siempre mantienen capacidad completa
-- **Estado Operativo**: Activar/desactivar estaciones según necesidades operativas
-- **Interfaz Visual**: Lista organizada con cards y indicadores de estado
+### 🎓 **Gestión de Certificaciones**
+- **Proceso de Entrenamiento**: Sistema completo de capacitación por estaciones
+- **Certificación Automática**: Transición de "entrenado" a "certificado"
+- **Estaciones de Entrenamiento**: Asignación automática a estaciones designadas
+- **Seguimiento Completo**: Historial detallado de certificaciones
 
-### 👥 Gestión Avanzada de Trabajadores
-- **Información Completa**: Datos personales, disponibilidad y restricciones
-- **Sistema de Disponibilidad**: Porcentajes de disponibilidad (0-100%) con indicadores visuales
-- **Roles de Entrenamiento**: Configurar entrenadores (👨‍🏫) y entrenados (🎯)
-- **👑 Sistema de Liderazgo**: Designar líderes con tipos configurables (ambas partes, primera, segunda)
-- **Identificación Visual**: Líderes destacados con colores púrpura y mensaje especial
-- **Asignación Flexible**: Múltiples estaciones por trabajador con sistema de checkboxes
-- **🚫 Restricciones Específicas**: Control granular por estación (PROHIBIDO, LIMITADO, TEMPORAL)
-- **Certificación**: Proceso para completar entrenamientos y remover estado de entrenado
+### 📊 **Algoritmo de Rotación Optimizado**
+- **Distribución Inteligente**: Balanceado automático considerando capacidades y restricciones
+- **Rotación Dual**: Sistema independiente para primera y segunda parte
+- **Validación Robusta**: Verificación en tiempo real de todas las reglas de negocio
+- **Flexibilidad Total**: Soporte para múltiples estaciones por trabajador
 
-### 🔄 Sistema de Rotación Inteligente
-- **Algoritmo Avanzado**: Considera entrenamiento, liderazgo, disponibilidad, prioridades y restricciones
-- **👑 Prioridad de Líderes**: Líderes asignados a sus estaciones designadas con identificación visual
-- **Parejas de Entrenamiento**: Entrenador y entrenado siempre juntos con prioridad absoluta
-- **Rotación Forzada**: Trabajadores entrenados rotan automáticamente cada 2 ciclos
-- **Visualización Dual**: Rotación actual y próxima rotación simultáneamente
-- **Indicadores Visuales**: Estados claros de liderazgo, entrenamiento, disponibilidad y capacidad
-- **🚫 Respeto de Restricciones**: El algoritmo automáticamente evita asignaciones prohibidas
+### 📱 **Interfaz Moderna y Profesional**
+- **Material Design 3**: Diseño moderno siguiendo las últimas guías de Google
+- **Modo Oscuro Completo**: Soporte nativo para tema oscuro
+- **Responsive Design**: Optimizado para tablets y diferentes resoluciones
+- **Navegación Intuitiva**: Flujo de trabajo diseñado para máxima eficiencia
 
-### 📚 Tutorial y Ayuda
-- **Tutorial Interactivo**: 9 pasos detallados para nuevos usuarios
-- **Configuración Flexible**: Activar/desactivar tutorial y pistas
-- **Ayuda Contextual**: Resaltado visual de elementos durante la guía
-- **Documentación Integrada**: Acceso a guías desde la aplicación
+### ⚡ **Rendimiento y Confiabilidad**
+- **Base de Datos Offline**: Room Database para funcionamiento sin conexión
+- **Arquitectura MVVM**: Separación clara de responsabilidades
+- **Kotlin Coroutines**: Operaciones asíncronas sin bloqueos
+- **Testing Integral**: Cobertura completa de pruebas unitarias e integración
 
-## Tecnologías
-
-- **Kotlin** - Lenguaje principal
-- **Room Database** - Persistencia local
-- **Material Design 3** - Interfaz de usuario
-- **MVVM Architecture** - Patrón arquitectónico
-- **Coroutines** - Programación asíncrona
-- **ViewBinding** - Vinculación de vistas
-
-## Instalación
-
-### Opción 1: Descargar APK
-1. Ve a la sección [Releases](../../releases)
-2. Descarga el archivo `app-debug.apk`
-3. Instala en tu dispositivo Android
-
-### Opción 2: Compilar desde código
-1. Clona este repositorio
-2. Abre en Android Studio
-3. Ejecuta el proyecto
-
-## 📱 Requisitos del Sistema
+## 📋 Requisitos del Sistema
 
 - **Android**: 7.0 (API 24) o superior
-- **Espacio**: ~20 MB de espacio libre
-- **Conectividad**: No requiere conexión a internet (funciona offline)
-- **RAM**: Mínimo 2 GB recomendado para rendimiento óptimo
+- **RAM**: 2 GB mínimo, 4 GB recomendado
+- **Almacenamiento**: 100 MB de espacio libre
+- **Procesador**: ARM64 o x86_64 compatible
 
-## 📖 Guía de Uso Rápido
+## 🛠️ Stack Tecnológico
 
-1. **🏭 Configurar Estaciones**: Crea 3-5 estaciones variadas, marca las prioritarias
-2. **👥 Registrar Trabajadores**: Agrega 5-10 trabajadores con diferentes disponibilidades
-3. **🎓 Configurar Entrenamiento**: Establece parejas entrenador-entrenado si es necesario
-4. **🔄 Generar Rotación**: El algoritmo inteligente creará la rotación óptima
-5. **🏆 Certificar Trabajadores**: Completa entrenamientos cuando sea apropiado
+- **Lenguaje**: Kotlin 100% (Null Safety, Coroutines)
+- **UI Framework**: Material Design 3, XML Layouts responsivos
+- **Base de Datos**: Room Database con migraciones automáticas
+- **Arquitectura**: MVVM + Repository Pattern
+- **Testing**: JUnit 5, Espresso, MockK
+- **Build System**: Gradle 8.0+ con Kotlin DSL
+- **CI/CD**: GitHub Actions con análisis de seguridad
 
-### 📚 Tutorial Integrado
-La aplicación incluye un tutorial interactivo que se ejecuta automáticamente en el primer uso. Puedes reactivarlo desde el menú principal en cualquier momento.
+## 📦 Instalación
 
-### 📋 Documentación Completa
-- **GUIA_USUARIO_RAPIDA.md**: Manual práctico para usuarios finales
-- **FUNCIONES_DEL_SISTEMA.md**: Documentación técnica detallada
-- **CHANGELOG.md**: Historial de versiones y cambios
+### 🎯 Descarga Oficial (Recomendada)
+1. Visita [Releases](https://github.com/brandonhidalgopa13-jpg/workstation-rotation-app/releases)
+2. Descarga `REWS-v3.0.0-release.apk` de la versión más reciente
+3. Habilita "Instalar aplicaciones desconocidas" en Configuración > Seguridad
+4. Instala el APK y sigue las instrucciones en pantalla
 
-## Capturas de Pantalla
+### 🔧 Compilación desde Código Fuente
+```bash
+# Clonar repositorio
+git clone https://github.com/brandonhidalgopa13-jpg/workstation-rotation-app.git
+cd workstation-rotation-app
 
-*Las capturas se agregarán próximamente*
+# Configurar keystore (opcional para release)
+cp keystore.properties.example keystore.properties
+# Editar keystore.properties con tus credenciales
 
-## Contribuir
+# Compilar APK de release
+./gradlew assembleRelease
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+# APK generado en: app/build/outputs/apk/release/
+```
 
-## Licencia
+## 🎯 Guía de Uso Rápido
 
-Este proyecto está bajo una **Licencia Propietaria Restrictiva** - ver el archivo [LICENSE](LICENSE) para detalles.
+### 1. **Configuración Inicial**
+- Crear estaciones de trabajo con capacidades específicas
+- Registrar trabajadores con sus habilidades y certificaciones
+- Definir restricciones por trabajador-estación si es necesario
 
-**⚠️ AVISO IMPORTANTE**: Este software es propietario. Solo el autor original tiene derechos de distribución. Prohibida la redistribución, modificación o uso comercial sin autorización expresa.
+### 2. **Gestión de Liderazgo**
+- Asignar líderes a estaciones específicas
+- Configurar tipo de liderazgo (BOTH, FIRST_HALF, SECOND_HALF)
+- Verificar identificación visual en las rotaciones
+
+### 3. **Proceso de Rotación**
+- Generar rotación automática con un clic
+- Alternar entre primera y segunda parte
+- Verificar distribución balanceada y cumplimiento de restricciones
+
+### 4. **Certificaciones**
+- Marcar trabajadores como "en entrenamiento"
+- Completar proceso de certificación
+- Seguimiento automático del progreso
+
+## 🔒 Seguridad y Privacidad
+
+- **Datos Locales**: Toda la información se almacena localmente en el dispositivo
+- **Sin Conexión**: Funciona completamente offline, sin envío de datos externos
+- **Permisos Mínimos**: Solo solicita permisos esenciales para funcionamiento
+- **Código Auditado**: Análisis de seguridad automatizado en cada release
+
+## 📚 Documentación
+
+- **[Guía de Instalación](INSTALLATION_GUIDE.md)**: Instrucciones detalladas de instalación
+- **[Notas de Release](RELEASE_NOTES_v3.0.0.md)**: Cambios y mejoras de la versión actual
+- **[Changelog](CHANGELOG.md)**: Historial completo de versiones
+- **[Arquitectura](ARCHITECTURE.md)**: Documentación técnica del sistema
+
+## 🤝 Contribución
+
+**⚠️ IMPORTANTE**: Este es un proyecto con licencia propietaria restrictiva. Las contribuciones están limitadas y requieren autorización previa del autor.
+
+Para consultas sobre contribuciones:
+1. Abre un [Issue](https://github.com/brandonhidalgopa13-jpg/workstation-rotation-app/issues) describiendo tu propuesta
+2. Espera aprobación antes de realizar cambios
+3. Todas las contribuciones quedan sujetas a la licencia propietaria
+
+## 📄 Licencia
+
+Este proyecto está bajo una **Licencia Propietaria Restrictiva** - ver el archivo [LICENSE](LICENSE) para detalles completos.
+
+**⚠️ AVISO LEGAL**: 
+- Solo el autor original tiene derechos de distribución
+- Prohibida la redistribución, modificación o uso comercial sin autorización expresa
+- Uso permitido solo para evaluación personal y organizacional autorizada
+- Violaciones pueden resultar en acciones legales
 
 ## 👨‍💻 Desarrollador
 
 **Brandon Josué Hidalgo Paz**  
-*REWS - Rotation and Workstation System v2.3.0*
+*Desarrollador Principal - REWS v3.0.0*
 
-## 📞 Contacto
+## 📞 Contacto y Soporte
 
-Si tienes preguntas, sugerencias o encuentras algún problema, no dudes en:
-- Abrir un [Issue](../../issues)
-- Revisar la [documentación completa](FUNCIONES_DEL_SISTEMA.md)
-- Consultar la [guía de usuario](GUIA_USUARIO_RAPIDA.md)
+Para consultas, soporte técnico o licenciamiento:
+- **Issues**: [GitHub Issues](https://github.com/brandonhidalgopa13-jpg/workstation-rotation-app/issues)
+- **Documentación**: Consulta los archivos de documentación incluidos
+- **Licenciamiento**: Contacta al desarrollador para consultas comerciales
 
 ---
 
-## 📊 Estadísticas del Proyecto
+## 📊 Información del Proyecto
 
-- **Versión Actual**: 2.5.1
-- **Lenguaje Principal**: Kotlin (100%)
-- **Arquitectura**: MVVM + Room Database
-- **Funcionalidades**: 30+ características implementadas
-- **Documentación**: Completa con guías y tutoriales
-- **Diseño**: Moderno con onboarding interactivo estabilizado
-- **Estado**: Versión estable lista para producción
+- **Versión Actual**: 3.0.0 (Enero 2025)
+- **Lenguaje**: Kotlin 100%
+- **Arquitectura**: MVVM + Clean Architecture
+- **Base de Datos**: Room Database
+- **UI**: Material Design 3
+- **Testing**: Cobertura >80%
+- **Estado**: Producción estable
+- **Licencia**: Propietaria Restrictiva
+
+**© 2024-2025 Brandon Josué Hidalgo Paz. Todos los derechos reservados.**
