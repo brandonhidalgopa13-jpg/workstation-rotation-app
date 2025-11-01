@@ -16,6 +16,7 @@ import com.workstation.rotation.adapters.WorkstationCheckboxAdapter
 import com.workstation.rotation.adapters.WorkstationCheckItem
 import com.workstation.rotation.data.database.AppDatabase
 import com.workstation.rotation.data.entities.Worker
+import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.databinding.ActivityWorkerBinding
 import com.workstation.rotation.databinding.DialogAddWorkerBinding
 import com.workstation.rotation.viewmodels.WorkerViewModel
@@ -217,7 +218,7 @@ class WorkerActivity : AppCompatActivity() {
                 
                 // Setup training workstation spinner
                 val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
-                val spinnerAdapter = ArrayAdapter(this@WorkerActivity, android.R.layout.simple_spinner_item, workstationNames)
+                val spinnerAdapter = ArrayAdapter<String>(this@WorkerActivity, android.R.layout.simple_spinner_item, workstationNames)
                 spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 dialogBinding.spinnerTrainingWorkstation.adapter = spinnerAdapter
                 
@@ -378,7 +379,7 @@ class WorkerActivity : AppCompatActivity() {
             try {
                 val workstations = viewModel.getActiveWorkstationsSync()
                 val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
-                val leaderWorkstationAdapter = ArrayAdapter(
+                val leaderWorkstationAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
                     workstationNames
@@ -399,7 +400,7 @@ class WorkerActivity : AppCompatActivity() {
             try {
                 val trainers = viewModel.getTrainers()
                 val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
-                val trainerAdapter = ArrayAdapter(
+                val trainerAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
                     trainerNames
@@ -456,7 +457,7 @@ class WorkerActivity : AppCompatActivity() {
                 
                 if (trainerWorkstations.isEmpty()) {
                     // Si el entrenador no tiene estaciones asignadas
-                    val emptyAdapter = ArrayAdapter(
+                    val emptyAdapter = ArrayAdapter<String>(
                         this@WorkerActivity,
                         android.R.layout.simple_spinner_item,
                         listOf("El entrenador no tiene estaciones asignadas")
@@ -494,7 +495,7 @@ class WorkerActivity : AppCompatActivity() {
      * Limpia el spinner de estaciones cuando no hay entrenador seleccionado.
      */
     private fun clearWorkstationSpinner(dialogBinding: DialogAddWorkerBinding) {
-        val emptyAdapter = ArrayAdapter(
+        val emptyAdapter = ArrayAdapter<String>(
             this@WorkerActivity,
             android.R.layout.simple_spinner_item,
             listOf("Primero selecciona un entrenador")
@@ -543,7 +544,7 @@ class WorkerActivity : AppCompatActivity() {
             try {
                 val trainers = viewModel.getTrainers()
                 val trainerNames = listOf("Seleccionar entrenador...") + trainers.map { it.name }
-                val trainerAdapter = ArrayAdapter(
+                val trainerAdapter = ArrayAdapter<String>(
                     this@WorkerActivity,
                     android.R.layout.simple_spinner_item,
                     trainerNames
@@ -615,7 +616,7 @@ class WorkerActivity : AppCompatActivity() {
                 
                 if (trainerWorkstations.isEmpty()) {
                     // Si el entrenador no tiene estaciones asignadas
-                    val emptyAdapter = ArrayAdapter(
+                    val emptyAdapter = ArrayAdapter<String>(
                         this@WorkerActivity,
                         android.R.layout.simple_spinner_item,
                         listOf("El entrenador no tiene estaciones asignadas")
@@ -1007,7 +1008,7 @@ class WorkerActivity : AppCompatActivity() {
         
         // Configurar spinner de tipos de restricción
         val restrictionTypes = arrayOf("Prohibido", "Limitado", "Temporal")
-        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, restrictionTypes)
+        val spinnerAdapter = ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, restrictionTypes)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         dialogBinding.spinnerRestrictionType.adapter = spinnerAdapter
         
@@ -1274,7 +1275,7 @@ class WorkerActivity : AppCompatActivity() {
     ) {
         // Setup training workstation spinner
         val workstationNames = listOf("Seleccionar estación...") + workstations.map { it.name }
-        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, workstationNames)
+        val spinnerAdapter = ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, workstationNames)
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         dialogBinding.spinnerTrainingWorkstation.adapter = spinnerAdapter
         
