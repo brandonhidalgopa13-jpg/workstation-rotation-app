@@ -1148,7 +1148,7 @@ class RotationViewModel(
                 val leaderStation = allWorkstations.find { it.id == leaderStationId }
                 leaderStation?.let { station ->
                     // Ensure BOTH leaders are in next rotation regardless of current assignment
-                    if (!nextAssignments[station.id]?.contains(bothLeader) == true) {
+                    if (nextAssignments[station.id]?.contains(bothLeader) != true) {
                         if ((nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
                             nextAssignments[station.id]?.add(bothLeader)
                             println("DEBUG: Líder BOTH ${bothLeader.name} forzado en próxima rotación en ${station.name}")
