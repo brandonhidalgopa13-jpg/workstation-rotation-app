@@ -342,33 +342,7 @@ class WorkerActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * Sets up the training system for editing a worker.
-     */
-    private fun setupTrainingSystemForEdit(dialogBinding: DialogAddWorkerBinding, worker: Worker) {
-        with(dialogBinding) {
-            // Setup trainee checkbox listener
-            checkboxIsTrainee.setOnCheckedChangeListener { _, isChecked ->
-                layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
-                
-                if (isChecked) {
-                    loadTrainersForSpinner(dialogBinding)
-                    setupTrainerSelectionListener(dialogBinding)
-                }
-            }
-            
-            // Prevent trainer and trainee from being selected simultaneously
-            checkboxIsTrainer.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    checkboxIsTrainee.isChecked = false
-                    layoutTrainingDetails.visibility = View.GONE
-                }
-            }
-            
-            // Setup leadership system with worker ID for filtering
-            setupLeadershipSystem(dialogBinding, worker.id)
-        }
-    }
+
     
     /**
      * Sets up the leadership system UI components and their interactions.
@@ -546,8 +520,8 @@ class WorkerActivity : AppCompatActivity() {
                 layoutTrainingDetails.visibility = if (isChecked) View.VISIBLE else View.GONE
                 
                 if (isChecked) {
-                    loadTrainersForEditSpinner(dialogBinding, worker)
-                    setupTrainerSelectionListenerForEdit(dialogBinding, worker)
+                    loadTrainersForSpinner(dialogBinding)
+                    setupTrainerSelectionListener(dialogBinding)
                 }
             }
             
@@ -559,11 +533,14 @@ class WorkerActivity : AppCompatActivity() {
                 }
             }
             
+            // Setup leadership system with worker ID for filtering
+            setupLeadershipSystem(dialogBinding, worker.id)
+            
             // If worker is currently a trainee, show training details
             if (worker.isTrainee) {
                 layoutTrainingDetails.visibility = View.VISIBLE
-                loadTrainersForEditSpinner(dialogBinding, worker)
-                setupTrainerSelectionListenerForEdit(dialogBinding, worker)
+                loadTrainersForSpinner(dialogBinding)
+                setupTrainerSelectionListener(dialogBinding)
             }
         }
     }
