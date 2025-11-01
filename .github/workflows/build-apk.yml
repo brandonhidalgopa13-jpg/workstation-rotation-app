@@ -32,27 +32,36 @@ jobs:
     - name: 🤖 Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: 🔧 Setup Gradle
-      uses: gradle/gradle-build-action@v2
+    - name: 🔧 Clean Gradle environment
+      run: |
+        unset GRADLE_OPTS
+        unset GRADLE_USER_HOME
+        echo "Cleaned Gradle environment variables"
       
     - name: 🧪 Run unit tests
-      run: ./gradlew testDebugUnitTest --no-daemon --max-workers=2
+      env:
+        GRADLE_OPTS: ""
+      run: |
+        echo "Running Gradle tests..."
+        ./gradlew testDebugUnitTest --no-daemon --stacktrace
       
     - name: 🔍 Run lint
-      run: ./gradlew lintDebug --no-daemon --max-workers=2
+      env:
+        GRADLE_OPTS: ""
+      run: ./gradlew lintDebug --no-daemon --stacktrace
       
     - name: 📊 Generate test report
-      run: ./gradlew jacocoTestReport --no-daemon --max-workers=2
+      env:
+        GRADLE_OPTS: ""
+      run: ./gradlew jacocoTestReport --no-daemon --stacktrace
       
     - name: 📤 Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: |
-          app/build/reports/tests/
-          app/build/reports/jacoco/
-          app/build/reports/lint-results-debug.html
+        path: app/build/reports/
+        if-no-files-found: warn
 
   build-debug:
     name: 🔨 Build Debug APK
@@ -235,5 +244,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: performance-test-results
-        path: app/build/reports/tests/testDebugUnitTest/
+        path: app/build/reports/
+        if-no-files-found: warn
       continue-on-error: true
