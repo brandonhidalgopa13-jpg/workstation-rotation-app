@@ -109,7 +109,9 @@ La aplicación incluye un tutorial interactivo que se ejecuta automáticamente e
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+Este proyecto está bajo una **Licencia Propietaria Restrictiva** - ver el archivo [LICENSE](LICENSE) para detalles.
+
+**⚠️ AVISO IMPORTANTE**: Este software es propietario. Solo el autor original tiene derechos de distribución. Prohibida la redistribución, modificación o uso comercial sin autorización expresa.
 
 ## 👨‍💻 Desarrollador
 
