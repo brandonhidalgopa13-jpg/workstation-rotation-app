@@ -143,43 +143,14 @@ class WorkerActivity : AppCompatActivity() {
             item.isChecked = isChecked
         }
         
+        // Configuración básica del RecyclerView
         dialogBinding.recyclerViewWorkstations.apply {
             layoutManager = LinearLayoutManager(this@WorkerActivity)
             adapter = workstationAdapter
-            
-            // Debug: Verificar visibilidad del RecyclerView
-            android.util.Log.d("WorkerActivity", "RecyclerView visibility: $visibility")
-            android.util.Log.d("WorkerActivity", "RecyclerView width: $width, height: $height")
-            
-            // Asegurar que el RecyclerView sea visible
             visibility = android.view.View.VISIBLE
             
-            // Optimizaciones para manejar muchas estaciones
-            isNestedScrollingEnabled = true
-            setHasFixedSize(true)  // Mejora rendimiento cuando el tamaño es fijo
-            setItemViewCacheSize(com.workstation.rotation.utils.Constants.RECYCLER_VIEW_CACHE_SIZE)
-            
-            // Mejorar el scroll suave
-            isVerticalScrollBarEnabled = true
-            scrollBarStyle = android.view.View.SCROLLBARS_OUTSIDE_OVERLAY
-            
-            // Agregar separadores sutiles entre elementos (solo si hay drawable disponible)
-            try {
-                val divider = androidx.recyclerview.widget.DividerItemDecoration(
-                    this@WorkerActivity, 
-                    androidx.recyclerview.widget.DividerItemDecoration.VERTICAL
-                )
-                // Usar drawable por defecto si no existe el personalizado
-                androidx.core.content.ContextCompat.getDrawable(
-                    this@WorkerActivity, 
-                    android.R.drawable.divider_horizontal_bright
-                )?.let { drawable ->
-                    divider.setDrawable(drawable)
-                    addItemDecoration(divider)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("WorkerActivity", "No se pudo agregar divisor: ${e.message}")
-            }
+            // Debug: Verificar configuración inicial
+            android.util.Log.d("WorkerActivity", "RecyclerView configurado - LayoutManager: ${layoutManager != null}, Adapter: ${adapter != null}")
         }
         
         // Setup training system
