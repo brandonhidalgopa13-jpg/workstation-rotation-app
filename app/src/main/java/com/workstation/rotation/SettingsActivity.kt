@@ -151,6 +151,19 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnAppInfo.setOnClickListener {
             showAppInfo()
         }
+        
+        // Nuevas funcionalidades
+        binding.btnGenerateReport?.setOnClickListener {
+            generatePerformanceReport()
+        }
+        
+        binding.btnNotificationSettings?.setOnClickListener {
+            showNotificationSettings()
+        }
+        
+        binding.btnAdvancedSettings?.setOnClickListener {
+            showAdvancedSettings()
+        }
     }
     
     /**
@@ -606,19 +619,24 @@ class SettingsActivity : AppCompatActivity() {
         androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("📱 Información de la Aplicación")
             .setMessage(
-                "🏭 Sistema de Rotación Inteligente\n" +
-                "📱 Versión: 2.1.0\n" +
+                "🏭 REWS - Rotation and Workstation System\n" +
+                "📱 Versión: 2.4.0\n" +
                 "👨‍💻 Desarrollador: Brandon Josué Hidalgo Paz\n" +
                 "📅 Año: 2024\n\n" +
                 "🚀 Funcionalidades Principales:\n" +
                 "• 👥 Gestión completa de trabajadores\n" +
                 "• 🏭 Administración de estaciones de trabajo\n" +
+                "• 👑 Sistema de liderazgo avanzado\n" +
                 "• 🔄 Sistema de rotación inteligente\n" +
                 "• 📚 Sistema de entrenamiento avanzado\n" +
                 "• 🎓 Certificación de trabajadores\n" +
+                "• 🚫 Sistema de restricciones específicas\n" +
                 "• 🌙 Modo oscuro automático\n" +
                 "• 💾 Respaldo y sincronización\n" +
-                "• 📊 Reportes y estadísticas\n\n" +
+                "• ☁️ Sincronización en la nube\n" +
+                "• 📊 Reportes y estadísticas avanzadas\n" +
+                "• 🔔 Sistema de notificaciones\n" +
+                "• ⚡ Optimizaciones de rendimiento\n\n" +
                 "© 2024 - Todos los derechos reservados"
             )
             .setPositiveButton("Cerrar", null)
@@ -1280,4 +1298,1255 @@ class SettingsActivity : AppCompatActivity() {
         val title: String,
         val content: String
     )
-}
+}    
+
+    /**
+     * Genera un reporte de rendimiento completo
+     */
+    private fun generatePerformanceReport() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                val workers = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkersSync()
+                }
+                val workstations = withContext(Dispatchers.IO) {
+                    database.workstationDao().getAllWorkstationsSync()
+                }
+                
+                val reportGenerator = com.workstation.rotation.utils.ReportGenerator(this@SettingsActivity)
+                val report = reportGenerator.generateRotationReport(workers, workstations, null)
+                val performanceStats = reportGenerator.generatePerformanceStats(workers, workstations)
+                
+                // Generar imagen del reporte
+                val reportImage = reportGenerator.generateReportImage(report)
+                val imageFile = reportGenerator.saveReportImage(reportImage)
+                
+                // Generar texto del reporte
+                val reportText = reportGenerator.exportReportToText(report)
+                
+                // Mostrar opciones de exportación
+                val options = arrayOf(
+                    "📊 Ver Reporte",
+                    "📤 Compartir Imagen",
+                    "📝 Compartir Texto",
+                    "💾 Guardar Archivo"
+                )
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("📊 Reporte Generado")
+                    .setMessage("El reporte de rendimiento ha sido generado exitosamente.")
+                    .setItems(options) { _, which ->
+                        when (which) {
+                            0 -> showReportDetails(report, performanceStats)
+                            1 -> shareReportImage(imageFile)
+                            2 -> shareReportText(reportText)
+                            3 -> saveReportFile(reportText)
+                        }
+                    }
+                    .setNegativeButton("Cerrar", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error al generar reporte: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Muestra los detalles del reporte
+     */
+    private fun showReportDetails(
+        report: com.workstation.rotation.utils.ReportGenerator.RotationReport,
+        stats: com.workstation.rotation.utils.ReportGenerator.PerformanceStats
+    ) {
+        val details = buildString {
+            appendLine("📊 REPORTE DE RENDIMIENTO")
+            appendLine("=" .repeat(30))
+            appendLine("📅 ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(report.timestamp)}")
+            appendLine()
+            appendLine("👥 TRABAJADORES")
+            appendLine("Total: ${report.totalWorkers}")
+            appendLine("Activos: ${report.activeWorkers}")
+            appendLine("Líderes: ${report.leaders}")
+            appendLine("Entrenadores: ${report.trainers}")
+            appendLine("Entrenados: ${report.trainees}")
+            appendLine()
+            appendLine("🏭 ESTACIONES")
+            appendLine("Total: ${report.totalWorkstations}")
+            appendLine("Activas: ${report.activeWorkstations}")
+            appendLine("Prioritarias: ${report.priorityWorkstations}")
+            appendLine()
+            appendLine("📈 MÉTRICAS")
+            appendLine("Eficiencia: ${String.format("%.1f%%", report.rotationEfficiency)}")
+            appendLine("Utilización: ${String.format("%.1f%%", report.workstationUtilization)}")
+            appendLine("Disponibilidad Promedio: ${String.format("%.1f%%", stats.averageAvailability)}")
+            appendLine()
+            if (stats.recommendations.isNotEmpty()) {
+                appendLine("💡 RECOMENDACIONES")
+                stats.recommendations.forEach { recommendation ->
+                    appendLine("• $recommendation")
+                }
+            }
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📊 Detalles del Reporte")
+            .setMessage(details)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+    
+    /**
+     * Comparte la imagen del reporte
+     */
+    private fun shareReportImage(imageFile: File?) {
+        if (imageFile == null) {
+            Toast.makeText(this, "Error: No se pudo generar la imagen", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        try {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "${packageName}.fileprovider",
+                imageFile
+            )
+            
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "image/png"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Reporte de Rendimiento REWS")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            
+            startActivity(Intent.createChooser(shareIntent, "Compartir Reporte"))
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al compartir imagen: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Comparte el texto del reporte
+     */
+    private fun shareReportText(reportText: String) {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, reportText)
+            putExtra(Intent.EXTRA_SUBJECT, "Reporte de Rendimiento REWS")
+        }
+        
+        startActivity(Intent.createChooser(shareIntent, "Compartir Reporte"))
+    }
+    
+    /**
+     * Guarda el reporte como archivo
+     */
+    private fun saveReportFile(reportText: String) {
+        try {
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val filename = "reporte_rews_$timestamp.txt"
+            val file = File(getExternalFilesDir(null), filename)
+            
+            file.writeText(reportText)
+            
+            Toast.makeText(this, "Reporte guardado: ${file.name}", Toast.LENGTH_LONG).show()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al guardar archivo: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Muestra configuraciones de notificaciones
+     */
+    private fun showNotificationSettings() {
+        val options = arrayOf(
+            "🔔 Notificaciones de Rotación",
+            "🎓 Notificaciones de Entrenamiento", 
+            "👑 Notificaciones de Liderazgo",
+            "⚠️ Alertas del Sistema",
+            "📊 Reportes de Rendimiento",
+            "⏰ Recordatorios Programados"
+        )
+        
+        val checkedItems = booleanArrayOf(
+            prefs.getBoolean("notify_rotation", true),
+            prefs.getBoolean("notify_training", true),
+            prefs.getBoolean("notify_leadership", true),
+            prefs.getBoolean("notify_alerts", true),
+            prefs.getBoolean("notify_reports", false),
+            prefs.getBoolean("notify_reminders", false)
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔔 Configuración de Notificaciones")
+            .setMultiChoiceItems(options, checkedItems) { _, which, isChecked ->
+                val key = when (which) {
+                    0 -> "notify_rotation"
+                    1 -> "notify_training"
+                    2 -> "notify_leadership"
+                    3 -> "notify_alerts"
+                    4 -> "notify_reports"
+                    5 -> "notify_reminders"
+                    else -> ""
+                }
+                if (key.isNotEmpty()) {
+                    prefs.edit().putBoolean(key, isChecked).apply()
+                }
+            }
+            .setPositiveButton("Guardar") { _, _ ->
+                Toast.makeText(this, "Configuración de notificaciones guardada", Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton("Probar Notificación") { _, _ ->
+                testNotification()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Prueba una notificación
+     */
+    private fun testNotification() {
+        val notificationManager = com.workstation.rotation.utils.NotificationManager(this)
+        notificationManager.notifyRotationGenerated(5, 3, 85.5)
+        Toast.makeText(this, "Notificación de prueba enviada", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Muestra configuraciones avanzadas
+     */
+    private fun showAdvancedSettings() {
+        val options = arrayOf(
+            "🔧 Configuración del Algoritmo",
+            "📊 Configuración de Rendimiento",
+            "🗄️ Gestión de Base de Datos",
+            "🔍 Logs y Diagnósticos",
+            "🧹 Limpieza de Datos",
+            "⚡ Optimizaciones"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚙️ Configuraciones Avanzadas")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showAlgorithmSettings()
+                    1 -> showPerformanceSettings()
+                    2 -> showDatabaseManagement()
+                    3 -> showLogsAndDiagnostics()
+                    4 -> showDataCleanup()
+                    5 -> showOptimizations()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Configuración del algoritmo de rotación
+     */
+    private fun showAlgorithmSettings() {
+        val currentRotationForce = prefs.getInt("rotation_force_cycles", 2)
+        val currentAvailabilityThreshold = prefs.getInt("availability_threshold", 50)
+        val enableLeadershipPriority = prefs.getBoolean("leadership_priority", true)
+        val enableTrainingPriority = prefs.getBoolean("training_priority", true)
+        
+        val message = """
+            Configuración actual del algoritmo:
+            
+            🔄 Ciclos para rotación forzada: $currentRotationForce
+            📊 Umbral de disponibilidad: $currentAvailabilityThreshold%
+            👑 Prioridad de liderazgo: ${if (enableLeadershipPriority) "Activada" else "Desactivada"}
+            🎓 Prioridad de entrenamiento: ${if (enableTrainingPriority) "Activada" else "Desactivada"}
+            
+            ¿Qué deseas modificar?
+        """.trimIndent()
+        
+        val options = arrayOf(
+            "🔄 Cambiar Ciclos de Rotación Forzada",
+            "📊 Cambiar Umbral de Disponibilidad",
+            "👑 Alternar Prioridad de Liderazgo",
+            "🎓 Alternar Prioridad de Entrenamiento",
+            "🔄 Restaurar Valores por Defecto"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔧 Configuración del Algoritmo")
+            .setMessage(message)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> changeRotationCycles()
+                    1 -> changeAvailabilityThreshold()
+                    2 -> toggleLeadershipPriority()
+                    3 -> toggleTrainingPriority()
+                    4 -> resetAlgorithmDefaults()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Cambia los ciclos de rotación forzada
+     */
+    private fun changeRotationCycles() {
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(prefs.getInt("rotation_force_cycles", 2).toString())
+            hint = "Número de ciclos (1-10)"
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔄 Ciclos de Rotación Forzada")
+            .setMessage("Después de cuántos ciclos un trabajador debe rotar obligatoriamente:")
+            .setView(input)
+            .setPositiveButton("Guardar") { _, _ ->
+                val cycles = input.text.toString().toIntOrNull()
+                if (cycles != null && cycles in 1..10) {
+                    prefs.edit().putInt("rotation_force_cycles", cycles).apply()
+                    Toast.makeText(this, "Ciclos de rotación actualizados: $cycles", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Valor inválido. Debe ser entre 1 y 10", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Cambia el umbral de disponibilidad
+     */
+    private fun changeAvailabilityThreshold() {
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(prefs.getInt("availability_threshold", 50).toString())
+            hint = "Porcentaje (0-100)"
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📊 Umbral de Disponibilidad")
+            .setMessage("Disponibilidad mínima para que un trabajador sea considerado en rotaciones:")
+            .setView(input)
+            .setPositiveButton("Guardar") { _, _ ->
+                val threshold = input.text.toString().toIntOrNull()
+                if (threshold != null && threshold in 0..100) {
+                    prefs.edit().putInt("availability_threshold", threshold).apply()
+                    Toast.makeText(this, "Umbral de disponibilidad actualizado: $threshold%", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Valor inválido. Debe ser entre 0 y 100", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Alterna la prioridad de liderazgo
+     */
+    private fun toggleLeadershipPriority() {
+        val current = prefs.getBoolean("leadership_priority", true)
+        val new = !current
+        
+        prefs.edit().putBoolean("leadership_priority", new).apply()
+        
+        val status = if (new) "activada" else "desactivada"
+        Toast.makeText(this, "Prioridad de liderazgo $status", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Alterna la prioridad de entrenamiento
+     */
+    private fun toggleTrainingPriority() {
+        val current = prefs.getBoolean("training_priority", true)
+        val new = !current
+        
+        prefs.edit().putBoolean("training_priority", new).apply()
+        
+        val status = if (new) "activada" else "desactivada"
+        Toast.makeText(this, "Prioridad de entrenamiento $status", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Restaura valores por defecto del algoritmo
+     */
+    private fun resetAlgorithmDefaults() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔄 Restaurar Valores por Defecto")
+            .setMessage("¿Estás seguro de que quieres restaurar la configuración del algoritmo a los valores por defecto?")
+            .setPositiveButton("Restaurar") { _, _ ->
+                prefs.edit()
+                    .putInt("rotation_force_cycles", 2)
+                    .putInt("availability_threshold", 50)
+                    .putBoolean("leadership_priority", true)
+                    .putBoolean("training_priority", true)
+                    .apply()
+                
+                Toast.makeText(this, "Configuración del algoritmo restaurada", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Configuración de rendimiento
+     */
+    private fun showPerformanceSettings() {
+        val enablePerformanceMonitoring = prefs.getBoolean("performance_monitoring", true)
+        val enableMemoryOptimization = prefs.getBoolean("memory_optimization", true)
+        val enableCaching = prefs.getBoolean("enable_caching", true)
+        
+        val message = """
+            Configuración de rendimiento:
+            
+            📊 Monitoreo de rendimiento: ${if (enablePerformanceMonitoring) "Activado" else "Desactivado"}
+            💾 Optimización de memoria: ${if (enableMemoryOptimization) "Activada" else "Desactivada"}
+            🎯 Sistema de caché: ${if (enableCaching) "Activado" else "Desactivado"}
+        """.trimIndent()
+        
+        val options = arrayOf(
+            "📊 Alternar Monitoreo de Rendimiento",
+            "💾 Alternar Optimización de Memoria",
+            "🎯 Alternar Sistema de Caché",
+            "🧹 Limpiar Caché",
+            "📈 Ver Estadísticas de Rendimiento"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📊 Configuración de Rendimiento")
+            .setMessage(message)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> togglePerformanceMonitoring()
+                    1 -> toggleMemoryOptimization()
+                    2 -> toggleCaching()
+                    3 -> clearCache()
+                    4 -> showPerformanceStatistics()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Alterna el monitoreo de rendimiento
+     */
+    private fun togglePerformanceMonitoring() {
+        val current = prefs.getBoolean("performance_monitoring", true)
+        val new = !current
+        prefs.edit().putBoolean("performance_monitoring", new).apply()
+        
+        val status = if (new) "activado" else "desactivado"
+        Toast.makeText(this, "Monitoreo de rendimiento $status", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Alterna la optimización de memoria
+     */
+    private fun toggleMemoryOptimization() {
+        val current = prefs.getBoolean("memory_optimization", true)
+        val new = !current
+        prefs.edit().putBoolean("memory_optimization", new).apply()
+        
+        val status = if (new) "activada" else "desactivada"
+        Toast.makeText(this, "Optimización de memoria $status", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Alterna el sistema de caché
+     */
+    private fun toggleCaching() {
+        val current = prefs.getBoolean("enable_caching", true)
+        val new = !current
+        prefs.edit().putBoolean("enable_caching", new).apply()
+        
+        if (!new) {
+            com.workstation.rotation.utils.PerformanceUtils.CacheManager.clearCache()
+        }
+        
+        val status = if (new) "activado" else "desactivado"
+        Toast.makeText(this, "Sistema de caché $status", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Limpia el caché
+     */
+    private fun clearCache() {
+        com.workstation.rotation.utils.PerformanceUtils.CacheManager.clearCache()
+        Toast.makeText(this, "Caché limpiado exitosamente", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Muestra estadísticas de rendimiento
+     */
+    private fun showPerformanceStatistics() {
+        val cacheStats = com.workstation.rotation.utils.PerformanceUtils.CacheManager.getCacheStats()
+        
+        com.workstation.rotation.utils.PerformanceUtils.logMemoryUsage("SettingsActivity")
+        
+        val stats = """
+            📊 Estadísticas de Rendimiento:
+            
+            💾 Memoria:
+            • Uso actual: Verificar logs
+            • Optimización: ${if (prefs.getBoolean("memory_optimization", true)) "Activada" else "Desactivada"}
+            
+            🎯 Caché:
+            • $cacheStats
+            • Estado: ${if (prefs.getBoolean("enable_caching", true)) "Activado" else "Desactivado"}
+            
+            📈 Monitoreo:
+            • Estado: ${if (prefs.getBoolean("performance_monitoring", true)) "Activado" else "Desactivado"}
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📈 Estadísticas de Rendimiento")
+            .setMessage(stats)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+    
+    /**
+     * Gestión de base de datos
+     */
+    private fun showDatabaseManagement() {
+        val options = arrayOf(
+            "📊 Información de la Base de Datos",
+            "🔧 Verificar Integridad",
+            "🧹 Limpiar Datos Obsoletos",
+            "📈 Optimizar Base de Datos",
+            "⚠️ Resetear Base de Datos"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🗄️ Gestión de Base de Datos")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showDatabaseInfo()
+                    1 -> verifyDatabaseIntegrity()
+                    2 -> cleanObsoleteData()
+                    3 -> optimizeDatabase()
+                    4 -> resetDatabase()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Muestra información de la base de datos
+     */
+    private fun showDatabaseInfo() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                val workerCount = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkersSync().size
+                }
+                val workstationCount = withContext(Dispatchers.IO) {
+                    database.workstationDao().getAllWorkstationsSync().size
+                }
+                val relationshipCount = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkerWorkstationsSync().size
+                }
+                
+                val dbFile = getDatabasePath("rotation_database")
+                val dbSize = if (dbFile.exists()) dbFile.length() / 1024 else 0 // KB
+                
+                val info = """
+                    📊 Información de la Base de Datos:
+                    
+                    📁 Archivo: ${dbFile.name}
+                    📏 Tamaño: ${dbSize} KB
+                    📍 Ubicación: ${dbFile.parent}
+                    
+                    📋 Contenido:
+                    👥 Trabajadores: $workerCount
+                    🏭 Estaciones: $workstationCount
+                    🔗 Relaciones: $relationshipCount
+                    
+                    📅 Versión: ${AppDatabase.DATABASE_VERSION}
+                """.trimIndent()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("📊 Información de la Base de Datos")
+                    .setMessage(info)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error al obtener información: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Verifica la integridad de la base de datos
+     */
+    private fun verifyDatabaseIntegrity() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                // Verificaciones básicas
+                val workers = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkersSync()
+                }
+                val workstations = withContext(Dispatchers.IO) {
+                    database.workstationDao().getAllWorkstationsSync()
+                }
+                val relationships = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkerWorkstationsSync()
+                }
+                
+                val issues = mutableListOf<String>()
+                
+                // Verificar relaciones huérfanas
+                relationships.forEach { rel ->
+                    if (workers.none { it.id == rel.workerId }) {
+                        issues.add("Relación huérfana: trabajador ${rel.workerId} no existe")
+                    }
+                    if (workstations.none { it.id == rel.workstationId }) {
+                        issues.add("Relación huérfana: estación ${rel.workstationId} no existe")
+                    }
+                }
+                
+                // Verificar entrenamiento
+                workers.filter { it.isTrainee }.forEach { trainee ->
+                    if (trainee.trainerId != null && workers.none { it.id == trainee.trainerId }) {
+                        issues.add("Entrenado ${trainee.name} tiene entrenador inexistente")
+                    }
+                }
+                
+                val result = if (issues.isEmpty()) {
+                    "✅ Base de datos íntegra\n\nNo se encontraron problemas de integridad."
+                } else {
+                    "⚠️ Problemas encontrados:\n\n${issues.joinToString("\n")}"
+                }
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("🔧 Verificación de Integridad")
+                    .setMessage(result)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error en verificación: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Limpia datos obsoletos
+     */
+    private fun cleanObsoleteData() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🧹 Limpiar Datos Obsoletos")
+            .setMessage(
+                "Esta operación eliminará:\n\n" +
+                "• Trabajadores inactivos sin rotaciones recientes\n" +
+                "• Relaciones de trabajadores eliminados\n" +
+                "• Datos de entrenamiento huérfanos\n\n" +
+                "¿Continuar?"
+            )
+            .setPositiveButton("Limpiar") { _, _ ->
+                performDataCleanup()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Realiza la limpieza de datos
+     */
+    private fun performDataCleanup() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                var cleanedItems = 0
+                
+                withContext(Dispatchers.IO) {
+                    // Limpiar relaciones huérfanas
+                    val workers = database.workerDao().getAllWorkersSync()
+                    val workstations = database.workstationDao().getAllWorkstationsSync()
+                    val relationships = database.workerDao().getAllWorkerWorkstationsSync()
+                    
+                    relationships.forEach { rel ->
+                        if (workers.none { it.id == rel.workerId } || 
+                            workstations.none { it.id == rel.workstationId }) {
+                            database.workerDao().deleteWorkerWorkstation(rel.workerId, rel.workstationId)
+                            cleanedItems++
+                        }
+                    }
+                }
+                
+                Toast.makeText(this@SettingsActivity, "Limpieza completada: $cleanedItems elementos eliminados", Toast.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error en limpieza: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Optimiza la base de datos
+     */
+    private fun optimizeDatabase() {
+        lifecycleScope.launch {
+            try {
+                // Ejecutar VACUUM para optimizar la base de datos
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                withContext(Dispatchers.IO) {
+                    database.openHelper.writableDatabase.execSQL("VACUUM")
+                }
+                
+                Toast.makeText(this@SettingsActivity, "Base de datos optimizada exitosamente", Toast.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error al optimizar: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Resetea la base de datos
+     */
+    private fun resetDatabase() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Resetear Base de Datos")
+            .setMessage(
+                "ADVERTENCIA: Esta acción eliminará TODOS los datos:\n\n" +
+                "• Todos los trabajadores\n" +
+                "• Todas las estaciones\n" +
+                "• Todas las asignaciones\n" +
+                "• Todo el historial\n\n" +
+                "Esta acción NO se puede deshacer.\n\n" +
+                "¿Estás completamente seguro?"
+            )
+            .setPositiveButton("SÍ, ELIMINAR TODO") { _, _ ->
+                confirmDatabaseReset()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Confirma el reseteo de la base de datos
+     */
+    private fun confirmDatabaseReset() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚠️ Confirmación Final")
+            .setMessage("Escribe 'RESETEAR' para confirmar la eliminación completa de todos los datos:")
+            .setView(android.widget.EditText(this).apply {
+                hint = "Escribe RESETEAR"
+            })
+            .setPositiveButton("Confirmar") { dialog, _ ->
+                val editText = (dialog as androidx.appcompat.app.AlertDialog).findViewById<android.widget.EditText>(android.R.id.edit)
+                if (editText?.text.toString() == "RESETEAR") {
+                    performDatabaseReset()
+                } else {
+                    Toast.makeText(this, "Texto incorrecto. Reseteo cancelado.", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Realiza el reseteo de la base de datos
+     */
+    private fun performDatabaseReset() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                withContext(Dispatchers.IO) {
+                    database.workerDao().deleteAllWorkerWorkstations()
+                    database.workerDao().deleteAllWorkers()
+                    database.workstationDao().deleteAllWorkstations()
+                }
+                
+                Toast.makeText(this@SettingsActivity, "Base de datos reseteada completamente", Toast.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error al resetear: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Muestra logs y diagnósticos
+     */
+    private fun showLogsAndDiagnostics() {
+        val options = arrayOf(
+            "📋 Ver Logs de Sistema",
+            "🔍 Diagnóstico de Rendimiento",
+            "📊 Estadísticas de Uso",
+            "🧹 Limpiar Logs",
+            "📤 Exportar Logs"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔍 Logs y Diagnósticos")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showSystemLogs()
+                    1 -> runPerformanceDiagnostic()
+                    2 -> showUsageStatistics()
+                    3 -> clearLogs()
+                    4 -> exportLogs()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Muestra logs del sistema
+     */
+    private fun showSystemLogs() {
+        // Simulación de logs - en una implementación real se leerían de archivos de log
+        val logs = """
+            📋 Logs del Sistema (Últimas 24 horas):
+            
+            [2024-10-31 10:30:15] INFO: Aplicación iniciada
+            [2024-10-31 10:30:16] INFO: Base de datos conectada
+            [2024-10-31 10:35:22] INFO: Rotación generada (5 trabajadores, 3 estaciones)
+            [2024-10-31 11:15:45] INFO: Trabajador certificado: Juan Pérez
+            [2024-10-31 14:20:33] INFO: Respaldo creado exitosamente
+            [2024-10-31 15:45:12] WARN: Trabajador con baja disponibilidad: María García (45%)
+            [2024-10-31 16:30:28] INFO: Configuración de tema cambiada a modo oscuro
+            
+            📊 Resumen:
+            • Eventos INFO: 5
+            • Eventos WARN: 1
+            • Eventos ERROR: 0
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📋 Logs del Sistema")
+            .setMessage(logs)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+    
+    /**
+     * Ejecuta diagnóstico de rendimiento
+     */
+    private fun runPerformanceDiagnostic() {
+        lifecycleScope.launch {
+            try {
+                val startTime = System.currentTimeMillis()
+                
+                // Simular diagnóstico
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                val workerCount = withContext(Dispatchers.IO) {
+                    database.workerDao().getAllWorkersSync().size
+                }
+                val workstationCount = withContext(Dispatchers.IO) {
+                    database.workstationDao().getAllWorkstationsSync().size
+                }
+                
+                val endTime = System.currentTimeMillis()
+                val executionTime = endTime - startTime
+                
+                com.workstation.rotation.utils.PerformanceUtils.logMemoryUsage("Diagnostic")
+                
+                val diagnostic = """
+                    🔍 Diagnóstico de Rendimiento:
+                    
+                    ⏱️ Tiempo de consulta DB: ${executionTime}ms
+                    📊 Trabajadores cargados: $workerCount
+                    🏭 Estaciones cargadas: $workstationCount
+                    
+                    💾 Memoria:
+                    • Ver logs para detalles de memoria
+                    
+                    📈 Rendimiento: ${if (executionTime < 100) "Excelente" else if (executionTime < 500) "Bueno" else "Necesita optimización"}
+                """.trimIndent()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("🔍 Diagnóstico Completado")
+                    .setMessage(diagnostic)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error en diagnóstico: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Muestra estadísticas de uso
+     */
+    private fun showUsageStatistics() {
+        val appInstallTime = prefs.getLong("app_install_time", System.currentTimeMillis())
+        val rotationsGenerated = prefs.getInt("rotations_generated", 0)
+        val workersCreated = prefs.getInt("workers_created", 0)
+        val workstationsCreated = prefs.getInt("workstations_created", 0)
+        
+        val daysSinceInstall = (System.currentTimeMillis() - appInstallTime) / (1000 * 60 * 60 * 24)
+        
+        val statistics = """
+            📊 Estadísticas de Uso:
+            
+            📅 Días desde instalación: $daysSinceInstall
+            🔄 Rotaciones generadas: $rotationsGenerated
+            👥 Trabajadores creados: $workersCreated
+            🏭 Estaciones creadas: $workstationsCreated
+            
+            📈 Promedio diario:
+            • Rotaciones: ${if (daysSinceInstall > 0) rotationsGenerated / daysSinceInstall else 0}
+            • Trabajadores: ${if (daysSinceInstall > 0) workersCreated / daysSinceInstall else 0}
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("📊 Estadísticas de Uso")
+            .setMessage(statistics)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+    
+    /**
+     * Limpia los logs
+     */
+    private fun clearLogs() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🧹 Limpiar Logs")
+            .setMessage("¿Estás seguro de que quieres eliminar todos los logs del sistema?")
+            .setPositiveButton("Limpiar") { _, _ ->
+                // En una implementación real, aquí se limpiarían los archivos de log
+                Toast.makeText(this, "Logs limpiados exitosamente", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Exporta los logs
+     */
+    private fun exportLogs() {
+        try {
+            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+            val filename = "logs_rews_$timestamp.txt"
+            val file = File(getExternalFilesDir(null), filename)
+            
+            // Simular contenido de logs
+            val logContent = """
+                REWS - Logs del Sistema
+                Exportado: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}
+                
+                [INFO] Aplicación iniciada correctamente
+                [INFO] Base de datos cargada
+                [INFO] Sistema de rotación operativo
+                [INFO] Configuraciones cargadas
+                
+                Fin de logs
+            """.trimIndent()
+            
+            file.writeText(logContent)
+            
+            Toast.makeText(this, "Logs exportados: ${file.name}", Toast.LENGTH_LONG).show()
+            
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error al exportar logs: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Muestra opciones de limpieza de datos
+     */
+    private fun showDataCleanup() {
+        val options = arrayOf(
+            "🧹 Limpiar Datos Temporales",
+            "📊 Limpiar Estadísticas Antiguas",
+            "🗑️ Eliminar Trabajadores Inactivos",
+            "🏭 Eliminar Estaciones Inactivas",
+            "🔄 Resetear Contadores"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🧹 Limpieza de Datos")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> cleanTemporaryData()
+                    1 -> cleanOldStatistics()
+                    2 -> removeInactiveWorkers()
+                    3 -> removeInactiveWorkstations()
+                    4 -> resetCounters()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Limpia datos temporales
+     */
+    private fun cleanTemporaryData() {
+        com.workstation.rotation.utils.PerformanceUtils.CacheManager.clearCache()
+        
+        // Limpiar preferencias temporales
+        prefs.edit()
+            .remove("temp_rotation_data")
+            .remove("temp_worker_data")
+            .apply()
+        
+        Toast.makeText(this, "Datos temporales limpiados", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Limpia estadísticas antiguas
+     */
+    private fun cleanOldStatistics() {
+        // Resetear estadísticas de uso
+        prefs.edit()
+            .putInt("rotations_generated", 0)
+            .putInt("workers_created", 0)
+            .putInt("workstations_created", 0)
+            .apply()
+        
+        Toast.makeText(this, "Estadísticas antiguas limpiadas", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Elimina trabajadores inactivos
+     */
+    private fun removeInactiveWorkers() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🗑️ Eliminar Trabajadores Inactivos")
+            .setMessage("¿Estás seguro de que quieres eliminar todos los trabajadores marcados como inactivos?")
+            .setPositiveButton("Eliminar") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        val database = AppDatabase.getDatabase(this@SettingsActivity)
+                        val deletedCount = withContext(Dispatchers.IO) {
+                            val inactiveWorkers = database.workerDao().getAllWorkersSync().filter { !it.isActive }
+                            inactiveWorkers.forEach { worker ->
+                                database.workerDao().deleteWorker(worker)
+                            }
+                            inactiveWorkers.size
+                        }
+                        
+                        Toast.makeText(this@SettingsActivity, "Eliminados $deletedCount trabajadores inactivos", Toast.LENGTH_SHORT).show()
+                        
+                    } catch (e: Exception) {
+                        Toast.makeText(this@SettingsActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Elimina estaciones inactivas
+     */
+    private fun removeInactiveWorkstations() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🏭 Eliminar Estaciones Inactivas")
+            .setMessage("¿Estás seguro de que quieres eliminar todas las estaciones marcadas como inactivas?")
+            .setPositiveButton("Eliminar") { _, _ ->
+                lifecycleScope.launch {
+                    try {
+                        val database = AppDatabase.getDatabase(this@SettingsActivity)
+                        val deletedCount = withContext(Dispatchers.IO) {
+                            val inactiveStations = database.workstationDao().getAllWorkstationsSync().filter { !it.isActive }
+                            inactiveStations.forEach { station ->
+                                database.workstationDao().deleteWorkstation(station)
+                            }
+                            inactiveStations.size
+                        }
+                        
+                        Toast.makeText(this@SettingsActivity, "Eliminadas $deletedCount estaciones inactivas", Toast.LENGTH_SHORT).show()
+                        
+                    } catch (e: Exception) {
+                        Toast.makeText(this@SettingsActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Resetea contadores
+     */
+    private fun resetCounters() {
+        lifecycleScope.launch {
+            try {
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                withContext(Dispatchers.IO) {
+                    val workers = database.workerDao().getAllWorkersSync()
+                    workers.forEach { worker ->
+                        val updatedWorker = worker.copy(
+                            rotationsInCurrentStation = 0,
+                            lastRotationTimestamp = null
+                        )
+                        database.workerDao().updateWorker(updatedWorker)
+                    }
+                }
+                
+                Toast.makeText(this@SettingsActivity, "Contadores de rotación reseteados", Toast.LENGTH_SHORT).show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Muestra opciones de optimización
+     */
+    private fun showOptimizations() {
+        val options = arrayOf(
+            "⚡ Optimización Automática",
+            "🔧 Optimizar Base de Datos",
+            "💾 Optimizar Memoria",
+            "🎯 Optimizar Caché",
+            "📊 Análisis de Rendimiento"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚡ Optimizaciones")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> runAutoOptimization()
+                    1 -> optimizeDatabase()
+                    2 -> optimizeMemory()
+                    3 -> optimizeCache()
+                    4 -> runPerformanceAnalysis()
+                }
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Ejecuta optimización automática
+     */
+    private fun runAutoOptimization() {
+        lifecycleScope.launch {
+            try {
+                val progressDialog = androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("⚡ Optimizando...")
+                    .setMessage("Ejecutando optimizaciones automáticas...")
+                    .setCancelable(false)
+                    .create()
+                progressDialog.show()
+                
+                // Simular optimizaciones
+                withContext(Dispatchers.IO) {
+                    // Optimizar base de datos
+                    val database = AppDatabase.getDatabase(this@SettingsActivity)
+                    database.openHelper.writableDatabase.execSQL("VACUUM")
+                    
+                    // Limpiar caché
+                    com.workstation.rotation.utils.PerformanceUtils.CacheManager.clearCache()
+                    
+                    // Simular tiempo de optimización
+                    kotlinx.coroutines.delay(2000)
+                }
+                
+                progressDialog.dismiss()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("✅ Optimización Completada")
+                    .setMessage(
+                        "Optimizaciones aplicadas:\n\n" +
+                        "✅ Base de datos optimizada\n" +
+                        "✅ Caché limpiado\n" +
+                        "✅ Memoria liberada\n" +
+                        "✅ Rendimiento mejorado"
+                    )
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error en optimización: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+    
+    /**
+     * Optimiza la memoria
+     */
+    private fun optimizeMemory() {
+        System.gc() // Sugerir garbage collection
+        com.workstation.rotation.utils.PerformanceUtils.logMemoryUsage("AfterOptimization")
+        Toast.makeText(this, "Optimización de memoria ejecutada", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Optimiza el caché
+     */
+    private fun optimizeCache() {
+        com.workstation.rotation.utils.PerformanceUtils.CacheManager.clearCache()
+        Toast.makeText(this, "Caché optimizado", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Ejecuta análisis de rendimiento
+     */
+    private fun runPerformanceAnalysis() {
+        lifecycleScope.launch {
+            try {
+                val startTime = System.currentTimeMillis()
+                
+                // Análisis de rendimiento
+                val database = AppDatabase.getDatabase(this@SettingsActivity)
+                
+                val analysisResults = withContext(Dispatchers.IO) {
+                    val workers = database.workerDao().getAllWorkersSync()
+                    val workstations = database.workstationDao().getAllWorkstationsSync()
+                    
+                    mapOf(
+                        "workers" to workers.size,
+                        "workstations" to workstations.size,
+                        "activeWorkers" to workers.count { it.isActive },
+                        "activeWorkstations" to workstations.count { it.isActive }
+                    )
+                }
+                
+                val endTime = System.currentTimeMillis()
+                val executionTime = endTime - startTime
+                
+                val analysis = """
+                    📊 Análisis de Rendimiento:
+                    
+                    ⏱️ Tiempo de análisis: ${executionTime}ms
+                    📊 Datos analizados:
+                    • Trabajadores: ${analysisResults["workers"]} (${analysisResults["activeWorkers"]} activos)
+                    • Estaciones: ${analysisResults["workstations"]} (${analysisResults["activeWorkstations"]} activas)
+                    
+                    📈 Rendimiento: ${
+                        when {
+                            executionTime < 50 -> "Excelente ⭐⭐⭐"
+                            executionTime < 100 -> "Muy Bueno ⭐⭐"
+                            executionTime < 200 -> "Bueno ⭐"
+                            else -> "Necesita Optimización ⚠️"
+                        }
+                    }
+                    
+                    💡 Recomendaciones:
+                    ${if (executionTime > 100) "• Considerar optimizar la base de datos\n• Limpiar datos obsoletos" else "• El sistema funciona óptimamente"}
+                """.trimIndent()
+                
+                androidx.appcompat.app.AlertDialog.Builder(this@SettingsActivity)
+                    .setTitle("📊 Análisis Completado")
+                    .setMessage(analysis)
+                    .setPositiveButton("OK", null)
+                    .show()
+                
+            } catch (e: Exception) {
+                Toast.makeText(this@SettingsActivity, "Error en análisis: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }

@@ -1,17 +1,21 @@
 # 🏭 REWS - Rotation and Workstation System
 
-**Versión 2.3.0** - Una aplicación Android avanzada para gestionar estaciones de trabajo y rotación inteligente de trabajadores con sistema de entrenamiento integrado.
+**Versión 2.4.0** - Una aplicación Android avanzada para gestionar estaciones de trabajo y rotación inteligente de trabajadores con sistema de liderazgo y entrenamiento integrado.
 
 ## ✨ Características Principales
 
 - **🏭 Gestión Avanzada de Estaciones**: Crear, editar y configurar estaciones prioritarias
-- **👥 Sistema Completo de Trabajadores**: Gestión de personal con roles de entrenamiento
+- **👥 Sistema Completo de Trabajadores**: Gestión de personal con roles de entrenamiento y liderazgo
+- **👑 Sistema de Liderazgo**: Designación de líderes con identificación visual distintiva
 - **🎓 Sistema de Entrenamiento**: Parejas entrenador-entrenado con prioridad absoluta
 - **🔄 Rotación Inteligente**: Algoritmo avanzado que considera múltiples factores
 - **🏆 Certificación de Trabajadores**: Proceso para completar entrenamientos
+- **🚫 Sistema de Restricciones**: Control granular por trabajador y estación
 - **📚 Tutorial Interactivo**: Guía paso a paso para nuevos usuarios
 - **🎨 Material Design 3**: Interfaz moderna y accesible
 - **💾 Base de Datos Local**: Funciona completamente offline
+- **☁️ Sincronización en la Nube**: Backup y restauración con Firebase
+- **🌙 Modo Oscuro**: Tema adaptativo para mejor experiencia
 
 ## 🚀 Funcionalidades Detalladas
 
@@ -25,15 +29,20 @@
 - **Información Completa**: Datos personales, disponibilidad y restricciones
 - **Sistema de Disponibilidad**: Porcentajes de disponibilidad (0-100%) con indicadores visuales
 - **Roles de Entrenamiento**: Configurar entrenadores (👨‍🏫) y entrenados (🎯)
+- **👑 Sistema de Liderazgo**: Designar líderes con tipos configurables (ambas partes, primera, segunda)
+- **Identificación Visual**: Líderes destacados con colores púrpura y mensaje especial
 - **Asignación Flexible**: Múltiples estaciones por trabajador con sistema de checkboxes
+- **🚫 Restricciones Específicas**: Control granular por estación (PROHIBIDO, LIMITADO, TEMPORAL)
 - **Certificación**: Proceso para completar entrenamientos y remover estado de entrenado
 
 ### 🔄 Sistema de Rotación Inteligente
-- **Algoritmo Avanzado**: Considera entrenamiento, disponibilidad, prioridades y restricciones
+- **Algoritmo Avanzado**: Considera entrenamiento, liderazgo, disponibilidad, prioridades y restricciones
+- **👑 Prioridad de Líderes**: Líderes asignados a sus estaciones designadas con identificación visual
 - **Parejas de Entrenamiento**: Entrenador y entrenado siempre juntos con prioridad absoluta
 - **Rotación Forzada**: Trabajadores entrenados rotan automáticamente cada 2 ciclos
 - **Visualización Dual**: Rotación actual y próxima rotación simultáneamente
-- **Indicadores Visuales**: Estados claros de entrenamiento, disponibilidad y capacidad
+- **Indicadores Visuales**: Estados claros de liderazgo, entrenamiento, disponibilidad y capacidad
+- **🚫 Respeto de Restricciones**: El algoritmo automáticamente evita asignaciones prohibidas
 
 ### 📚 Tutorial y Ayuda
 - **Tutorial Interactivo**: 9 pasos detallados para nuevos usuarios

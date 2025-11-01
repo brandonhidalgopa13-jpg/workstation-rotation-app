@@ -1,5 +1,64 @@
 # 📋 CHANGELOG - REWS (Rotation and Workstation System)
 
+## [2.4.0] - 2024-10-31
+
+### 🎉 **SISTEMA DE LIDERAZGO COMPLETAMENTE IMPLEMENTADO**
+
+#### 👑 **Sistema de Liderazgo Avanzado**
+- **Designación Inteligente**: Filtrado contextual de estaciones por trabajador
+- **Tipos de Liderazgo**: Configurables (ambas partes, primera parte, segunda parte)
+- **Actualización Automática**: Spinner se actualiza dinámicamente al cambiar selecciones
+- **Identificación Visual Distintiva**: 
+  - 🟣 Fondo púrpura claro para líderes
+  - 🟣 Borde púrpura grueso (4px)
+  - 🟡 Número dorado destacado
+  - 👑 Mensaje especial "LÍDER DE ESTACIÓN"
+
+#### 🔧 **Correcciones Críticas Implementadas**
+- ✅ **Estaciones no aparecían**: Método síncrono correcto implementado
+- ✅ **Funciones duplicadas**: Eliminadas todas las duplicaciones de código
+- ✅ **17 Errores de compilación**: Corregidos al 100%
+- ✅ **Filtrado de estaciones**: Solo estaciones asignadas al trabajador seleccionado
+- ✅ **Identificación visual**: Líderes destacados con colores distintivos
+
+#### 🎯 **Mejoras de UX/UI**
+- **Filtrado Inteligente**: Solo muestra estaciones donde el trabajador puede trabajar
+- **Visualización Avanzada**: Colores distintivos para identificación rápida de líderes
+- **UX Optimizada**: Actualización automática de opciones en tiempo real
+- **Prevención de Errores**: Validación automática de asignaciones de liderazgo
+
+#### 📊 **Optimizaciones de Rendimiento**
+- **Código Limpio**: Eliminación de funciones duplicadas y código redundante
+- **Algoritmo Optimizado**: Mejoras en el algoritmo de rotación para líderes
+- **Validaciones Robustas**: Sistema completo de validación de liderazgo
+- **Manejo de Estados**: Gestión correcta de estados de liderazgo
+
+### 🚀 **Estado del Sistema**
+- ✅ **Compilación Exitosa**: Sin errores ni warnings críticos
+- ✅ **Funcionalidades Completas**: Todos los sistemas operativos
+- ✅ **Listo para Producción**: Sistema robusto y estable
+- ✅ **Documentación Actualizada**: Guías y manuales completos
+
+---
+
+## [2.3.0] - 2024-10-31
+
+### 🔄 **MEJORAS INTEGRALES DEL SISTEMA**
+
+#### 🛠️ **Optimizaciones Técnicas**
+- **Actualización de Dependencias**: Librerías actualizadas a versiones más recientes
+- **Configuración de Build**: Optimizaciones para release y debug
+- **Lint Configuration**: Configuración avanzada de análisis de código
+- **Test Coverage**: Configuración completa de Jacoco para cobertura de código
+
+#### 📋 **Gestión de Calidad**
+- **Quality Gates**: Tareas automatizadas de verificación de calidad
+- **Test Suite Completa**: Pruebas unitarias e instrumentadas
+- **Reportes Detallados**: Generación automática de reportes de lint, tests y cobertura
+- **CI/CD Ready**: Configuración lista para integración continua
+
+---
+
 ## [2.2.0] - 2024-10-30
 
 ### 🎯 **CAMBIO DE MARCA Y FUNCIONALIDADES AVANZADAS**

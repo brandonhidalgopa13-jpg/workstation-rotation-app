@@ -300,6 +300,14 @@
                     android:text="🎓 Certificar Trabajadores"
                     android:layout_marginBottom="8dp" />
 
+                <Button
+                    android:id="@+id/btnGenerateReport"
+                    style="@style/SecondaryButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📊 Generar Reporte"
+                    android:layout_marginBottom="8dp" />
+
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
@@ -355,7 +363,33 @@
                     style="@style/SecondaryButtonStyle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="📱 Acerca de la App" />
+                    android:text="📱 Acerca de la App"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btnNotificationSettings"
+                        style="@style/SecondaryButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🔔 Notificaciones"
+                        android:layout_marginEnd="4dp" />
+
+                    <Button
+                        android:id="@+id/btnAdvancedSettings"
+                        style="@style/SecondaryButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="⚙️ Avanzado"
+                        android:layout_marginStart="4dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
