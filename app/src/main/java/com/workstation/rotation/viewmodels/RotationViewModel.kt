@@ -1355,6 +1355,10 @@ class RotationViewModel(
         // Phase 1: Assign remaining workers to PRIORITY workstations (current positions)
         assignPriorityWorkstations(priorityWorkstations, eligibleWorkers, currentAssignments)
         
+        // Phase 1.5: CRITICAL - Force assign active leaders to their stations
+        // This ensures ALL active leaders are assigned to their designated stations
+        forceAssignActiveLeaders(eligibleWorkers, currentAssignments, allWorkstations)
+        
         // Phase 2: Assign remaining workers to NORMAL workstations (current positions)
         assignNormalWorkstations(normalWorkstations, eligibleWorkers, currentAssignments)
         
@@ -1415,6 +1419,92 @@ class RotationViewModel(
         }
         
         println("DEBUG: ========================================================")
+    }
+
+    /**
+     * Forces assignment of active leaders to their designated stations.
+     * This ensures that ALL active leaders (BOTH + active for current rotation) are assigned.
+     * CORRECCIÓN CRÍTICA: Garantiza que los líderes activos siempre estén en sus estaciones.
+     */
+    private suspend fun forceAssignActiveLeaders(
+        eligibleWorkers: List<Worker>,
+        currentAssignments: MutableMap<Long, MutableList<Worker>>,
+        allWorkstations: List<Workstation>
+    ) {
+        println("DEBUG: === ASIGNACIÓN FORZADA DE LÍDERES ACTIVOS ===")
+        println("DEBUG: Rotación actual: ${getCurrentRotationHalf()}")
+        
+        // Get all leaders who should be active in current rotation
+        val activeLeaders = eligibleWorkers.filter { worker ->
+            worker.isLeader && 
+            worker.leaderWorkstationId != null &&
+            worker.shouldBeLeaderInRotation(isFirstHalfRotation)
+        }
+        
+        println("DEBUG: Líderes que deberían estar activos: ${activeLeaders.size}")
+        
+        for (leader in activeLeaders) {
+            leader.leaderWorkstationId?.let { leaderStationId ->
+                val leaderStation = allWorkstations.find { it.id == leaderStationId }
+                leaderStation?.let { station ->
+                    // Check if leader is already assigned
+                    val alreadyAssigned = currentAssignments.values.any { it.contains(leader) }
+                    
+                    if (!alreadyAssigned) {
+                        // Check if leader can work at this station
+                        val leaderStations = getWorkerWorkstationIds(leader.id)
+                        
+                        if (leaderStations.contains(station.id)) {
+                            // FORCE assignment - Active leaders override capacity limits
+                            currentAssignments[station.id]?.add(leader)
+                            println("DEBUG: ✅ LÍDER FORZADO - ${leader.name} (${leader.leadershipType}) → ${station.name}")
+                            println("DEBUG: Nueva capacidad: ${currentAssignments[station.id]?.size}/${station.requiredWorkers}")
+                            
+                            // Log if we exceeded capacity (acceptable for leaders)
+                            if ((currentAssignments[station.id]?.size ?: 0) > station.requiredWorkers) {
+                                println("DEBUG: ⚠️ CAPACIDAD EXCEDIDA por liderazgo (ACEPTABLE)")
+                            }
+                        } else {
+                            println("DEBUG: ❌ ERROR - Líder ${leader.name} NO puede trabajar en su estación asignada ${station.name}")
+                            println("DEBUG: Estaciones del líder: $leaderStations")
+                            
+                            // Try to assign to any compatible station as fallback
+                            val compatibleStation = allWorkstations.find { st ->
+                                leaderStations.contains(st.id) && 
+                                (currentAssignments[st.id]?.size ?: 0) < st.requiredWorkers
+                            }
+                            
+                            compatibleStation?.let { fallbackStation ->
+                                currentAssignments[fallbackStation.id]?.add(leader)
+                                println("DEBUG: ⚠️ LÍDER ASIGNADO A ESTACIÓN ALTERNATIVA - ${leader.name} → ${fallbackStation.name}")
+                            } ?: run {
+                                println("DEBUG: ❌ ERROR CRÍTICO - No se pudo asignar líder ${leader.name} a ninguna estación")
+                            }
+                        }
+                    } else {
+                        println("DEBUG: ✅ Líder ${leader.name} ya asignado correctamente")
+                    }
+                } ?: run {
+                    println("DEBUG: ❌ ERROR - Estación de liderazgo ${leaderStationId} no encontrada para ${leader.name}")
+                }
+            }
+        }
+        
+        // Log inactive leaders for debugging
+        val inactiveLeaders = eligibleWorkers.filter { worker ->
+            worker.isLeader && 
+            worker.leaderWorkstationId != null &&
+            !worker.shouldBeLeaderInRotation(isFirstHalfRotation)
+        }
+        
+        if (inactiveLeaders.isNotEmpty()) {
+            println("DEBUG: Líderes INACTIVOS para ${getCurrentRotationHalf()}: ${inactiveLeaders.size}")
+            inactiveLeaders.forEach { leader ->
+                println("DEBUG: - ${leader.name} (${leader.leadershipType}) - NO se asignará como líder")
+            }
+        }
+        
+        println("DEBUG: ===============================================")
     }
 
     /**
@@ -1674,6 +1764,7 @@ class RotationViewModel(
     
     /**
      * Gets leadership status indicator for workers who are leaders.
+     * CORRECCIÓN: Mejorada la lógica de visualización y resaltado de líderes.
      */
     private fun getLeadershipStatus(
         worker: Worker,
@@ -1686,21 +1777,35 @@ class RotationViewModel(
         val isLeaderInNext = worker.leaderWorkstationId == nextStation.id
         val shouldBeActiveNow = worker.shouldBeLeaderInRotation(isFirstHalfRotation)
         
-        val leadershipTypeIndicator = when (worker.leadershipType) {
-            "BOTH" -> "👑"
-            "FIRST_HALF" -> if (isFirstHalfRotation) "👑" else "⏸️"
-            "SECOND_HALF" -> if (!isFirstHalfRotation) "👑" else "⏸️"
-            else -> "❓"
+        // Determinar el icono y estado del liderazgo
+        val (icon, status) = when {
+            // Líderes BOTH - siempre activos
+            worker.leadershipType == "BOTH" -> {
+                when {
+                    isLeaderInCurrent && isLeaderInNext -> "👑💎" to "LÍDER PERMANENTE"
+                    isLeaderInCurrent -> "👑💎" to "LÍDER PERMANENTE (ACTUAL)"
+                    isLeaderInNext -> "👑💎" to "LÍDER PERMANENTE (SIGUIENTE)"
+                    else -> "👑⚠️" to "LÍDER PERMANENTE (MAL ASIGNADO)"
+                }
+            }
+            // Líderes activos para la rotación actual
+            shouldBeActiveNow -> {
+                val typeDesc = if (worker.leadershipType == "FIRST_HALF") "1RA PARTE" else "2DA PARTE"
+                when {
+                    isLeaderInCurrent && isLeaderInNext -> "👑✨" to "LÍDER ACTIVO ($typeDesc)"
+                    isLeaderInCurrent -> "👑✨" to "LÍDER ACTIVO ACTUAL ($typeDesc)"
+                    isLeaderInNext -> "👑✨" to "LÍDER ACTIVO SIGUIENTE ($typeDesc)"
+                    else -> "👑⚠️" to "LÍDER ACTIVO MAL ASIGNADO ($typeDesc)"
+                }
+            }
+            // Líderes inactivos para la rotación actual
+            else -> {
+                val typeDesc = if (worker.leadershipType == "FIRST_HALF") "1RA PARTE" else "2DA PARTE"
+                "⏸️👑" to "LÍDER INACTIVO ($typeDesc)"
+            }
         }
         
-        return when {
-            isLeaderInCurrent && isLeaderInNext && shouldBeActiveNow -> " $leadershipTypeIndicator [LÍDER ACTIVO - ${getCurrentRotationHalfDescription()}]"
-            isLeaderInCurrent && shouldBeActiveNow -> " $leadershipTypeIndicator [LÍDER ACTUAL - ${getCurrentRotationHalfDescription()}]"
-            isLeaderInNext && shouldBeActiveNow -> " $leadershipTypeIndicator [LÍDER SIGUIENTE - ${getCurrentRotationHalfDescription()}]"
-            worker.isLeader && !shouldBeActiveNow -> " ⏸️ [LÍDER INACTIVO - ${worker.getLeadershipTypeDescription()}]"
-            worker.isLeader && shouldBeActiveNow && !isLeaderInCurrent && !isLeaderInNext -> " 👑⚠️ [LÍDER SIN ESTACIÓN ASIGNADA]"
-            else -> ""
-        }
+        return " $icon [$status]"
     }
     
     /**
@@ -1803,6 +1908,7 @@ class RotationViewModel(
     
     /**
      * Muestra un resumen del sistema de liderazgo después de generar la rotación.
+     * MEJORADO: Análisis más detallado y claro del estado de los líderes.
      */
     private fun showLeadershipSummary(
         allWorkstations: List<Workstation>,
@@ -1812,54 +1918,90 @@ class RotationViewModel(
         println("DEBUG: === RESUMEN SISTEMA DE LIDERAZGO ===")
         println("DEBUG: Rotación: ${getCurrentRotationHalfDescription()}")
         
-        val allAssignedWorkers = (currentAssignments.values.flatten() + nextAssignments.values.flatten()).distinct()
-        val assignedLeaders = allAssignedWorkers.filter { it.isLeader }
+        val allLeaders = (currentAssignments.values.flatten() + nextAssignments.values.flatten())
+            .distinct()
+            .filter { it.isLeader }
         
-        if (assignedLeaders.isEmpty()) {
-            println("DEBUG: No hay líderes asignados en esta rotación")
+        if (allLeaders.isEmpty()) {
+            println("DEBUG: ❌ No hay líderes configurados en el sistema")
             return
         }
         
-        println("DEBUG: Líderes en rotación actual:")
-        currentAssignments.forEach { (stationId, workers) ->
-            val station = allWorkstations.find { it.id == stationId }
-            val leadersInStation = workers.filter { it.isLeader }
+        // Analizar líderes por tipo
+        val bothLeaders = allLeaders.filter { it.leadershipType == "BOTH" }
+        val firstHalfLeaders = allLeaders.filter { it.leadershipType == "FIRST_HALF" }
+        val secondHalfLeaders = allLeaders.filter { it.leadershipType == "SECOND_HALF" }
+        
+        println("DEBUG: 📊 ESTADÍSTICAS DE LIDERAZGO:")
+        println("DEBUG: - Líderes BOTH (permanentes): ${bothLeaders.size}")
+        println("DEBUG: - Líderes FIRST_HALF: ${firstHalfLeaders.size}")
+        println("DEBUG: - Líderes SECOND_HALF: ${secondHalfLeaders.size}")
+        println("DEBUG: - Total líderes: ${allLeaders.size}")
+        
+        // Analizar líderes activos vs inactivos
+        val activeLeaders = allLeaders.filter { it.shouldBeLeaderInRotation(isFirstHalfRotation) }
+        val inactiveLeaders = allLeaders.filter { !it.shouldBeLeaderInRotation(isFirstHalfRotation) }
+        
+        println("DEBUG: 🎯 ESTADO PARA ${getCurrentRotationHalfDescription()}:")
+        println("DEBUG: - Líderes ACTIVOS: ${activeLeaders.size}")
+        println("DEBUG: - Líderes INACTIVOS: ${inactiveLeaders.size}")
+        
+        // Verificar asignaciones en rotación actual
+        println("DEBUG: 🔍 VERIFICACIÓN ROTACIÓN ACTUAL:")
+        var correctlyAssigned = 0
+        var incorrectlyAssigned = 0
+        var unassigned = 0
+        
+        activeLeaders.forEach { leader ->
+            val assignedStation = currentAssignments.entries.find { it.value.contains(leader) }
+            val expectedStationId = leader.leaderWorkstationId
+            val stationName = allWorkstations.find { it.id == expectedStationId }?.name ?: "Desconocida"
             
-            if (leadersInStation.isNotEmpty()) {
-                println("DEBUG: Estación ${station?.name}:")
-                leadersInStation.forEach { leader ->
-                    val isActive = leader.shouldBeLeaderInRotation(isFirstHalfRotation)
-                    val isCorrectStation = leader.leaderWorkstationId == stationId
-                    val status = when {
-                        isActive && isCorrectStation -> "✅ CORRECTO"
-                        isActive && !isCorrectStation -> "⚠️ ESTACIÓN INCORRECTA"
-                        !isActive -> "⏸️ INACTIVO"
-                        else -> "❓ DESCONOCIDO"
-                    }
-                    println("DEBUG:   - ${leader.name} (${leader.leadershipType}) $status")
+            when {
+                assignedStation == null -> {
+                    println("DEBUG: ❌ ${leader.name} (${leader.leadershipType}) - NO ASIGNADO (debería estar en $stationName)")
+                    unassigned++
+                }
+                assignedStation.key == expectedStationId -> {
+                    println("DEBUG: ✅ ${leader.name} (${leader.leadershipType}) - CORRECTO en $stationName")
+                    correctlyAssigned++
+                }
+                else -> {
+                    val actualStationName = allWorkstations.find { it.id == assignedStation.key }?.name ?: "Desconocida"
+                    println("DEBUG: ⚠️ ${leader.name} (${leader.leadershipType}) - MAL ASIGNADO: está en $actualStationName, debería estar en $stationName")
+                    incorrectlyAssigned++
                 }
             }
         }
         
-        println("DEBUG: Líderes en próxima rotación:")
-        nextAssignments.forEach { (stationId, workers) ->
-            val station = allWorkstations.find { it.id == stationId }
-            val leadersInStation = workers.filter { it.isLeader }
-            
-            if (leadersInStation.isNotEmpty()) {
-                println("DEBUG: Estación ${station?.name}:")
-                leadersInStation.forEach { leader ->
-                    val isActive = leader.shouldBeLeaderInRotation(isFirstHalfRotation)
-                    val isCorrectStation = leader.leaderWorkstationId == stationId
-                    val status = when {
-                        isActive && isCorrectStation -> "✅ CORRECTO"
-                        isActive && !isCorrectStation -> "⚠️ ESTACIÓN INCORRECTA"
-                        !isActive -> "⏸️ INACTIVO"
-                        else -> "❓ DESCONOCIDO"
-                    }
-                    println("DEBUG:   - ${leader.name} (${leader.leadershipType}) $status")
-                }
+        // Mostrar líderes inactivos
+        if (inactiveLeaders.isNotEmpty()) {
+            println("DEBUG: ⏸️ LÍDERES INACTIVOS (no deberían estar como líderes):")
+            inactiveLeaders.forEach { leader ->
+                val assignedStation = currentAssignments.entries.find { it.value.contains(leader) }
+                val stationName = if (assignedStation != null) {
+                    allWorkstations.find { it.id == assignedStation.key }?.name ?: "Desconocida"
+                } else "NO ASIGNADO"
+                println("DEBUG: - ${leader.name} (${leader.leadershipType}) en $stationName")
             }
+        }
+        
+        // Resumen final
+        println("DEBUG: 📋 RESUMEN FINAL:")
+        println("DEBUG: - Líderes correctamente asignados: $correctlyAssigned")
+        println("DEBUG: - Líderes mal asignados: $incorrectlyAssigned")
+        println("DEBUG: - Líderes sin asignar: $unassigned")
+        
+        val successRate = if (activeLeaders.isNotEmpty()) {
+            (correctlyAssigned * 100) / activeLeaders.size
+        } else 100
+        
+        println("DEBUG: - Tasa de éxito: $successRate%")
+        
+        if (successRate < 100) {
+            println("DEBUG: ⚠️ ATENCIÓN: Hay problemas en la asignación de líderes")
+        } else {
+            println("DEBUG: ✅ PERFECTO: Todos los líderes activos están correctamente asignados")
         }
         
         println("DEBUG: ======================================")
