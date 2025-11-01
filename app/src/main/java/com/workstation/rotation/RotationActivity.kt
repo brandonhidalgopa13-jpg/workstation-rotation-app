@@ -141,7 +141,7 @@ class RotationActivity : AppCompatActivity() {
     private fun setupWorkstationHeaders(workstations: List<com.workstation.rotation.data.entities.Workstation>, layoutParams: LinearLayout.LayoutParams) {
         workstations.forEach { workstation ->
             val headerView = createWorkstationHeader(workstation, layoutParams)
-            binding.layoutWorkstationHeaders.addView(headerView)
+            binding.layoutWorkstationHeaders?.addView(headerView)
         }
     }
     
@@ -153,7 +153,7 @@ class RotationActivity : AppCompatActivity() {
         workstations.forEach { workstation ->
             val currentWorkers = rotationTable.currentPhase[workstation.id] ?: emptyList()
             val capacityView = createCapacityRequirement(workstation, currentWorkers, layoutParams)
-            binding.layoutCapacityRequirements.addView(capacityView)
+            binding.layoutCapacityRequirements?.addView(capacityView)
         }
     }
     
@@ -166,7 +166,7 @@ class RotationActivity : AppCompatActivity() {
             val workers = rotationTable.currentPhase[workstation.id] ?: emptyList()
             println("DEBUG: Current phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, true)
-            binding.layoutCurrentPhase.addView(columnView)
+            binding.layoutCurrentPhase?.addView(columnView)
         }
     }
     
@@ -179,7 +179,7 @@ class RotationActivity : AppCompatActivity() {
             val workers = rotationTable.nextPhase[workstation.id] ?: emptyList()
             println("DEBUG: Next phase - ${workstation.name}: ${workers.size} workers")
             val columnView = createWorkerColumn(workers, layoutParams, false)
-            binding.layoutNextPhase.addView(columnView)
+            binding.layoutNextPhase?.addView(columnView)
         }
     }
     
@@ -313,10 +313,10 @@ class RotationActivity : AppCompatActivity() {
     }
     
     private fun clearRotationTable() {
-        binding.layoutWorkstationHeaders.removeAllViews()
-        binding.layoutCapacityRequirements.removeAllViews()
-        binding.layoutCurrentPhase.removeAllViews()
-        binding.layoutNextPhase.removeAllViews()
+        binding.layoutWorkstationHeaders?.removeAllViews()
+        binding.layoutCapacityRequirements?.removeAllViews()
+        binding.layoutCurrentPhase?.removeAllViews()
+        binding.layoutNextPhase?.removeAllViews()
     }
     
     /**
