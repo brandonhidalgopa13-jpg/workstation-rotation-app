@@ -471,6 +471,7 @@ class SqlRotationViewModel(
     
     /**
      * Distribuye trabajadores equitativamente entre estaciones.
+     * CORREGIDO: Evita asignaciones duplicadas.
      */
     private suspend fun distributeWorkersEquitably(
         stations: List<Workstation>,
@@ -498,6 +499,16 @@ class SqlRotationViewModel(
         for (worker in workersToAssign) {
             if (stationsNeedingWorkers.isEmpty()) break
             
+            // VERIFICACIÓN CRÍTICA: Asegurar que el trabajador no esté ya asignado
+            val isAlreadyAssigned = assignments.values.any { stationWorkers ->
+                stationWorkers.contains(worker)
+            }
+            
+            if (isAlreadyAssigned) {
+                println("SQL_DEBUG: ⚠️ ${worker.name} ya está asignado, saltando")
+                continue
+            }
+            
             // Buscar una estación donde el trabajador pueda trabajar
             var assigned = false
             var attempts = 0
@@ -505,16 +516,24 @@ class SqlRotationViewModel(
             while (!assigned && attempts < stationsNeedingWorkers.size) {
                 val station = stationsNeedingWorkers[stationIndex % stationsNeedingWorkers.size]
                 
-                val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
-                if (canWork) {
-                    assignments[station.id]?.add(worker)
-                    availableWorkers.remove(worker)
-                    stationsNeedingWorkers.removeAt(stationIndex % stationsNeedingWorkers.size)
-                    assigned = true
-                    
-                    println("SQL_DEBUG: ✅ ${worker.name} asignado a ${station.name}")
+                // Verificar que el trabajador no esté ya en esta estación
+                val isInThisStation = assignments[station.id]?.contains(worker) ?: false
+                
+                if (!isInThisStation) {
+                    val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
+                    if (canWork) {
+                        assignments[station.id]?.add(worker)
+                        availableWorkers.remove(worker)
+                        stationsNeedingWorkers.removeAt(stationIndex % stationsNeedingWorkers.size)
+                        assigned = true
+                        
+                        println("SQL_DEBUG: ✅ ${worker.name} asignado ÚNICAMENTE a ${station.name}")
+                    } else {
+                        println("SQL_DEBUG: ⚠️ ${worker.name} no puede trabajar en ${station.name}")
+                        stationIndex++
+                    }
                 } else {
-                    println("SQL_DEBUG: ⚠️ ${worker.name} no puede trabajar en ${station.name}")
+                    println("SQL_DEBUG: ⚠️ ${worker.name} ya está en ${station.name}")
                     stationIndex++
                 }
                 attempts++
@@ -523,6 +542,38 @@ class SqlRotationViewModel(
             if (!assigned) {
                 println("SQL_DEBUG: ❌ No se pudo asignar ${worker.name} a ninguna estación disponible")
             }
+        }
+        
+        // Validar asignaciones después de la distribución
+        validateCurrentAssignments(assignments)
+    }
+    
+    /**
+     * Valida las asignaciones actuales para detectar duplicados.
+     */
+    private fun validateCurrentAssignments(assignments: Map<Long, List<Worker>>) {
+        println("SQL_DEBUG: === VALIDANDO ASIGNACIONES ACTUALES ===")
+        
+        val allWorkers = mutableListOf<Worker>()
+        val duplicates = mutableSetOf<Worker>()
+        
+        assignments.forEach { (stationId, workers) ->
+            println("SQL_DEBUG: Estación $stationId tiene ${workers.size} trabajadores")
+            workers.forEach { worker ->
+                if (allWorkers.contains(worker)) {
+                    duplicates.add(worker)
+                    println("SQL_DEBUG: ❌ DUPLICADO: ${worker.name} en estación $stationId")
+                } else {
+                    allWorkers.add(worker)
+                    println("SQL_DEBUG: ✅ ${worker.name} asignado correctamente a estación $stationId")
+                }
+            }
+        }
+        
+        if (duplicates.isEmpty()) {
+            println("SQL_DEBUG: ✅ VALIDACIÓN EXITOSA: No hay duplicados en asignaciones actuales")
+        } else {
+            println("SQL_DEBUG: ❌ ENCONTRADOS ${duplicates.size} DUPLICADOS EN ASIGNACIONES ACTUALES")
         }
     }
     
@@ -587,6 +638,7 @@ class SqlRotationViewModel(
     
     /**
      * Rota trabajadores regulares a diferentes estaciones.
+     * CORREGIDO: Evita asignaciones duplicadas.
      */
     private suspend fun rotateRegularWorkers(
         systemData: SystemData,
@@ -597,12 +649,23 @@ class SqlRotationViewModel(
         println("SQL_DEBUG: === ROTANDO TRABAJADORES REGULARES ===")
         
         for (worker in workersToRotate) {
+            // VERIFICACIÓN CRÍTICA: Asegurar que el trabajador no esté ya asignado en nextAssignments
+            val isAlreadyAssignedInNext = nextAssignments.values.any { stationWorkers ->
+                stationWorkers.contains(worker)
+            }
+            
+            if (isAlreadyAssignedInNext) {
+                println("SQL_DEBUG: ⚠️ ${worker.name} ya está asignado en próxima rotación, saltando")
+                continue
+            }
+            
             val currentStationId = currentAssignments.entries.find { it.value.contains(worker) }?.key
             
             // Buscar estaciones donde puede trabajar (excluyendo la actual)
             val eligibleStations = systemData.workstations.filter { station ->
                 station.id != currentStationId && 
-                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers
+                (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers &&
+                !nextAssignments[station.id]!!.contains(worker) // Verificación adicional
             }
             
             println("SQL_DEBUG: ${worker.name} puede rotar a ${eligibleStations.size} estaciones")
@@ -610,21 +673,31 @@ class SqlRotationViewModel(
             // Intentar asignar a una estación elegible
             var assigned = false
             for (station in eligibleStations) {
-                val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
-                if (canWork) {
-                    nextAssignments[station.id]?.add(worker)
-                    assigned = true
-                    println("SQL_DEBUG: ✅ ${worker.name} rotado de estación $currentStationId a ${station.id}")
-                    break
+                // Verificación final antes de asignar
+                val isWorkerInThisStation = nextAssignments[station.id]?.contains(worker) ?: false
+                
+                if (!isWorkerInThisStation) {
+                    val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
+                    if (canWork && (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
+                        nextAssignments[station.id]?.add(worker)
+                        assigned = true
+                        println("SQL_DEBUG: ✅ ${worker.name} rotado ÚNICAMENTE de estación $currentStationId a ${station.id}")
+                        break
+                    }
                 }
             }
             
             // Si no se pudo rotar, mantener en la estación actual si hay espacio
             if (!assigned && currentStationId != null) {
                 val currentStation = systemData.workstations.find { it.id == currentStationId }
-                if (currentStation != null && (nextAssignments[currentStationId]?.size ?: 0) < currentStation.requiredWorkers) {
+                val isWorkerInCurrentNext = nextAssignments[currentStationId]?.contains(worker) ?: false
+                
+                if (currentStation != null && 
+                    !isWorkerInCurrentNext &&
+                    (nextAssignments[currentStationId]?.size ?: 0) < currentStation.requiredWorkers) {
+                    
                     nextAssignments[currentStationId]?.add(worker)
-                    println("SQL_DEBUG: ⚠️ ${worker.name} permanece en estación $currentStationId (no se pudo rotar)")
+                    println("SQL_DEBUG: ⚠️ ${worker.name} permanece ÚNICAMENTE en estación $currentStationId (no se pudo rotar)")
                 } else {
                     println("SQL_DEBUG: ❌ No se pudo asignar ${worker.name} a ninguna estación")
                 }
@@ -634,6 +707,7 @@ class SqlRotationViewModel(
     
     /**
      * Llena espacios vacíos en la próxima rotación.
+     * CORREGIDO: Evita asignaciones duplicadas de trabajadores.
      */
     private suspend fun fillRemainingSpaces(
         systemData: SystemData,
@@ -650,27 +724,84 @@ class SqlRotationViewModel(
         if (stationsNeedingWorkers.isNotEmpty()) {
             println("SQL_DEBUG: ${stationsNeedingWorkers.size} estaciones necesitan más trabajadores")
             
-            // Usar trabajadores ya asignados si es necesario
-            val allAssignedWorkers = nextAssignments.values.flatten()
-            val workersPool = (availableWorkers + allAssignedWorkers).distinct()
+            // CORRECCIÓN CRÍTICA: Solo usar trabajadores que NO están asignados a ninguna estación
+            val allAssignedWorkers = nextAssignments.values.flatten().toSet()
+            val unassignedWorkers = systemData.eligibleWorkers.filter { worker ->
+                !allAssignedWorkers.contains(worker)
+            }
+            
+            println("SQL_DEBUG: Trabajadores sin asignar disponibles: ${unassignedWorkers.size}")
+            unassignedWorkers.forEach { worker ->
+                println("SQL_DEBUG: - ${worker.name} disponible para asignación")
+            }
             
             for (station in stationsNeedingWorkers) {
                 val currentCount = nextAssignments[station.id]?.size ?: 0
                 val needed = station.requiredWorkers - currentCount
                 
-                if (needed > 0) {
-                    val eligibleWorkers = workersPool.filter { worker ->
-                        !nextAssignments[station.id]!!.contains(worker)
+                println("SQL_DEBUG: ${station.name} necesita $needed trabajadores más")
+                
+                if (needed > 0 && unassignedWorkers.isNotEmpty()) {
+                    val eligibleWorkers = unassignedWorkers.filter { worker ->
+                        // Verificar que el trabajador no esté ya asignado a NINGUNA estación
+                        val isAlreadyAssigned = nextAssignments.values.any { stationWorkers ->
+                            stationWorkers.contains(worker)
+                        }
+                        !isAlreadyAssigned
                     }.take(needed)
                     
                     for (worker in eligibleWorkers) {
                         val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
-                        if (canWork && (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
-                            nextAssignments[station.id]?.add(worker)
-                            println("SQL_DEBUG: ✅ ${worker.name} agregado para llenar ${station.name}")
+                        if (canWork) {
+                            // Verificación final antes de asignar
+                            val isWorkerAlreadyAssigned = nextAssignments.values.any { stationWorkers ->
+                                stationWorkers.contains(worker)
+                            }
+                            
+                            if (!isWorkerAlreadyAssigned && (nextAssignments[station.id]?.size ?: 0) < station.requiredWorkers) {
+                                nextAssignments[station.id]?.add(worker)
+                                println("SQL_DEBUG: ✅ ${worker.name} agregado ÚNICAMENTE a ${station.name}")
+                            } else {
+                                println("SQL_DEBUG: ⚠️ ${worker.name} ya está asignado o estación llena")
+                            }
+                        } else {
+                            println("SQL_DEBUG: ⚠️ ${worker.name} no puede trabajar en ${station.name}")
                         }
                     }
                 }
+            }
+        }
+        
+        // Verificación final de integridad
+        validateNoDoubleAssignments(nextAssignments)
+    }
+    
+    /**
+     * Valida que no haya trabajadores asignados a múltiples estaciones.
+     */
+    private fun validateNoDoubleAssignments(assignments: Map<Long, List<Worker>>) {
+        println("SQL_DEBUG: === VALIDANDO ASIGNACIONES ÚNICAS ===")
+        
+        val allAssignedWorkers = mutableListOf<Worker>()
+        val duplicateWorkers = mutableSetOf<Worker>()
+        
+        assignments.forEach { (stationId, workers) ->
+            workers.forEach { worker ->
+                if (allAssignedWorkers.contains(worker)) {
+                    duplicateWorkers.add(worker)
+                    println("SQL_DEBUG: ❌ DUPLICADO: ${worker.name} está asignado a múltiples estaciones")
+                } else {
+                    allAssignedWorkers.add(worker)
+                }
+            }
+        }
+        
+        if (duplicateWorkers.isEmpty()) {
+            println("SQL_DEBUG: ✅ VALIDACIÓN EXITOSA: No hay asignaciones duplicadas")
+        } else {
+            println("SQL_DEBUG: ❌ ENCONTRADAS ${duplicateWorkers.size} ASIGNACIONES DUPLICADAS")
+            duplicateWorkers.forEach { worker ->
+                println("SQL_DEBUG: - ${worker.name} está duplicado")
             }
         }
     }
