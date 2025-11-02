@@ -43,10 +43,10 @@ class AdvancedAnalyticsService {
         val patterns = mutableListOf<RotationPattern>()
         
         // Agrupar por trabajador y analizar secuencias
-        val workerSequences = history.groupBy { it.workerId }
+        val workerSequences = history.groupBy { it.worker_id }
         
         workerSequences.forEach { (workerId, rotations) ->
-            val sortedRotations = rotations.sortedBy { it.startTime }
+            val sortedRotations = rotations.sortedBy { it.rotation_date }
             
             // Buscar secuencias con alta eficiencia
             for (i in 0 until sortedRotations.size - 2) {
@@ -58,14 +58,14 @@ class AdvancedAnalyticsService {
                         patterns.add(
                             RotationPattern(
                                 patternType = PatternType.OPTIMAL_SEQUENCE,
-                                workstationId = rotation.workstationId,
+                                workstationId = rotation.workstation_id,
                                 workerId = workerId,
-                                frequency = calculateFrequency(workerId, rotation.workstationId, history),
+                                frequency = calculateFrequency(workerId, rotation.workstation_id, history),
                                 efficiency = avgEfficiency,
                                 confidence = 0.85,
                                 metadata = mapOf(
                                     "sequenceLength" to 3,
-                                    "avgDuration" to sequence.map { it.duration }.average()
+                                    "avgDuration" to sequence.mapNotNull { it.duration_minutes }.average()
                                 )
                             )
                         )
@@ -84,9 +84,10 @@ class AdvancedAnalyticsService {
         val patterns = mutableListOf<RotationPattern>()
         
         workstations.forEach { workstation ->
-            val stationRotations = history.filter { it.workstationId == workstation.id }
-            val avgDuration = stationRotations.map { it.duration }.average()
-            val maxDuration = stationRotations.maxOfOrNull { it.duration } ?: 0L
+            val stationRotations = history.filter { it.workstation_id == workstation.id }
+            val durations = stationRotations.mapNotNull { it.duration_minutes?.toDouble() }
+            val avgDuration = if (durations.isNotEmpty()) durations.average() else 0.0
+            val maxDuration = durations.maxOrNull() ?: 0.0
             
             // Si la duración promedio es significativamente mayor que otras estaciones
             if (avgDuration > 0 && maxDuration > avgDuration * 1.5) {
@@ -118,19 +119,19 @@ class AdvancedAnalyticsService {
         val patterns = mutableListOf<RotationPattern>()
         
         workers.forEach { worker ->
-            val workerRotations = history.filter { it.workerId == worker.id }
+            val workerRotations = history.filter { it.worker_id == worker.id }
             val efficiencies = workerRotations.map { calculateEfficiency(it) }
             
             if (efficiencies.isNotEmpty()) {
                 val avgEfficiency = efficiencies.average()
-                val consistency = 1.0 - efficiencies.map { abs(it - avgEfficiency) }.average()
+                val consistency = 1.0 - efficiencies.map { kotlin.math.abs(it - avgEfficiency) }.average()
                 
                 if (avgEfficiency > 0.85 && consistency > 0.8) {
                     workerRotations.forEach { rotation ->
                         patterns.add(
                             RotationPattern(
                                 patternType = PatternType.HIGH_EFFICIENCY,
-                                workstationId = rotation.workstationId,
+                                workstationId = rotation.workstation_id,
                                 workerId = worker.id,
                                 frequency = 1.0,
                                 efficiency = avgEfficiency,
@@ -164,8 +165,8 @@ class AdvancedAnalyticsService {
                 patterns.add(
                     RotationPattern(
                         patternType = PatternType.SKILL_MISMATCH,
-                        workstationId = rotation.workstationId,
-                        workerId = rotation.workerId,
+                        workstationId = rotation.workstation_id,
+                        workerId = rotation.worker_id,
                         frequency = 0.3,
                         efficiency = efficiency,
                         confidence = 0.7,
@@ -211,10 +212,10 @@ class AdvancedAnalyticsService {
         targetDate: Date
     ): RotationPrediction {
         // Algoritmo de predicción basado en historial y patrones
-        val stationHistory = history.filter { it.workstationId == workstation.id }
+        val stationHistory = history.filter { it.workstation_id == workstation.id }
         
         val workerScores = workers.map { worker ->
-            val workerHistory = stationHistory.filter { it.workerId == worker.id }
+            val workerHistory = stationHistory.filter { it.worker_id == worker.id }
             val efficiency = if (workerHistory.isNotEmpty()) {
                 workerHistory.map { calculateEfficiency(it) }.average()
             } else {
@@ -253,7 +254,7 @@ class AdvancedAnalyticsService {
         history: List<RotationHistory>
     ): List<WorkloadAnalysis> = withContext(Dispatchers.Default) {
         workstations.map { workstation ->
-            val stationHistory = history.filter { it.workstationId == workstation.id }
+            val stationHistory = history.filter { it.workstation_id == workstation.id }
             
             val currentLoad = calculateCurrentLoad(stationHistory)
             val optimalLoad = calculateOptimalLoad(workstation, stationHistory)
@@ -280,7 +281,7 @@ class AdvancedAnalyticsService {
         history: List<RotationHistory>
     ): List<WorkerPerformanceMetrics> = withContext(Dispatchers.Default) {
         workers.map { worker ->
-            val workerHistory = history.filter { it.workerId == worker.id }
+            val workerHistory = history.filter { it.worker_id == worker.id }
             
             if (workerHistory.isEmpty()) {
                 // Trabajador sin historial
@@ -331,19 +332,20 @@ class AdvancedAnalyticsService {
     // Funciones auxiliares de cálculo
     private fun calculateEfficiency(rotation: RotationHistory): Double {
         // Simular cálculo de eficiencia basado en duración y otros factores
-        val baseDuration = 480L // 8 horas en minutos
+        val baseDuration = 480 // 8 horas en minutos
+        val actualDuration = rotation.duration_minutes ?: baseDuration
         val efficiency = when {
-            rotation.duration <= baseDuration * 0.8 -> 0.9 + Random.nextDouble(0.1)
-            rotation.duration <= baseDuration -> 0.7 + Random.nextDouble(0.2)
-            rotation.duration <= baseDuration * 1.2 -> 0.5 + Random.nextDouble(0.2)
-            else -> 0.3 + Random.nextDouble(0.2)
+            actualDuration <= baseDuration * 0.8 -> 0.9 + kotlin.random.Random.nextDouble(0.1)
+            actualDuration <= baseDuration -> 0.7 + kotlin.random.Random.nextDouble(0.2)
+            actualDuration <= baseDuration * 1.2 -> 0.5 + kotlin.random.Random.nextDouble(0.2)
+            else -> 0.3 + kotlin.random.Random.nextDouble(0.2)
         }
         return efficiency.coerceIn(0.0, 1.0)
     }
 
     private fun calculateFrequency(workerId: Long, workstationId: Long, history: List<RotationHistory>): Double {
-        val workerStationRotations = history.count { it.workerId == workerId && it.workstationId == workstationId }
-        val totalWorkerRotations = history.count { it.workerId == workerId }
+        val workerStationRotations = history.count { it.worker_id == workerId && it.workstation_id == workstationId }
+        val totalWorkerRotations = history.count { it.worker_id == workerId }
         return if (totalWorkerRotations > 0) {
             workerStationRotations.toDouble() / totalWorkerRotations
         } else 0.0
@@ -351,19 +353,20 @@ class AdvancedAnalyticsService {
 
     private fun calculateRecency(workerId: Long, workstationId: Long, history: List<RotationHistory>): Double {
         val lastRotation = history
-            .filter { it.workerId == workerId && it.workstationId == workstationId }
-            .maxByOrNull { it.startTime }
+            .filter { it.worker_id == workerId && it.workstation_id == workstationId }
+            .maxByOrNull { it.rotation_date }
         
         return if (lastRotation != null) {
-            val daysSince = (Date().time - lastRotation.startTime.time) / (1000 * 60 * 60 * 24)
+            val daysSince = (System.currentTimeMillis() - lastRotation.rotation_date) / (1000 * 60 * 60 * 24)
             (1.0 / (1.0 + daysSince * 0.1)).coerceIn(0.0, 1.0)
         } else 0.0
     }
 
     private fun calculateExpectedDuration(workerId: Long, workstationId: Long, history: List<RotationHistory>): Long {
-        val relevantHistory = history.filter { it.workerId == workerId && it.workstationId == workstationId }
+        val relevantHistory = history.filter { it.worker_id == workerId && it.workstation_id == workstationId }
         return if (relevantHistory.isNotEmpty()) {
-            relevantHistory.map { it.duration }.average().toLong()
+            val durations = relevantHistory.mapNotNull { it.duration_minutes }
+            if (durations.isNotEmpty()) durations.average().toLong() else 480L
         } else {
             480L // 8 horas por defecto
         }
@@ -377,7 +380,7 @@ class AdvancedAnalyticsService {
         val risks = mutableListOf<RiskFactor>()
         
         // Simular factores de riesgo basados en datos
-        val workerHistory = history.filter { it.workerId == worker.id }
+        val workerHistory = history.filter { it.worker_id == worker.id }
         
         if (workerHistory.isEmpty()) {
             risks.add(
@@ -431,7 +434,7 @@ class AdvancedAnalyticsService {
     private fun calculateCurrentLoad(stationHistory: List<RotationHistory>): Double {
         if (stationHistory.isEmpty()) return 0.0
         
-        val totalDuration = stationHistory.sumOf { it.duration }
+        val totalDuration = stationHistory.sumOf { it.duration_minutes?.toLong() ?: 0L }
         val avgDuration = totalDuration.toDouble() / stationHistory.size
         
         // Normalizar a escala 0-1
@@ -446,8 +449,8 @@ class AdvancedAnalyticsService {
     private fun calculateBottleneckScore(stationHistory: List<RotationHistory>): Double {
         if (stationHistory.isEmpty()) return 0.0
         
-        val durations = stationHistory.map { it.duration }
-        val avgDuration = durations.average()
+        val durations = stationHistory.mapNotNull { it.duration_minutes?.toLong() }
+        val avgDuration = if (durations.isNotEmpty()) durations.average() else 0.0
         val maxDuration = durations.maxOrNull() ?: 0L
         
         return if (maxDuration > 0) {
@@ -500,7 +503,7 @@ class AdvancedAnalyticsService {
     }
 
     private fun calculateAdaptabilityScore(workerHistory: List<RotationHistory>): Double {
-        val uniqueStations = workerHistory.map { it.workstationId }.distinct().size
+        val uniqueStations = workerHistory.map { it.workstation_id }.distinct().size
         val totalRotations = workerHistory.size
         
         return if (totalRotations > 0) {
@@ -510,7 +513,7 @@ class AdvancedAnalyticsService {
 
     private fun calculateSkillUtilization(worker: Worker, workerHistory: List<RotationHistory>): Double {
         // Simular utilización de habilidades basada en variedad de estaciones
-        val uniqueStations = workerHistory.map { it.workstationId }.distinct().size
+        val uniqueStations = workerHistory.map { it.workstation_id }.distinct().size
         return (uniqueStations * 2.0).coerceAtMost(10.0)
     }
 
@@ -534,7 +537,7 @@ class AdvancedAnalyticsService {
             )
         }
         
-        val uniqueStations = workerHistory.map { it.workstationId }.distinct().size
+        val uniqueStations = workerHistory.map { it.workstation_id }.distinct().size
         if (uniqueStations < 3) {
             areas.add(
                 ImprovementArea(
@@ -573,7 +576,7 @@ class AdvancedAnalyticsService {
     private fun calculateTrendDirection(workerHistory: List<RotationHistory>): TrendDirection {
         if (workerHistory.size < 3) return TrendDirection.STABLE
         
-        val recentHistory = workerHistory.sortedBy { it.startTime }.takeLast(5)
+        val recentHistory = workerHistory.sortedBy { it.rotation_date }.takeLast(5)
         val recentEfficiencies = recentHistory.map { calculateEfficiency(it) }
         
         val trend = recentEfficiencies.zipWithNext { a, b -> b - a }.average()

@@ -8,6 +8,7 @@ import com.workstation.rotation.data.database.AppDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -53,9 +54,9 @@ class AdvancedAnalyticsViewModel(
             
             try {
                 // Cargar datos base
-                val workers = database.workerDao().getAllWorkers()
-                val workstations = database.workstationDao().getAllWorkstations()
-                val rotationHistory = database.rotationHistoryDao().getAllHistory()
+                val workers = database.workerDao().getAllWorkers().first()
+                val workstations = database.workstationDao().getAllWorkstations().first()
+                val rotationHistory = database.rotationHistoryDao().getAll()
 
                 // Ejecutar análisis en paralelo
                 launch { analyzeRotationPatterns(rotationHistory, workers, workstations) }
@@ -229,11 +230,13 @@ class AdvancedAnalyticsViewModel(
         rotationHistory: List<com.workstation.rotation.data.entities.RotationHistory>
     ): List<BottleneckAnalysis> {
         return workstations.mapNotNull { workstation ->
-            val stationHistory = rotationHistory.filter { it.workstationId == workstation.id }
+            val stationHistory = rotationHistory.filter { it.workstation_id == workstation.id }
             
             if (stationHistory.isNotEmpty()) {
-                val avgDuration = stationHistory.map { it.duration }.average()
-                val overallAvg = rotationHistory.map { it.duration }.average()
+                val durations = stationHistory.mapNotNull { it.duration_minutes?.toDouble() }
+                val allDurations = rotationHistory.mapNotNull { it.duration_minutes?.toDouble() }
+                val avgDuration = if (durations.isNotEmpty()) durations.average() else 0.0
+                val overallAvg = if (allDurations.isNotEmpty()) allDurations.average() else 0.0
                 
                 if (avgDuration > overallAvg * 1.3) { // 30% más que el promedio
                     BottleneckAnalysis(
@@ -251,7 +254,7 @@ class AdvancedAnalyticsViewModel(
                             "Posible complejidad de tareas",
                             "Necesidad de capacitación específica"
                         ),
-                        affectedWorkers = stationHistory.map { it.workerId }.distinct(),
+                        affectedWorkers = stationHistory.map { it.worker_id }.distinct(),
                         suggestedSolutions = listOf(
                             BottleneckSolution(
                                 description = "Capacitación especializada para trabajadores",

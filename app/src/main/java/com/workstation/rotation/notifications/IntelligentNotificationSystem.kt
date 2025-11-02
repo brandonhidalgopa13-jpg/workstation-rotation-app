@@ -552,7 +552,7 @@ class IntelligentNotificationSystem(private val context: Context) {
     /**
      * Muestra alerta proactiva
      */
-    private fun showProactiveAlert(
+    fun showProactiveAlert(
         title: String,
         shortDescription: String,
         recommendation: String,

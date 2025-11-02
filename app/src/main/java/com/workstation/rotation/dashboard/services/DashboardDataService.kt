@@ -6,6 +6,7 @@ import com.workstation.rotation.services.RotationHistoryService
 import com.workstation.rotation.data.database.AppDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import java.util.*
 
 /**
@@ -54,8 +55,8 @@ class DashboardDataService(private val context: Context) {
         
         // Obtener métricas base
         val generalMetrics = historyService.getGeneralMetrics()
-        val workers = database.workerDao().getAllActiveWorkers()
-        val workstations = database.workstationDao().getAllActiveWorkstations()
+        val workers = database.workerDao().getAllActiveWorkers().first()
+        val workstations = database.workstationDao().getAllActiveWorkstations().first()
         
         // KPI 1: Total de Rotaciones Históricas
         kpis.add(
@@ -225,8 +226,8 @@ class DashboardDataService(private val context: Context) {
         
         // Obtener métricas actuales
         val generalMetrics = historyService.getGeneralMetrics()
-        val workers = database.workerDao().getAllActiveWorkers()
-        val workstations = database.workstationDao().getAllActiveWorkstations()
+        val workers = database.workerDao().getAllActiveWorkers().first()
+        val workstations = database.workstationDao().getAllActiveWorkstations().first()
         
         // Alerta 1: Sin rotaciones activas
         if (generalMetrics.activeRotations == 0 && generalMetrics.totalRotations > 0) {
@@ -338,8 +339,8 @@ class DashboardDataService(private val context: Context) {
     
     private suspend fun calculateSystemEfficiency(): Double {
         val generalMetrics = historyService.getGeneralMetrics()
-        val workers = database.workerDao().getAllActiveWorkers()
-        val workstations = database.workstationDao().getAllActiveWorkstations()
+        val workers = database.workerDao().getAllActiveWorkers().first()
+        val workstations = database.workstationDao().getAllActiveWorkstations().first()
         
         // Algoritmo simplificado de eficiencia
         var efficiency = 50.0 // Base

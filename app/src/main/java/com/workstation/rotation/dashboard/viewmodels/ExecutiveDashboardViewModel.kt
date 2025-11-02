@@ -289,7 +289,7 @@ class ExecutiveDashboardViewModel(application: Application) : AndroidViewModel(a
                     id = "no_active_rotations",
                     title = "Sin Rotaciones Activas",
                     description = "No hay rotaciones activas en el sistema. Considera generar una nueva rotación.",
-                    severity = AlertItem.Severity.WARNING,
+                    severity = AlertItem.Severity.MEDIUM,
                     timestamp = System.currentTimeMillis(),
                     actionRequired = true
                 )

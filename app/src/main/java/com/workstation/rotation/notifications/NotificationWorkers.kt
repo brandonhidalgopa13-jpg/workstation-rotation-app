@@ -7,6 +7,7 @@ import com.workstation.rotation.data.database.AppDatabase
 import com.workstation.rotation.services.RotationHistoryService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -98,7 +99,7 @@ class CapacityMonitorWorker(
             val historyService = RotationHistoryService(applicationContext)
             
             // Obtener todas las estaciones activas
-            val workstations = database.workstationDao().getAllActiveWorkstations()
+            val workstations = database.workstationDao().getAllActiveWorkstations().first()
             val activeRotations = historyService.getActiveRotationsLiveData().value ?: emptyList()
             
             // Analizar capacidad de cada estación
@@ -205,7 +206,7 @@ class ProactiveAnalysisWorker(
             
             // Análisis 1: Verificar rotaciones activas
             val activeRotations = historyService.getActiveRotationsLiveData().value ?: emptyList()
-            val totalWorkers = database.workerDao().getAllActiveWorkers().size
+            val totalWorkers = database.workerDao().getAllActiveWorkers().first().size
             
             if (activeRotations.isEmpty() && totalWorkers > 0) {
                 notificationSystem.showProactiveAlert(

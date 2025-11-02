@@ -321,7 +321,7 @@ fun View.cardAppearance(
     scaleX = 0.9f
     scaleY = 0.9f
     translationY = 50f
-    isVisible = true
+    visibility = View.VISIBLE
     
     animate()
         .alpha(1f)
@@ -352,7 +352,7 @@ fun View.cardDisappearance(
         .setStartDelay(delay)
         .setInterpolator(AnimationManager.FAST_OUT_SLOW_IN)
         .withEndAction {
-            if (hideOnComplete) isVisible = false
+            if (hideOnComplete) visibility = View.GONE
             onComplete?.invoke()
         }
         .start()

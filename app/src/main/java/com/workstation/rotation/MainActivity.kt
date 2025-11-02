@@ -47,32 +47,26 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupUI() {
         binding.apply {
-            btnWorkstations.setOnClickListener {
+            btnWorkstations?.setOnClickListener {
                 provideTactileFeedback()
-                AnimationManager.clickFeedback(btnWorkstations)
+                btnWorkstations?.let { AnimationManager.clickFeedback(it) }
                 navigateToMainSection(Intent(this@MainActivity, WorkstationActivity::class.java))
             }
             
-            btnWorkers.setOnClickListener {
+            btnWorkers?.setOnClickListener {
                 provideTactileFeedback()
-                AnimationManager.clickFeedback(btnWorkers)
+                btnWorkers?.let { AnimationManager.clickFeedback(it) }
                 navigateToMainSection(Intent(this@MainActivity, WorkerActivity::class.java))
             }
             
-            btnRotation.setOnClickListener {
+            btnRotation?.setOnClickListener {
                 provideTactileFeedback()
-                AnimationManager.clickFeedback(btnRotation)
+                btnRotation?.let { AnimationManager.clickFeedback(it) }
                 openDetails(Intent(this@MainActivity, SqlRotationActivity::class.java))
             }
             
-            btnHistory.setOnClickListener {
-                provideTactileFeedback()
-                AnimationManager.clickFeedback(btnHistory)
-                openDetails(Intent(this@MainActivity, RotationHistoryActivity::class.java))
-            }
-            
             // Acceso al dashboard ejecutivo (long press)
-            btnSettings.setOnLongClickListener {
+            btnSettings?.setOnLongClickListener {
                 provideTactileFeedback()
                 openDetails(Intent(this@MainActivity, com.workstation.rotation.dashboard.ExecutiveDashboardActivity::class.java))
                 true
@@ -80,25 +74,25 @@ class MainActivity : AppCompatActivity() {
             
             // Acceso a Analytics Avanzados (doble tap en History)
             var lastHistoryClickTime = 0L
-            btnHistory.setOnClickListener {
+            btnHistory?.setOnClickListener {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastHistoryClickTime < 500) {
                     // Doble tap detectado - abrir Analytics Avanzados
                     provideTactileFeedback()
-                    AnimationManager.clickFeedback(btnHistory)
+                    btnHistory?.let { AnimationManager.clickFeedback(it) }
                     openDetails(Intent(this@MainActivity, com.workstation.rotation.analytics.AdvancedAnalyticsActivity::class.java))
                 } else {
                     // Click simple - abrir historial normal
                     provideTactileFeedback()
-                    AnimationManager.clickFeedback(btnHistory)
+                    btnHistory?.let { AnimationManager.clickFeedback(it) }
                     openDetails(Intent(this@MainActivity, RotationHistoryActivity::class.java))
                 }
                 lastHistoryClickTime = currentTime
             }
             
-            btnSettings.setOnClickListener {
+            btnSettings?.setOnClickListener {
                 provideTactileFeedback()
-                AnimationManager.clickFeedback(btnSettings)
+                btnSettings?.let { AnimationManager.clickFeedback(it) }
                 openSettings(Intent(this@MainActivity, SettingsActivity::class.java))
             }
         }
@@ -110,21 +104,23 @@ class MainActivity : AppCompatActivity() {
     private fun setupAnimations() {
         binding.apply {
             // Animar las cards principales con stagger effect
-            val mainCards = listOf(
-                btnWorkstations.parent as android.view.View,
-                btnWorkers.parent as android.view.View,
-                btnRotation.parent as android.view.View,
-                btnHistory.parent as android.view.View,
-                btnSettings.parent as android.view.View
+            val mainCards = listOfNotNull(
+                btnWorkstations?.parent as? android.view.View,
+                btnWorkers?.parent as? android.view.View,
+                btnRotation?.parent as? android.view.View,
+                btnHistory?.parent as? android.view.View,
+                btnSettings?.parent as? android.view.View
             )
             
             // Animación staggered para las cards principales
-            AnimationManager.staggeredListAnimation(
-                views = mainCards,
-                animationType = AnimationManager.StaggerType.SLIDE_IN_FROM_BOTTOM,
-                baseDuration = AnimationManager.DURATION_MEDIUM,
-                staggerDelay = AnimationManager.DELAY_MEDIUM
-            )
+            if (mainCards.isNotEmpty()) {
+                AnimationManager.staggeredListAnimation(
+                    views = mainCards,
+                    animationType = AnimationManager.StaggerType.SLIDE_IN_FROM_BOTTOM,
+                    baseDuration = AnimationManager.DURATION_MEDIUM,
+                    staggerDelay = AnimationManager.DELAY_MEDIUM
+                )
+            }
         }
     }
     
