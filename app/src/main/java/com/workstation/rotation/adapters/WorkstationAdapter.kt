@@ -31,18 +31,90 @@ class WorkstationAdapter(
 
         fun bind(workstation: Workstation) {
             binding.apply {
-                tvWorkstationName.text = workstation.name
-                tvRequiredWorkers.text = "Trabajadores necesarios: ${workstation.requiredWorkers}"
-                switchActive.isChecked = workstation.isActive
-                
-                // Mostrar indicador de prioridad
-                if (workstation.isPriority) {
-                    tvPriorityStatus.visibility = android.view.View.VISIBLE
-                    tvPriorityStatus.text = "⭐ ESTACIÓN PRIORITARIA - Asignación automática"
+                bindBasicInfo(workstation)
+                bindCapacityInfo(workstation)
+                bindStatusInfo(workstation)
+                setupClickListeners(workstation)
+            }
+        }
+        
+        /**
+         * Binds basic workstation information.
+         */
+        private fun bindBasicInfo(workstation: Workstation) {
+            binding.apply {
+                tvWorkstationName.text = workstation.getDisplayName()
+                tvWorkstationDescription.text = if (workstation.description.isNotEmpty()) {
+                    workstation.description
                 } else {
-                    tvPriorityStatus.visibility = android.view.View.GONE
+                    "Sin descripción"
+                }
+                switchActive.isChecked = workstation.isActive
+            }
+        }
+        
+        /**
+         * Binds capacity and configuration information.
+         */
+        private fun bindCapacityInfo(workstation: Workstation) {
+            binding.apply {
+                tvCapacityInfo.text = "👥 Capacidad: ${workstation.getCapacityInfo()}"
+                
+                // Show priority status
+                tvPriorityStatus.apply {
+                    if (workstation.isPriority) {
+                        visibility = android.view.View.VISIBLE
+                        text = "⭐ ESTACIÓN PRIORITARIA"
+                    } else {
+                        visibility = android.view.View.GONE
+                    }
                 }
                 
+                // Show training status
+                tvTrainingStatus.apply {
+                    if (workstation.isTrainingStation) {
+                        visibility = android.view.View.VISIBLE
+                        text = "🎓 ESTACIÓN DE ENTRENAMIENTO"
+                    } else {
+                        visibility = android.view.View.GONE
+                    }
+                }
+            }
+        }
+        
+        /**
+         * Binds status and maintenance information.
+         */
+        private fun bindStatusInfo(workstation: Workstation) {
+            binding.apply {
+                tvStatusInfo.text = "📊 Estado: ${workstation.getStatusDescription()}"
+                
+                // Set status color based on workstation state
+                val statusColor = when {
+                    !workstation.isActive -> android.graphics.Color.parseColor("#FFF44336") // Red
+                    workstation.needsMaintenance() -> android.graphics.Color.parseColor("#FFFF9800") // Orange
+                    workstation.isPriority -> android.graphics.Color.parseColor("#FF4CAF50") // Green
+                    else -> android.graphics.Color.parseColor("#FF2196F3") // Blue
+                }
+                tvStatusInfo.setTextColor(statusColor)
+                
+                // Show utilization rate if available
+                if (workstation.utilizationRate > 0) {
+                    tvUtilizationInfo.apply {
+                        visibility = android.view.View.VISIBLE
+                        text = "📈 Utilización: ${workstation.utilizationRate.toInt()}%"
+                    }
+                } else {
+                    tvUtilizationInfo.visibility = android.view.View.GONE
+                }
+            }
+        }
+        
+        /**
+         * Sets up click listeners for interactive elements.
+         */
+        private fun setupClickListeners(workstation: Workstation) {
+            binding.apply {
                 switchActive.setOnCheckedChangeListener { _, isChecked ->
                     onStatusChange(workstation, isChecked)
                 }

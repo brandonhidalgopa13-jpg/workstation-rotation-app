@@ -29,24 +29,81 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/tvRequiredWorkers"
+                android:id="@+id/tvWorkstationDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Trabajadores necesarios: 1"
+                android:text="Descripción de la estación"
                 android:textSize="14sp"
-                android:textColor="@color/teal_700"
+                android:textColor="@color/text_secondary"
                 android:layout_marginTop="4dp" />
 
             <TextView
-                android:id="@+id/tvPriorityStatus"
+                android:id="@+id/tvCapacityInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="⭐ ESTACIÓN PRIORITARIA"
+                android:text="👥 Capacidad: 2-4 trabajadores"
                 android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="@color/purple_700"
-                android:layout_marginTop="4dp"
-                android:visibility="gone" />
+                android:textColor="@color/teal_700"
+                android:layout_marginTop="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/tvStatusInfo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="📊 Estado: Activa"
+                    android:textSize="11sp"
+                    android:textColor="@color/purple_700" />
+
+                <TextView
+                    android:id="@+id/tvUtilizationInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📈 Utilización: 85%"
+                    android:textSize="11sp"
+                    android:textColor="@color/accent_green"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/tvPriorityStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⭐ ESTACIÓN PRIORITARIA"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/accent_green"
+                    android:background="@drawable/status_badge_green"
+                    android:padding="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/tvTrainingStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎓 ESTACIÓN DE ENTRENAMIENTO"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/accent_orange"
+                    android:background="@drawable/status_badge_orange"
+                    android:padding="4dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

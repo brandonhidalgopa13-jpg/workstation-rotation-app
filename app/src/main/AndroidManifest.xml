@@ -55,6 +55,11 @@
             android:theme="@style/Theme.REWS"
             android:screenOrientation="portrait" />
             
+        <activity
+            android:name=".BenchmarkActivity"
+            android:exported="false"
+            android:label="Benchmark de Algoritmos" />
+            
         <!-- FileProvider para compartir archivos de respaldo -->
         <provider
             android:name="androidx.core.content.FileProvider"

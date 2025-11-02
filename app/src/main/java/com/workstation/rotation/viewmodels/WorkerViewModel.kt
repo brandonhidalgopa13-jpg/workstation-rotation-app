@@ -97,6 +97,10 @@ class WorkerViewModel(
     
     suspend fun getWorkstationById(workstationId: Long) = workstationDao.getWorkstationById(workstationId)
     
+    suspend fun getActiveWorkstationsSync(): List<Workstation> {
+        return workstationDao.getAllWorkstationsSync().filter { it.isActive }
+    }
+    
     /**
      * Certifica a un trabajador (remueve el estado de entrenamiento).
      * El trabajador pasa de "en entrenamiento" a "trabajador normal".
@@ -303,19 +307,7 @@ class WorkerViewModel(
         return trainerWorkstations
     }
     
-    /**
-     * Obtiene las estaciones activas de forma síncrona.
-     */
-    suspend fun getActiveWorkstationsSync(): List<Workstation> {
-        android.util.Log.d("WorkerViewModel", "=== OBTENIENDO ESTACIONES ACTIVAS ===")
-        val workstations = workstationDao.getAllActiveWorkstationsSync()
-        android.util.Log.d("WorkerViewModel", "getActiveWorkstationsSync: encontradas ${workstations.size} estaciones")
-        workstations.forEachIndexed { index, station ->
-            android.util.Log.d("WorkerViewModel", "Estación $index: ${station.name} (ID: ${station.id}, Activa: ${station.isActive}, Requeridos: ${station.requiredWorkers})")
-        }
-        android.util.Log.d("WorkerViewModel", "==========================================")
-        return workstations
-    }
+    // Método duplicado eliminado - ya existe arriba
     
     /**
      * Método de testing para verificar el estado completo de un trabajador después de certificación.
