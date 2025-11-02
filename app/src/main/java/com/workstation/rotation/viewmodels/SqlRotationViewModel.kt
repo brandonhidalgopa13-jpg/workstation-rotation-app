@@ -80,79 +80,74 @@ class SqlRotationViewModel(
      * Genera una rotación usando el algoritmo SQL simplificado con analytics integrado.
      * GARANTIZADO: Funciona sin conflictos y errores.
      */
-    fun generateOptimizedRotation(): Boolean {
-        var success = false
-        
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                _errorMessage.value = null
-                
-                println("SQL_DEBUG: ===== INICIANDO ROTACIÓN SQL OPTIMIZADA =====")
-                println("SQL_DEBUG: Rotación: ${getCurrentRotationHalf()}")
-                
-                // Registrar inicio de operación
-                analytics.recordUsageMetric("rotation_generated", mapOf("type" to "sql"))
-                
-                // Paso 1: Obtener datos básicos del sistema con medición de tiempo
-                val systemData = analytics.measureOperation("system_data_loading") {
-                    loadSystemData()
-                }
-                
-                if (!systemData.isValid()) {
-                    throw Exception("Sistema no tiene datos válidos para generar rotación")
-                }
-                
-                // Paso 1.5: Validar sistema antes de proceder
-                val validationResults = validator.validateSystem(
-                    systemData.eligibleWorkers,
-                    systemData.workstations,
-                    systemData.eligibleWorkers.associate { worker ->
-                        worker.id to workerDao.getWorkerWorkstationIds(worker.id)
-                    }
-                )
-                
-                if (!validationResults.isValid) {
-                    val criticalIssues = validationResults.criticalIssues
-                    if (criticalIssues.isNotEmpty()) {
-                        throw Exception("Problemas críticos detectados: ${criticalIssues.joinToString { it.message }}")
-                    }
-                }
-                
-                // Paso 2: Ejecutar algoritmo SQL simplificado con medición
-                val (currentAssignments, nextAssignments) = analytics.measureOperation("sql_rotation_generation") {
-                    executeSimplifiedSqlAlgorithm(systemData)
-                }
-                
-                // Paso 3: Crear elementos de visualización
-                val rotationItems = createRotationItems(systemData.workstations, currentAssignments, nextAssignments)
-                val rotationTable = createRotationTable(systemData.workstations, currentAssignments, nextAssignments)
-                
-                // Paso 4: Registrar métricas de calidad
-                recordQualityMetrics(systemData, currentAssignments, nextAssignments)
-                
-                // Paso 5: Actualizar UI
-                _rotationItems.value = rotationItems
-                _rotationTable.value = rotationTable
-                
-                println("SQL_DEBUG: ✅ ROTACIÓN GENERADA EXITOSAMENTE")
-                println("SQL_DEBUG: Items generados: ${rotationItems.size}")
-                println("SQL_DEBUG: ==========================================")
-                
-                success = true
-                
-            } catch (e: Exception) {
-                println("SQL_DEBUG: ❌ ERROR: ${e.message}")
-                e.printStackTrace()
-                _errorMessage.value = "Error al generar rotación: ${e.message}"
-                _rotationItems.value = emptyList()
-                _rotationTable.value = null
-            } finally {
-                _isLoading.value = false
+    suspend fun generateOptimizedRotation(): Boolean {
+        return try {
+            _isLoading.value = true
+            _errorMessage.value = null
+            
+            println("SQL_DEBUG: ===== INICIANDO ROTACIÓN SQL OPTIMIZADA =====")
+            println("SQL_DEBUG: Rotación: ${getCurrentRotationHalf()}")
+            
+            // Registrar inicio de operación
+            analytics.recordUsageMetric("rotation_generated", mapOf("type" to "sql"))
+            
+            // Paso 1: Obtener datos básicos del sistema con medición de tiempo
+            val systemData = analytics.measureOperation("system_data_loading") {
+                loadSystemData()
             }
+            
+            if (!systemData.isValid()) {
+                throw Exception("Sistema no tiene datos válidos para generar rotación")
+            }
+            
+            // Paso 1.5: Validar sistema antes de proceder
+            val validationResults = validator.validateSystem(
+                systemData.eligibleWorkers,
+                systemData.workstations,
+                systemData.eligibleWorkers.associate { worker ->
+                    worker.id to workerDao.getWorkerWorkstationIds(worker.id)
+                }
+            )
+            
+            if (!validationResults.isValid) {
+                val criticalIssues = validationResults.criticalIssues
+                if (criticalIssues.isNotEmpty()) {
+                    throw Exception("Problemas críticos detectados: ${criticalIssues.joinToString { it.message }}")
+                }
+            }
+            
+            // Paso 2: Ejecutar algoritmo SQL simplificado con medición
+            val (currentAssignments, nextAssignments) = analytics.measureOperation("sql_rotation_generation") {
+                executeSimplifiedSqlAlgorithm(systemData)
+            }
+            
+            // Paso 3: Crear elementos de visualización
+            val rotationItems = createRotationItems(systemData.workstations, currentAssignments, nextAssignments)
+            val rotationTable = createRotationTable(systemData.workstations, currentAssignments, nextAssignments)
+            
+            // Paso 4: Registrar métricas de calidad
+            recordQualityMetrics(systemData, currentAssignments, nextAssignments)
+            
+            // Paso 5: Actualizar UI
+            _rotationItems.value = rotationItems
+            _rotationTable.value = rotationTable
+            
+            println("SQL_DEBUG: ✅ ROTACIÓN GENERADA EXITOSAMENTE")
+            println("SQL_DEBUG: Items generados: ${rotationItems.size}")
+            println("SQL_DEBUG: ==========================================")
+            
+            _isLoading.value = false
+            true
+            
+        } catch (e: Exception) {
+            println("SQL_DEBUG: ❌ ERROR: ${e.message}")
+            e.printStackTrace()
+            _errorMessage.value = "Error al generar rotación: ${e.message}"
+            _rotationItems.value = emptyList()
+            _rotationTable.value = null
+            _isLoading.value = false
+            false
         }
-        
-        return success
     }
     
     /**
@@ -510,6 +505,8 @@ class SqlRotationViewModel(
         
         return "${worker.name}$status$availability"
     }
+    
+
     
     /**
      * Limpia la rotación actual.
