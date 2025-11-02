@@ -12,6 +12,8 @@ import com.workstation.rotation.data.entities.Worker
 import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.models.RotationItem
 import com.workstation.rotation.models.RotationTable
+import com.workstation.rotation.analytics.RotationAnalytics
+import com.workstation.rotation.validation.RotationValidator
 import kotlinx.coroutines.launch
 
 /**
@@ -39,6 +41,10 @@ class SqlRotationViewModel(
     private val workerDao: WorkerDao,
     private val workstationDao: WorkstationDao
 ) : ViewModel() {
+    
+    // Sistemas de analytics y validación
+    private val analytics = RotationAnalytics.getInstance()
+    private val validator = RotationValidator()
     
     private val _rotationItems = MutableLiveData<List<RotationItem>>()
     val rotationItems: LiveData<List<RotationItem>> = _rotationItems
@@ -71,7 +77,7 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Genera una rotación usando el algoritmo SQL simplificado.
+     * Genera una rotación usando el algoritmo SQL simplificado con analytics integrado.
      * GARANTIZADO: Funciona sin conflictos y errores.
      */
     fun generateOptimizedRotation(): Boolean {
@@ -85,20 +91,47 @@ class SqlRotationViewModel(
                 println("SQL_DEBUG: ===== INICIANDO ROTACIÓN SQL OPTIMIZADA =====")
                 println("SQL_DEBUG: Rotación: ${getCurrentRotationHalf()}")
                 
-                // Paso 1: Obtener datos básicos del sistema
-                val systemData = loadSystemData()
+                // Registrar inicio de operación
+                analytics.recordUsageMetric("rotation_generated", mapOf("type" to "sql"))
+                
+                // Paso 1: Obtener datos básicos del sistema con medición de tiempo
+                val systemData = analytics.measureOperation("system_data_loading") {
+                    loadSystemData()
+                }
+                
                 if (!systemData.isValid()) {
                     throw Exception("Sistema no tiene datos válidos para generar rotación")
                 }
                 
-                // Paso 2: Ejecutar algoritmo SQL simplificado
-                val (currentAssignments, nextAssignments) = executeSimplifiedSqlAlgorithm(systemData)
+                // Paso 1.5: Validar sistema antes de proceder
+                val validationResults = validator.validateSystem(
+                    systemData.eligibleWorkers,
+                    systemData.workstations,
+                    systemData.eligibleWorkers.associate { worker ->
+                        worker.id to workerDao.getWorkerWorkstationIds(worker.id)
+                    }
+                )
+                
+                if (!validationResults.isValid) {
+                    val criticalIssues = validationResults.criticalIssues
+                    if (criticalIssues.isNotEmpty()) {
+                        throw Exception("Problemas críticos detectados: ${criticalIssues.joinToString { it.message }}")
+                    }
+                }
+                
+                // Paso 2: Ejecutar algoritmo SQL simplificado con medición
+                val (currentAssignments, nextAssignments) = analytics.measureOperation("sql_rotation_generation") {
+                    executeSimplifiedSqlAlgorithm(systemData)
+                }
                 
                 // Paso 3: Crear elementos de visualización
                 val rotationItems = createRotationItems(systemData.workstations, currentAssignments, nextAssignments)
                 val rotationTable = createRotationTable(systemData.workstations, currentAssignments, nextAssignments)
                 
-                // Paso 4: Actualizar UI
+                // Paso 4: Registrar métricas de calidad
+                recordQualityMetrics(systemData, currentAssignments, nextAssignments)
+                
+                // Paso 5: Actualizar UI
                 _rotationItems.value = rotationItems
                 _rotationTable.value = rotationTable
                 
@@ -485,7 +518,81 @@ class SqlRotationViewModel(
         _rotationItems.value = emptyList()
         _rotationTable.value = null
         _errorMessage.value = null
+        
+        // Registrar métrica de limpieza
+        analytics.recordUsageMetric("rotation_cleared")
     }
+    
+    /**
+     * Alterna entre primera y segunda parte de la rotación.
+     */
+    override fun toggleRotationHalf() {
+        isFirstHalfRotation = !isFirstHalfRotation
+        println("SQL_DEBUG: Rotación cambiada a: ${if (isFirstHalfRotation) "PRIMERA PARTE" else "SEGUNDA PARTE"}")
+        
+        // Registrar métrica de alternancia
+        analytics.recordUsageMetric("rotation_half_toggled")
+    }
+    
+    /**
+     * Registra métricas de calidad de la rotación generada.
+     */
+    private fun recordQualityMetrics(
+        systemData: SystemData,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: Map<Long, List<Worker>>
+    ) {
+        try {
+            val totalWorkers = currentAssignments.values.sumOf { it.size }
+            val totalStations = systemData.workstations.size
+            val stationsCompleted = systemData.workstations.count { station ->
+                (currentAssignments[station.id]?.size ?: 0) >= station.requiredWorkers
+            }
+            
+            // Verificar precisión de líderes
+            val totalLeaders = systemData.activeLeaders.size
+            val leadersCorrectlyAssigned = systemData.activeLeaders.count { leader ->
+                leader.leaderWorkstationId?.let { stationId ->
+                    currentAssignments[stationId]?.contains(leader) == true
+                } ?: false
+            }
+            
+            // Verificar parejas de entrenamiento
+            val totalTrainingPairs = systemData.trainingPairs.size
+            val trainingPairsKeptTogether = systemData.trainingPairs.count { trainee ->
+                val trainer = systemData.eligibleWorkers.find { it.id == trainee.trainerId }
+                val trainingStationId = trainee.trainingWorkstationId
+                
+                if (trainer != null && trainingStationId != null) {
+                    val stationWorkers = currentAssignments[trainingStationId] ?: emptyList()
+                    stationWorkers.contains(trainer) && stationWorkers.contains(trainee)
+                } else false
+            }
+            
+            analytics.recordQualityMetric(
+                workersAssigned = totalWorkers,
+                stationsCompleted = stationsCompleted,
+                totalStations = totalStations,
+                leadersCorrectlyAssigned = leadersCorrectlyAssigned,
+                totalLeaders = totalLeaders,
+                trainingPairsKeptTogether = trainingPairsKeptTogether,
+                totalTrainingPairs = totalTrainingPairs
+            )
+            
+        } catch (e: Exception) {
+            println("SQL_DEBUG: Error registrando métricas de calidad: ${e.message}")
+        }
+    }
+    
+    /**
+     * Obtiene reporte de analytics del sistema.
+     */
+    fun getAnalyticsReport() = analytics.getAnalyticsReport()
+    
+    /**
+     * Obtiene resultados de validación del sistema.
+     */
+    fun getValidationResults() = validator.validationResults
     
     /**
      * Data class para datos del sistema.

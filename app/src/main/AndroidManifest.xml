@@ -50,6 +50,16 @@
             android:label="Rotación SQL Optimizada" />
             
         <activity
+            android:name=".DiagnosticsActivity"
+            android:exported="false"
+            android:label="Diagnóstico del Sistema" />
+            
+        <activity
+            android:name=".BenchmarkActivity"
+            android:exported="false"
+            android:label="Benchmark de Algoritmos" />
+            
+        <activity
             android:name=".SettingsActivity"
             android:exported="false" />
             

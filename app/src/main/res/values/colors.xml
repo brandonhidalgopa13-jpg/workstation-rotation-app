@@ -132,4 +132,15 @@
     <color name="semi_transparent_black">#80000000</color>
     <color name="semi_transparent_white">#80FFFFFF</color>
     
+    <!-- Benchmark Colors -->
+    <color name="sql_algorithm_bg">#E8F5E8</color>
+    <color name="original_algorithm_bg">#E3F2FD</color>
+    <color name="average_result_bg">#FFF3E0</color>
+    <color name="default_result_bg">#F5F5F5</color>
+    
+    <!-- Additional System Colors -->
+    <color name="primary">#FF1976D2</color>
+    <color name="secondary">#FFFF9800</color>
+    <color name="surface">#FFFFFFFF</color>
+    
 </resources>

@@ -1,0 +1,8 @@
+{
+    "kiroAgent.trustedCommands": [
+        "",
+        "./gradlew clean",
+        "./gradlew *",
+        ""
+    ]
+}

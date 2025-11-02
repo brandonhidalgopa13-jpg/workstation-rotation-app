@@ -168,6 +168,19 @@ class SettingsActivity : AppCompatActivity() {
         binding.btnAdvancedSettings?.setOnClickListener {
             Toast.makeText(this, "Configuraciones avanzadas próximamente disponibles", Toast.LENGTH_SHORT).show()
         }
+        
+        // Diagnóstico y mantenimiento
+        binding.btnSystemDiagnostics?.setOnClickListener {
+            startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
+        
+        binding.btnPerformanceMetrics?.setOnClickListener {
+            startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
+        
+        binding.btnSystemValidation?.setOnClickListener {
+            startActivity(Intent(this, DiagnosticsActivity::class.java))
+        }
     }
     
     /**
