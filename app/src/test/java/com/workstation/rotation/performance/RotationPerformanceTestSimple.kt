@@ -98,7 +98,7 @@ class RotationPerformanceTestSimple {
         
         // Act - Test multiple capacity calculations
         val results = (0..10).map { currentWorkers ->
-            workstation.getCapacityInfo(currentWorkers) to workstation.isAtCapacity(currentWorkers)
+            workstation.getCapacityInfo() to workstation.isFullyOccupied(currentWorkers)
         }
         
         val endTime = System.currentTimeMillis()

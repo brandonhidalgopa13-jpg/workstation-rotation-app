@@ -33,8 +33,6 @@ class WorkstationTest {
         // Assert
         assertFalse(regularStation.isPriority)
         assertTrue(priorityStation.isPriority)
-        assertEquals("Normal", regularStation.getPriorityLevel())
-        assertEquals("Alta Prioridad", priorityStation.getPriorityLevel())
     }
 
     @Test
@@ -71,9 +69,7 @@ class WorkstationTest {
         val workstation = Workstation(name = "Test Station", requiredWorkers = 3)
 
         // Assert
-        assertEquals("(0/3)", workstation.getCapacityInfo(0))
-        assertEquals("(2/3)", workstation.getCapacityInfo(2))
-        assertEquals("(3/3)", workstation.getCapacityInfo(3))
+        assertEquals("3 trabajadores", workstation.getCapacityInfo())
     }
 
     @Test
@@ -82,10 +78,10 @@ class WorkstationTest {
         val workstation = Workstation(name = "Test Station", requiredWorkers = 2)
 
         // Assert
-        assertFalse(workstation.isAtCapacity(0))
-        assertFalse(workstation.isAtCapacity(1))
-        assertTrue(workstation.isAtCapacity(2))
-        assertTrue(workstation.isAtCapacity(3)) // Over capacity
+        assertFalse(workstation.isFullyOccupied(0))
+        assertFalse(workstation.isFullyOccupied(1))
+        assertTrue(workstation.isFullyOccupied(2))
+        assertTrue(workstation.isFullyOccupied(3)) // Over capacity
     }
 
     @Test
