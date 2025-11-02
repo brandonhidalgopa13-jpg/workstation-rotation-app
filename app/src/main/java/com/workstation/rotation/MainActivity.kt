@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
             
             btnRotation.setOnClickListener {
                 provideTactileFeedback()
-                showRotationOptions()
+                startActivity(Intent(this@MainActivity, SqlRotationActivity::class.java))
             }
             
             btnSettings.setOnClickListener {
@@ -61,54 +61,11 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
             }
             
-            // Agregar botón para diagnósticos (si existe)
-            btnDiagnostics?.setOnClickListener {
-                provideTactileFeedback()
-                startActivity(Intent(this@MainActivity, DiagnosticsActivity::class.java))
-            }
+
         }
     }
     
-    /**
-     * Muestra opciones de rotación al usuario.
-     */
-    private fun showRotationOptions() {
-        val options = arrayOf(
-            "🔄 Rotación Clásica",
-            "🚀 Rotación SQL Optimizada",
-            "📊 Comparar Algoritmos"
-        )
-        
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Seleccionar Tipo de Rotación")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> startActivity(Intent(this, RotationActivity::class.java))
-                    1 -> startActivity(Intent(this, SqlRotationActivity::class.java))
-                    2 -> startBenchmarkActivity()
-                }
-            }
-            .show()
-    }
-    
-    /**
-     * Inicia la actividad de benchmark para comparar algoritmos.
-     */
-    private fun startBenchmarkActivity() {
-        try {
-            val benchmarkIntent = Intent().apply {
-                setClassName(packageName, "com.workstation.rotation.BenchmarkActivity")
-            }
-            startActivity(benchmarkIntent)
-        } catch (e: Exception) {
-            // Si no existe BenchmarkActivity, mostrar mensaje
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Función en Desarrollo")
-                .setMessage("La comparación de algoritmos estará disponible próximamente.")
-                .setPositiveButton("OK", null)
-                .show()
-        }
-    }
+
     
     /**
      * Proporciona feedback táctil al usuario cuando interactúa con los botones.

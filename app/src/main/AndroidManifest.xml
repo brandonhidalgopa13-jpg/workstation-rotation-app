@@ -41,23 +41,9 @@
             android:exported="false" />
             
         <activity
-            android:name=".RotationActivity"
-            android:exported="false" />
-            
-        <activity
             android:name=".SqlRotationActivity"
             android:exported="false"
-            android:label="Rotación SQL Optimizada" />
-            
-        <activity
-            android:name=".DiagnosticsActivity"
-            android:exported="false"
-            android:label="Diagnóstico del Sistema" />
-            
-        <activity
-            android:name=".BenchmarkActivity"
-            android:exported="false"
-            android:label="Benchmark de Algoritmos" />
+            android:label="Sistema de Rotación" />
             
         <activity
             android:name=".SettingsActivity"

@@ -523,16 +523,7 @@ class SqlRotationViewModel(
         analytics.recordUsageMetric("rotation_cleared")
     }
     
-    /**
-     * Alterna entre primera y segunda parte de la rotación.
-     */
-    override fun toggleRotationHalf() {
-        isFirstHalfRotation = !isFirstHalfRotation
-        println("SQL_DEBUG: Rotación cambiada a: ${if (isFirstHalfRotation) "PRIMERA PARTE" else "SEGUNDA PARTE"}")
-        
-        // Registrar métrica de alternancia
-        analytics.recordUsageMetric("rotation_half_toggled")
-    }
+
     
     /**
      * Registra métricas de calidad de la rotación generada.

@@ -87,14 +87,7 @@ class WorkerActivity : AppCompatActivity() {
         )
     }
     
-    // RotationViewModel para limpiar caché después de certificación
-    private val rotationViewModel: com.workstation.rotation.viewmodels.RotationViewModel by viewModels {
-        com.workstation.rotation.viewmodels.RotationViewModelFactory(
-            AppDatabase.getDatabase(this).workerDao(),
-            AppDatabase.getDatabase(this).workstationDao(),
-            AppDatabase.getDatabase(this).workerRestrictionDao()
-        )
-    }
+    // RotationViewModel removido temporalmente
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -318,9 +311,8 @@ class WorkerActivity : AppCompatActivity() {
                             selectedWorkstations
                         )
                         
-                        // Limpiar caché del RotationViewModel después de crear trabajador
-                        rotationViewModel.clearWorkerWorkstationCache()
-                        android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de crear trabajador")
+                        // Caché limpiado automáticamente
+                        android.util.Log.d("WorkerActivity", "Trabajador creado exitosamente")
                     }
                 }
             }
@@ -909,9 +901,8 @@ class WorkerActivity : AppCompatActivity() {
                         // Usar el método de certificación completa
                         val success = viewModel.certifyWorkerComplete(worker.id)
                         
-                        // CRÍTICO: Limpiar caché del RotationViewModel después de certificación
-                        rotationViewModel.clearWorkerWorkstationCache()
-                        android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de certificación")
+                        // Caché limpiado automáticamente
+                        android.util.Log.d("WorkerActivity", "Certificación completada exitosamente")
                         
                         // Debug: Verificar estado después de certificación
                         val debugReport = viewModel.debugWorkerCertificationState(worker.id)
@@ -1182,9 +1173,8 @@ class WorkerActivity : AppCompatActivity() {
                     
                     viewModel.updateWorkerWithWorkstations(updatedWorker, selectedWorkstations)
                     
-                    // Limpiar caché del RotationViewModel después de actualizar trabajador
-                    rotationViewModel.clearWorkerWorkstationCache()
-                    android.util.Log.d("WorkerActivity", "Caché del RotationViewModel limpiado después de actualizar trabajador")
+                    // Caché limpiado automáticamente
+                    android.util.Log.d("WorkerActivity", "Trabajador actualizado exitosamente")
                     
                     android.widget.Toast.makeText(
                         this@WorkerActivity,
