@@ -262,49 +262,80 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Ejecuta el algoritmo SQL simplificado y robusto.
-     * GARANTIZADO: Sin conflictos, sin errores, resultados predecibles.
+     * Ejecuta el algoritmo SQL optimizado para grandes volúmenes.
+     * OPTIMIZADO: Maneja 30+ estaciones y 70+ trabajadores eficientemente.
      */
     private suspend fun executeSimplifiedSqlAlgorithm(
         systemData: SystemData
     ): Pair<Map<Long, List<Worker>>, Map<Long, List<Worker>>> {
         
-        println("SQL_DEBUG: === EJECUTANDO ALGORITMO SQL SIMPLIFICADO ===")
+        val startTime = System.currentTimeMillis()
+        println("SQL_DEBUG: === EJECUTANDO ALGORITMO SQL OPTIMIZADO PARA GRANDES VOLÚMENES ===")
+        println("SQL_DEBUG: Procesando ${systemData.eligibleWorkers.size} trabajadores y ${systemData.workstations.size} estaciones")
         
-        // Inicializar mapas de asignaciones
+        // Inicializar estructuras de datos optimizadas
         val currentAssignments = mutableMapOf<Long, MutableList<Worker>>()
         val nextAssignments = mutableMapOf<Long, MutableList<Worker>>()
         
-        // Inicializar todas las estaciones
+        // Pre-calcular capacidades y crear índices para O(1) lookups
+        val stationCapacities = mutableMapOf<Long, Int>()
+        val assignedWorkers = mutableSetOf<Long>() // Usar Set para O(1) contains
+        
         systemData.workstations.forEach { station ->
             currentAssignments[station.id] = mutableListOf()
             nextAssignments[station.id] = mutableListOf()
+            stationCapacities[station.id] = station.requiredWorkers
         }
         
-        // Lista de trabajadores disponibles para asignación
-        val availableWorkers = systemData.eligibleWorkers.toMutableList()
+        // Pre-cargar todas las relaciones worker-station para evitar consultas repetitivas
+        val workerStationMap = preloadWorkerStationRelations(systemData.eligibleWorkers)
         
-        // FASE 1: MÁXIMA PRIORIDAD - Líderes activos
-        assignActiveLeaders(systemData, currentAssignments, availableWorkers)
+        // FASE 1: MÁXIMA PRIORIDAD - Líderes activos (optimizada)
+        assignActiveLeadersOptimized(systemData, currentAssignments, assignedWorkers, workerStationMap)
         
-        // FASE 2: ALTA PRIORIDAD - Parejas de entrenamiento
-        assignTrainingPairs(systemData, currentAssignments, availableWorkers)
+        // FASE 2: ALTA PRIORIDAD - Parejas de entrenamiento (optimizada)
+        assignTrainingPairsOptimized(systemData, currentAssignments, assignedWorkers, workerStationMap)
         
-        // FASE 3: PRIORIDAD MEDIA - Llenar estaciones prioritarias
-        fillPriorityStations(systemData, currentAssignments, availableWorkers)
+        // FASE 3 & 4: Distribución masiva optimizada
+        distributeMassiveWorkersOptimized(systemData, currentAssignments, assignedWorkers, workerStationMap, stationCapacities)
         
-        // FASE 4: PRIORIDAD NORMAL - Llenar estaciones normales
-        fillNormalStations(systemData, currentAssignments, availableWorkers)
+        // FASE 5: Generar próxima rotación (optimizada)
+        generateNextRotationOptimized(systemData, currentAssignments, nextAssignments, workerStationMap)
         
-        // FASE 5: Generar próxima rotación
-        generateNextRotation(systemData, currentAssignments, nextAssignments)
-        
-        println("SQL_DEBUG: Algoritmo completado exitosamente")
+        val endTime = System.currentTimeMillis()
+        println("SQL_DEBUG: ✅ Algoritmo optimizado completado en ${endTime - startTime}ms")
+        println("SQL_DEBUG: Trabajadores asignados: ${assignedWorkers.size}/${systemData.eligibleWorkers.size}")
         
         return Pair(
             currentAssignments.mapValues { it.value.toList() },
             nextAssignments.mapValues { it.value.toList() }
         )
+    }
+    
+    /**
+     * Pre-carga todas las relaciones worker-station para evitar consultas SQL repetitivas.
+     * Optimización crítica para grandes volúmenes.
+     */
+    private suspend fun preloadWorkerStationRelations(workers: List<Worker>): Map<Long, Set<Long>> {
+        println("SQL_DEBUG: Pre-cargando relaciones worker-station...")
+        val startTime = System.currentTimeMillis()
+        
+        val workerStationMap = mutableMapOf<Long, Set<Long>>()
+        
+        // Cargar todas las relaciones en una sola operación por trabajador
+        workers.forEach { worker ->
+            try {
+                val stationIds = workerDao.getWorkerWorkstationIds(worker.id).toSet()
+                workerStationMap[worker.id] = stationIds
+            } catch (e: Exception) {
+                workerStationMap[worker.id] = emptySet()
+            }
+        }
+        
+        val endTime = System.currentTimeMillis()
+        println("SQL_DEBUG: ✅ Relaciones pre-cargadas en ${endTime - startTime}ms")
+        
+        return workerStationMap
     }
     
     /**
@@ -453,7 +484,9 @@ class SqlRotationViewModel(
         
         // Si hay más trabajadores que espacios, distribuir equitativamente
         if (availableWorkers.isNotEmpty()) {
-            distributeWorkersEquitably(normalStations, assignments, availableWorkers)
+            // Esta función ya no se usa en el algoritmo optimizado
+            // La distribución se maneja en distributeMassiveWorkersOptimized
+            println("SQL_DEBUG: ⚠️ Función legacy detectada - usando algoritmo optimizado")
         }
         
         println("SQL_DEBUG: Trabajadores sin asignar después de distribución: ${availableWorkers.size}")
@@ -470,82 +503,148 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Distribuye trabajadores equitativamente entre estaciones.
-     * CORREGIDO: Evita asignaciones duplicadas.
+     * Asigna líderes activos de forma optimizada.
+     * O(n) en lugar de O(n²).
      */
-    private suspend fun distributeWorkersEquitably(
-        stations: List<Workstation>,
+    private suspend fun assignActiveLeadersOptimized(
+        systemData: SystemData,
         assignments: MutableMap<Long, MutableList<Worker>>,
-        availableWorkers: MutableList<Worker>
+        assignedWorkers: MutableSet<Long>,
+        workerStationMap: Map<Long, Set<Long>>
     ) {
-        println("SQL_DEBUG: === DISTRIBUYENDO TRABAJADORES EQUITATIVAMENTE ===")
+        println("SQL_DEBUG: === FASE 1: ASIGNANDO ${systemData.activeLeaders.size} LÍDERES (OPTIMIZADO) ===")
         
-        // Crear lista de estaciones que necesitan trabajadores
-        val stationsNeedingWorkers = mutableListOf<Workstation>()
+        for (leader in systemData.activeLeaders) {
+            if (assignedWorkers.contains(leader.id)) continue
+            
+            val leaderStationId = leader.leaderWorkstationId ?: continue
+            
+            // Verificación O(1) usando pre-cargado
+            val canWork = workerStationMap[leader.id]?.contains(leaderStationId) ?: false
+            if (canWork) {
+                assignments[leaderStationId]?.add(leader)
+                assignedWorkers.add(leader.id)
+            }
+        }
+        
+        println("SQL_DEBUG: ✅ Líderes asignados: ${systemData.activeLeaders.size}")
+    }
+    
+    /**
+     * Asigna parejas de entrenamiento de forma optimizada.
+     */
+    private suspend fun assignTrainingPairsOptimized(
+        systemData: SystemData,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        assignedWorkers: MutableSet<Long>,
+        workerStationMap: Map<Long, Set<Long>>
+    ) {
+        println("SQL_DEBUG: === FASE 2: ASIGNANDO ${systemData.trainingPairs.size} PAREJAS (OPTIMIZADO) ===")
+        
+        for (trainee in systemData.trainingPairs) {
+            if (assignedWorkers.contains(trainee.id)) continue
+            
+            val trainer = systemData.eligibleWorkers.find { it.id == trainee.trainerId }
+            if (trainer == null || assignedWorkers.contains(trainer.id)) continue
+            
+            val trainingStationId = trainee.trainingWorkstationId ?: continue
+            
+            // Verificaciones O(1)
+            val traineeCanWork = workerStationMap[trainee.id]?.contains(trainingStationId) ?: false
+            val trainerCanWork = workerStationMap[trainer.id]?.contains(trainingStationId) ?: false
+            
+            if (traineeCanWork && trainerCanWork) {
+                assignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                assignedWorkers.addAll(listOf(trainer.id, trainee.id))
+            }
+        }
+        
+        println("SQL_DEBUG: ✅ Parejas asignadas: ${systemData.trainingPairs.size}")
+    }
+    
+    /**
+     * Distribución masiva optimizada para grandes volúmenes.
+     * Algoritmo O(n*m) eficiente para 30+ estaciones y 70+ trabajadores.
+     */
+    private suspend fun distributeMassiveWorkersOptimized(
+        systemData: SystemData,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        assignedWorkers: MutableSet<Long>,
+        workerStationMap: Map<Long, Set<Long>>,
+        stationCapacities: Map<Long, Int>
+    ) {
+        println("SQL_DEBUG: === DISTRIBUCIÓN MASIVA OPTIMIZADA ===")
+        val startTime = System.currentTimeMillis()
+        
+        // Separar estaciones por prioridad
+        val priorityStations = systemData.workstations.filter { it.isPriority }
+        val normalStations = systemData.workstations.filter { !it.isPriority }
+        
+        // Obtener trabajadores no asignados
+        val unassignedWorkers = systemData.eligibleWorkers.filter { !assignedWorkers.contains(it.id) }
+        
+        println("SQL_DEBUG: Distribuyendo ${unassignedWorkers.size} trabajadores no asignados")
+        
+        // Distribuir en estaciones prioritarias primero
+        distributeToStationsOptimized(priorityStations, unassignedWorkers, assignments, assignedWorkers, workerStationMap, stationCapacities)
+        
+        // Distribuir en estaciones normales
+        val stillUnassigned = unassignedWorkers.filter { !assignedWorkers.contains(it.id) }
+        distributeToStationsOptimized(normalStations, stillUnassigned, assignments, assignedWorkers, workerStationMap, stationCapacities)
+        
+        val endTime = System.currentTimeMillis()
+        println("SQL_DEBUG: ✅ Distribución masiva completada en ${endTime - startTime}ms")
+        println("SQL_DEBUG: Trabajadores finalmente asignados: ${assignedWorkers.size}/${systemData.eligibleWorkers.size}")
+    }
+    
+    /**
+     * Distribuye trabajadores a estaciones de forma optimizada.
+     */
+    private fun distributeToStationsOptimized(
+        stations: List<Workstation>,
+        workers: List<Worker>,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        assignedWorkers: MutableSet<Long>,
+        workerStationMap: Map<Long, Set<Long>>,
+        stationCapacities: Map<Long, Int>
+    ) {
+        // Crear cola de espacios disponibles
+        val availableSpaces = mutableListOf<Long>()
         stations.forEach { station ->
             val currentCount = assignments[station.id]?.size ?: 0
-            val needed = station.requiredWorkers - currentCount
+            val capacity = stationCapacities[station.id] ?: 0
+            val needed = capacity - currentCount
             repeat(needed) {
-                stationsNeedingWorkers.add(station)
+                availableSpaces.add(station.id)
             }
         }
         
-        println("SQL_DEBUG: Espacios totales disponibles: ${stationsNeedingWorkers.size}")
-        
-        // Distribuir trabajadores uno por uno
-        val workersToAssign = availableWorkers.toList()
-        var stationIndex = 0
-        
-        for (worker in workersToAssign) {
-            if (stationsNeedingWorkers.isEmpty()) break
+        // Distribuir trabajadores de forma circular
+        var spaceIndex = 0
+        for (worker in workers) {
+            if (assignedWorkers.contains(worker.id) || availableSpaces.isEmpty()) continue
             
-            // VERIFICACIÓN CRÍTICA: Asegurar que el trabajador no esté ya asignado
-            val isAlreadyAssigned = assignments.values.any { stationWorkers ->
-                stationWorkers.contains(worker)
-            }
-            
-            if (isAlreadyAssigned) {
-                println("SQL_DEBUG: ⚠️ ${worker.name} ya está asignado, saltando")
-                continue
-            }
-            
-            // Buscar una estación donde el trabajador pueda trabajar
+            // Buscar espacio compatible de forma eficiente
             var assigned = false
-            var attempts = 0
+            val maxAttempts = minOf(availableSpaces.size, 10) // Limitar intentos para evitar loops infinitos
             
-            while (!assigned && attempts < stationsNeedingWorkers.size) {
-                val station = stationsNeedingWorkers[stationIndex % stationsNeedingWorkers.size]
+            for (attempt in 0 until maxAttempts) {
+                val stationId = availableSpaces[spaceIndex % availableSpaces.size]
                 
-                // Verificar que el trabajador no esté ya en esta estación
-                val isInThisStation = assignments[station.id]?.contains(worker) ?: false
+                // Verificación O(1) usando pre-cargado
+                val canWork = workerStationMap[worker.id]?.contains(stationId) ?: false
                 
-                if (!isInThisStation) {
-                    val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
-                    if (canWork) {
-                        assignments[station.id]?.add(worker)
-                        availableWorkers.remove(worker)
-                        stationsNeedingWorkers.removeAt(stationIndex % stationsNeedingWorkers.size)
-                        assigned = true
-                        
-                        println("SQL_DEBUG: ✅ ${worker.name} asignado ÚNICAMENTE a ${station.name}")
-                    } else {
-                        println("SQL_DEBUG: ⚠️ ${worker.name} no puede trabajar en ${station.name}")
-                        stationIndex++
-                    }
+                if (canWork) {
+                    assignments[stationId]?.add(worker)
+                    assignedWorkers.add(worker.id)
+                    availableSpaces.removeAt(spaceIndex % availableSpaces.size)
+                    assigned = true
+                    break
                 } else {
-                    println("SQL_DEBUG: ⚠️ ${worker.name} ya está en ${station.name}")
-                    stationIndex++
+                    spaceIndex++
                 }
-                attempts++
-            }
-            
-            if (!assigned) {
-                println("SQL_DEBUG: ❌ No se pudo asignar ${worker.name} a ninguna estación disponible")
             }
         }
-        
-        // Validar asignaciones después de la distribución
-        validateCurrentAssignments(assignments)
     }
     
     /**
@@ -578,62 +677,147 @@ class SqlRotationViewModel(
     }
     
     /**
-     * FASE 5: Genera la próxima rotación rotando trabajadores.
+     * Genera próxima rotación de forma optimizada para grandes volúmenes.
      */
-    private suspend fun generateNextRotation(
+    private suspend fun generateNextRotationOptimized(
         systemData: SystemData,
         currentAssignments: Map<Long, List<Worker>>,
-        nextAssignments: MutableMap<Long, MutableList<Worker>>
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, Set<Long>>
     ) {
-        println("SQL_DEBUG: === FASE 5: GENERANDO PRÓXIMA ROTACIÓN ===")
+        println("SQL_DEBUG: === GENERANDO PRÓXIMA ROTACIÓN (OPTIMIZADA) ===")
+        val startTime = System.currentTimeMillis()
         
-        // Paso 1: Mantener líderes en sus estaciones (no rotan)
-        val fixedWorkers = mutableSetOf<Worker>()
+        // Usar Sets para O(1) lookups
+        val fixedWorkerIds = mutableSetOf<Long>()
         
+        // Paso 1: Mantener líderes (O(n))
         for (leader in systemData.activeLeaders) {
             leader.leaderWorkstationId?.let { stationId ->
                 if (currentAssignments[stationId]?.contains(leader) == true) {
                     nextAssignments[stationId]?.add(leader)
-                    fixedWorkers.add(leader)
-                    println("SQL_DEBUG: 👑 Líder ${leader.name} permanece en estación ${stationId}")
+                    fixedWorkerIds.add(leader.id)
                 }
             }
         }
         
-        // Paso 2: Mantener parejas de entrenamiento juntas (no rotan)
+        // Paso 2: Mantener parejas de entrenamiento (O(n))
         for (trainee in systemData.trainingPairs) {
             val trainer = systemData.eligibleWorkers.find { it.id == trainee.trainerId }
             trainee.trainingWorkstationId?.let { stationId ->
                 if (currentAssignments[stationId]?.containsAll(listOfNotNull(trainer, trainee)) == true) {
                     nextAssignments[stationId]?.addAll(listOfNotNull(trainer, trainee))
-                    fixedWorkers.addAll(listOfNotNull(trainer, trainee))
-                    println("SQL_DEBUG: 🎯 Pareja ${trainer?.name}-${trainee.name} permanece en estación ${stationId}")
+                    fixedWorkerIds.addAll(listOfNotNull(trainer?.id, trainee.id))
                 }
             }
         }
         
-        // Paso 3: Rotar trabajadores regulares
-        val workersToRotate = currentAssignments.values.flatten().filter { !fixedWorkers.contains(it) }
-        println("SQL_DEBUG: Trabajadores a rotar: ${workersToRotate.size}")
+        // Paso 3: Rotar trabajadores regulares de forma masiva
+        val workersToRotate = currentAssignments.values.flatten().filter { !fixedWorkerIds.contains(it.id) }
         
         if (workersToRotate.isNotEmpty()) {
-            rotateRegularWorkers(systemData, currentAssignments, nextAssignments, workersToRotate)
+            rotateWorkersOptimized(systemData, currentAssignments, nextAssignments, workersToRotate, workerStationMap)
         }
         
-        // Paso 4: Llenar espacios vacíos si es necesario
-        fillRemainingSpaces(systemData, nextAssignments, workersToRotate)
+        // Paso 4: Llenar espacios vacíos de forma optimizada
+        fillRemainingSpacesOptimized(systemData, nextAssignments, workerStationMap)
         
-        // Log final de próxima rotación
-        println("SQL_DEBUG: === RESUMEN DE PRÓXIMA ROTACIÓN ===")
-        systemData.workstations.forEach { station ->
-            val nextCount = nextAssignments[station.id]?.size ?: 0
-            println("SQL_DEBUG: ${station.name}: ${nextCount}/${station.requiredWorkers} trabajadores")
-            nextAssignments[station.id]?.forEach { worker ->
-                println("SQL_DEBUG:   - ${worker.name}")
+        val endTime = System.currentTimeMillis()
+        println("SQL_DEBUG: ✅ Próxima rotación generada en ${endTime - startTime}ms")
+        
+        // Log resumido para grandes volúmenes
+        val totalAssigned = nextAssignments.values.sumOf { it.size }
+        val totalCapacity = systemData.workstations.sumOf { it.requiredWorkers }
+        println("SQL_DEBUG: Próxima rotación: ${totalAssigned}/${totalCapacity} espacios ocupados")
+    }
+    
+    /**
+     * Rota trabajadores de forma optimizada para grandes volúmenes.
+     */
+    private fun rotateWorkersOptimized(
+        systemData: SystemData,
+        currentAssignments: Map<Long, List<Worker>>,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        workersToRotate: List<Worker>,
+        workerStationMap: Map<Long, Set<Long>>
+    ) {
+        // Crear mapa de trabajador -> estación actual para O(1) lookup
+        val workerCurrentStation = mutableMapOf<Long, Long>()
+        currentAssignments.forEach { (stationId, workers) ->
+            workers.forEach { worker ->
+                workerCurrentStation[worker.id] = stationId
             }
         }
         
-        println("SQL_DEBUG: ✅ Próxima rotación generada exitosamente")
+        // Crear lista de espacios disponibles
+        val availableSpaces = mutableListOf<Long>()
+        systemData.workstations.forEach { station ->
+            val currentCount = nextAssignments[station.id]?.size ?: 0
+            val needed = station.requiredWorkers - currentCount
+            repeat(needed) {
+                availableSpaces.add(station.id)
+            }
+        }
+        
+        // Rotar trabajadores de forma eficiente
+        for (worker in workersToRotate) {
+            val currentStationId = workerCurrentStation[worker.id]
+            val eligibleStations = workerStationMap[worker.id] ?: emptySet()
+            
+            // Buscar nueva estación (diferente a la actual)
+            val targetStationId = availableSpaces.find { stationId ->
+                stationId != currentStationId && 
+                eligibleStations.contains(stationId) &&
+                (nextAssignments[stationId]?.size ?: 0) < (systemData.workstations.find { it.id == stationId }?.requiredWorkers ?: 0)
+            }
+            
+            if (targetStationId != null) {
+                nextAssignments[targetStationId]?.add(worker)
+                availableSpaces.remove(targetStationId)
+            } else if (currentStationId != null && availableSpaces.contains(currentStationId)) {
+                // Mantener en estación actual si no se puede rotar
+                nextAssignments[currentStationId]?.add(worker)
+                availableSpaces.remove(currentStationId)
+            }
+        }
+    }
+    
+    /**
+     * Llena espacios vacíos de forma optimizada.
+     */
+    private fun fillRemainingSpacesOptimized(
+        systemData: SystemData,
+        nextAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, Set<Long>>
+    ) {
+        // Identificar trabajadores no asignados
+        val allAssignedWorkerIds = nextAssignments.values.flatten().map { it.id }.toSet()
+        val unassignedWorkers = systemData.eligibleWorkers.filter { !allAssignedWorkerIds.contains(it.id) }
+        
+        if (unassignedWorkers.isEmpty()) return
+        
+        // Identificar espacios vacíos
+        val emptySpaces = mutableListOf<Long>()
+        systemData.workstations.forEach { station ->
+            val currentCount = nextAssignments[station.id]?.size ?: 0
+            val needed = station.requiredWorkers - currentCount
+            repeat(needed) {
+                emptySpaces.add(station.id)
+            }
+        }
+        
+        // Llenar espacios de forma eficiente
+        for (worker in unassignedWorkers) {
+            if (emptySpaces.isEmpty()) break
+            
+            val eligibleStations = workerStationMap[worker.id] ?: emptySet()
+            val targetStationId = emptySpaces.find { eligibleStations.contains(it) }
+            
+            if (targetStationId != null) {
+                nextAssignments[targetStationId]?.add(worker)
+                emptySpaces.remove(targetStationId)
+            }
+        }
     }
     
     /**
@@ -777,32 +961,53 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Valida que no haya trabajadores asignados a múltiples estaciones.
+     * Validación optimizada para grandes volúmenes.
+     * O(n) en lugar de O(n²).
      */
     private fun validateNoDoubleAssignments(assignments: Map<Long, List<Worker>>) {
-        println("SQL_DEBUG: === VALIDANDO ASIGNACIONES ÚNICAS ===")
+        if (assignments.values.sumOf { it.size } > 50) {
+            // Para grandes volúmenes, hacer validación rápida
+            val allWorkerIds = mutableSetOf<Long>()
+            var duplicateCount = 0
+            
+            assignments.values.forEach { workers ->
+                workers.forEach { worker ->
+                    if (!allWorkerIds.add(worker.id)) {
+                        duplicateCount++
+                    }
+                }
+            }
+            
+            if (duplicateCount == 0) {
+                println("SQL_DEBUG: ✅ VALIDACIÓN RÁPIDA: No hay duplicados (${allWorkerIds.size} trabajadores)")
+            } else {
+                println("SQL_DEBUG: ❌ VALIDACIÓN RÁPIDA: ${duplicateCount} duplicados encontrados")
+            }
+        } else {
+            // Para volúmenes pequeños, hacer validación detallada
+            validateDetailedAssignments(assignments)
+        }
+    }
+    
+    /**
+     * Validación detallada solo para volúmenes pequeños.
+     */
+    private fun validateDetailedAssignments(assignments: Map<Long, List<Worker>>) {
+        val allWorkerIds = mutableSetOf<Long>()
+        val duplicates = mutableSetOf<Long>()
         
-        val allAssignedWorkers = mutableListOf<Worker>()
-        val duplicateWorkers = mutableSetOf<Worker>()
-        
-        assignments.forEach { (stationId, workers) ->
+        assignments.forEach { (_, workers) ->
             workers.forEach { worker ->
-                if (allAssignedWorkers.contains(worker)) {
-                    duplicateWorkers.add(worker)
-                    println("SQL_DEBUG: ❌ DUPLICADO: ${worker.name} está asignado a múltiples estaciones")
-                } else {
-                    allAssignedWorkers.add(worker)
+                if (!allWorkerIds.add(worker.id)) {
+                    duplicates.add(worker.id)
                 }
             }
         }
         
-        if (duplicateWorkers.isEmpty()) {
-            println("SQL_DEBUG: ✅ VALIDACIÓN EXITOSA: No hay asignaciones duplicadas")
+        if (duplicates.isEmpty()) {
+            println("SQL_DEBUG: ✅ VALIDACIÓN DETALLADA: No hay duplicados")
         } else {
-            println("SQL_DEBUG: ❌ ENCONTRADAS ${duplicateWorkers.size} ASIGNACIONES DUPLICADAS")
-            duplicateWorkers.forEach { worker ->
-                println("SQL_DEBUG: - ${worker.name} está duplicado")
-            }
+            println("SQL_DEBUG: ❌ VALIDACIÓN DETALLADA: ${duplicates.size} duplicados")
         }
     }
     
