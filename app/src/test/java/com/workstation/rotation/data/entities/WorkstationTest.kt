@@ -66,10 +66,12 @@ class WorkstationTest {
     @Test
     fun `workstation capacity info should be formatted correctly`() {
         // Arrange & Act
-        val workstation = Workstation(name = "Test Station", requiredWorkers = 3)
+        val workstation = Workstation(name = "Test Station", requiredWorkers = 3, maxWorkers = 3)
+        val workstationRange = Workstation(name = "Test Station Range", requiredWorkers = 2, maxWorkers = 4)
 
         // Assert
         assertEquals("3 trabajadores", workstation.getCapacityInfo())
+        assertEquals("2-4 trabajadores", workstationRange.getCapacityInfo())
     }
 
     @Test

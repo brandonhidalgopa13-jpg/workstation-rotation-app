@@ -91,7 +91,8 @@ class RotationPerformanceTestSimple {
         // Arrange
         val workstation = Workstation(
             name = "Test Station",
-            requiredWorkers = 5
+            requiredWorkers = 5,
+            maxWorkers = 5
         )
         
         val startTime = System.currentTimeMillis()
@@ -106,9 +107,9 @@ class RotationPerformanceTestSimple {
         
         // Assert
         assertEquals(11, results.size)
-        assertEquals("(0/5)" to false, results[0])
-        assertEquals("(5/5)" to true, results[5])
-        assertEquals("(10/5)" to true, results[10])
+        assertEquals("5 trabajadores" to false, results[0])
+        assertEquals("5 trabajadores" to true, results[5])
+        assertEquals("5 trabajadores" to true, results[10])
         assertTrue("Capacity calculations took too long: ${duration}ms", duration < 50)
     }
 
