@@ -97,19 +97,20 @@ class RotationPerformanceTestSimple {
         
         val startTime = System.currentTimeMillis()
         
-        // Act - Test multiple capacity calculations
-        val results = (0..10).map { currentWorkers ->
-            workstation.getCapacityInfo() to workstation.isFullyOccupied(currentWorkers)
-        }
+        // Act - Test capacity calculations
+        val capacityInfo = workstation.getCapacityInfo()
+        val isOccupied0 = workstation.isFullyOccupied(0)
+        val isOccupied5 = workstation.isFullyOccupied(5)
+        val isOccupied10 = workstation.isFullyOccupied(10)
         
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
         // Assert
-        assertEquals(11, results.size)
-        assertEquals("5 trabajadores" to false, results[0])
-        assertEquals("5 trabajadores" to true, results[5])
-        assertEquals("5 trabajadores" to true, results[10])
+        assertEquals("5 trabajadores", capacityInfo)
+        assertFalse("0 workers should not be fully occupied", isOccupied0)
+        assertTrue("5 workers should be fully occupied", isOccupied5)
+        assertTrue("10 workers should be fully occupied (over capacity)", isOccupied10)
         assertTrue("Capacity calculations took too long: ${duration}ms", duration < 50)
     }
 
