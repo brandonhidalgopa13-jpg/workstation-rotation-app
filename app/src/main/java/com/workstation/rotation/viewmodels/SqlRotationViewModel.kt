@@ -101,19 +101,40 @@ class SqlRotationViewModel(
             }
             
             // Paso 1.5: Validar sistema antes de proceder
+            println("SQL_DEBUG: === INICIANDO VALIDACIÓN DEL SISTEMA ===")
+            
+            val workerStationMap = mutableMapOf<Long, List<Long>>()
+            systemData.eligibleWorkers.forEach { worker ->
+                try {
+                    val stationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    workerStationMap[worker.id] = stationIds
+                    println("SQL_DEBUG: 🔗 ${worker.name} puede trabajar en estaciones: ${stationIds.joinToString()}")
+                } catch (e: Exception) {
+                    println("SQL_DEBUG: ❌ Error obteniendo estaciones para ${worker.name}: ${e.message}")
+                    workerStationMap[worker.id] = emptyList()
+                }
+            }
+            
             val validationResults = validator.validateSystem(
                 systemData.eligibleWorkers,
                 systemData.workstations,
-                systemData.eligibleWorkers.associate { worker ->
-                    worker.id to workerDao.getWorkerWorkstationIds(worker.id)
-                }
+                workerStationMap
             )
+            
+            println("SQL_DEBUG: 📋 Resultado de validación - Válido: ${validationResults.isValid}")
             
             if (!validationResults.isValid) {
                 val criticalIssues = validationResults.criticalIssues
+                println("SQL_DEBUG: ❌ PROBLEMAS CRÍTICOS DETECTADOS:")
+                criticalIssues.forEach { issue ->
+                    println("SQL_DEBUG:    - ${issue.message}")
+                }
+                
                 if (criticalIssues.isNotEmpty()) {
                     throw Exception("Problemas críticos detectados: ${criticalIssues.joinToString { it.message }}")
                 }
+            } else {
+                println("SQL_DEBUG: ✅ VALIDACIÓN EXITOSA - Sistema listo para generar rotación")
             }
             
             // Paso 2: Ejecutar algoritmo SQL simplificado con medición
@@ -156,32 +177,88 @@ class SqlRotationViewModel(
     private suspend fun loadSystemData(): SystemData {
         println("SQL_DEBUG: === CARGANDO DATOS DEL SISTEMA ===")
         
-        // Usar las nuevas consultas SQL mejoradas
-        val eligibleWorkers = rotationDao.getAllEligibleWorkers()
-        val workstations = rotationDao.getAllActiveWorkstationsOrdered()
-        val activeLeaders = rotationDao.getActiveLeadersForRotationFixed(isFirstHalfRotation)
-        val trainingPairs = rotationDao.getValidTrainingPairs()
-        
-        println("SQL_DEBUG: Trabajadores elegibles: ${eligibleWorkers.size}")
-        println("SQL_DEBUG: Estaciones activas: ${workstations.size}")
-        println("SQL_DEBUG: Líderes activos: ${activeLeaders.size}")
-        println("SQL_DEBUG: Parejas de entrenamiento: ${trainingPairs.size}")
-        
-        // Verificar integridad de datos
-        if (eligibleWorkers.isEmpty()) {
-            throw Exception("No hay trabajadores elegibles para rotación")
+        try {
+            // Usar las nuevas consultas SQL mejoradas con logs detallados
+            println("SQL_DEBUG: 🔍 Ejecutando getAllEligibleWorkers()...")
+            val eligibleWorkers = rotationDao.getAllEligibleWorkers()
+            println("SQL_DEBUG: ✅ getAllEligibleWorkers() completado - Resultado: ${eligibleWorkers.size}")
+            
+            println("SQL_DEBUG: 🔍 Ejecutando getAllActiveWorkstationsOrdered()...")
+            val workstations = rotationDao.getAllActiveWorkstationsOrdered()
+            println("SQL_DEBUG: ✅ getAllActiveWorkstationsOrdered() completado - Resultado: ${workstations.size}")
+            
+            println("SQL_DEBUG: 🔍 Ejecutando getActiveLeadersForRotationFixed(${isFirstHalfRotation})...")
+            val activeLeaders = rotationDao.getActiveLeadersForRotationFixed(isFirstHalfRotation)
+            println("SQL_DEBUG: ✅ getActiveLeadersForRotationFixed() completado - Resultado: ${activeLeaders.size}")
+            
+            println("SQL_DEBUG: 🔍 Ejecutando getValidTrainingPairs()...")
+            val trainingPairs = rotationDao.getValidTrainingPairs()
+            println("SQL_DEBUG: ✅ getValidTrainingPairs() completado - Resultado: ${trainingPairs.size}")
+            
+            // Log detallado de trabajadores
+            println("SQL_DEBUG: === DETALLE DE TRABAJADORES ELEGIBLES ===")
+            if (eligibleWorkers.isEmpty()) {
+                println("SQL_DEBUG: ❌ NO HAY TRABAJADORES ELEGIBLES")
+            } else {
+                eligibleWorkers.forEach { worker ->
+                    println("SQL_DEBUG: 👤 ${worker.name} - ID: ${worker.id} - Activo: ${worker.isActive} - Líder: ${worker.isLeader} - Entrenador: ${worker.isTrainer} - Entrenado: ${worker.isTrainee}")
+                }
+            }
+            
+            // Log detallado de estaciones
+            println("SQL_DEBUG: === DETALLE DE ESTACIONES ACTIVAS ===")
+            if (workstations.isEmpty()) {
+                println("SQL_DEBUG: ❌ NO HAY ESTACIONES ACTIVAS")
+            } else {
+                workstations.forEach { station ->
+                    println("SQL_DEBUG: 🏭 ${station.name} - ID: ${station.id} - Activa: ${station.isActive} - Requiere: ${station.requiredWorkers} - Prioritaria: ${station.isPriority}")
+                }
+            }
+            
+            // Log detallado de líderes
+            println("SQL_DEBUG: === DETALLE DE LÍDERES ACTIVOS ===")
+            if (activeLeaders.isEmpty()) {
+                println("SQL_DEBUG: ⚠️ NO HAY LÍDERES ACTIVOS PARA ESTA ROTACIÓN")
+            } else {
+                activeLeaders.forEach { leader ->
+                    println("SQL_DEBUG: 👑 ${leader.name} - Estación: ${leader.leaderWorkstationId} - Tipo: ${leader.leadershipType}")
+                }
+            }
+            
+            // Log detallado de parejas de entrenamiento
+            println("SQL_DEBUG: === DETALLE DE PAREJAS DE ENTRENAMIENTO ===")
+            if (trainingPairs.isEmpty()) {
+                println("SQL_DEBUG: ⚠️ NO HAY PAREJAS DE ENTRENAMIENTO")
+            } else {
+                trainingPairs.forEach { trainee ->
+                    println("SQL_DEBUG: 🎯 ${trainee.name} - Entrenador ID: ${trainee.trainerId} - Estación: ${trainee.trainingWorkstationId}")
+                }
+            }
+            
+            // Verificar integridad de datos
+            if (eligibleWorkers.isEmpty()) {
+                println("SQL_DEBUG: ❌ FALLO: No hay trabajadores elegibles para rotación")
+                throw Exception("No hay trabajadores elegibles para rotación")
+            }
+            
+            if (workstations.isEmpty()) {
+                println("SQL_DEBUG: ❌ FALLO: No hay estaciones activas")
+                throw Exception("No hay estaciones activas")
+            }
+            
+            println("SQL_DEBUG: ✅ DATOS DEL SISTEMA CARGADOS EXITOSAMENTE")
+            return SystemData(
+                eligibleWorkers = eligibleWorkers,
+                workstations = workstations,
+                activeLeaders = activeLeaders,
+                trainingPairs = trainingPairs
+            )
+            
+        } catch (e: Exception) {
+            println("SQL_DEBUG: ❌ ERROR CRÍTICO en loadSystemData(): ${e.message}")
+            e.printStackTrace()
+            throw e
         }
-        
-        if (workstations.isEmpty()) {
-            throw Exception("No hay estaciones activas")
-        }
-        
-        return SystemData(
-            eligibleWorkers = eligibleWorkers,
-            workstations = workstations,
-            activeLeaders = activeLeaders,
-            trainingPairs = trainingPairs
-        )
     }
     
     /**
