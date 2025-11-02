@@ -1317,15 +1317,16 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Algoritmo mejorado que genera ambas rotaciones simultáneamente.
-     * GARANTIZA: Distribución equitativa de todos los trabajadores.
+     * Algoritmo de rotación verdadera con prioridades estrictas.
+     * PRIORIDADES: 1) Entrenamientos, 2) Líderes, 3) Discapacidades, 4) Regulares
      */
     private suspend fun generateDualRotationAlgorithm(
         systemData: DualSystemData,
         workerStationMap: Map<Long, List<Long>>
     ): Pair<Map<Long, List<Worker>>, Map<Long, List<Worker>>> {
         
-        println("SQL_DEBUG: === ALGORITMO DUAL DE ROTACIÓN ===")
+        println("SQL_DEBUG: === ALGORITMO DE ROTACIÓN CON PRIORIDADES ESTRICTAS ===")
+        println("SQL_DEBUG: Respetando: Entrenamientos > Líderes > Discapacidades > Regulares")
         
         // Inicializar asignaciones para ambas rotaciones
         val firstHalfAssignments = mutableMapOf<Long, MutableList<Worker>>()
@@ -1336,29 +1337,27 @@ class SqlRotationViewModel(
             secondHalfAssignments[station.id] = mutableListOf()
         }
         
-        // Conjuntos para rastrear trabajadores asignados
-        val firstHalfAssigned = mutableSetOf<Long>()
-        val secondHalfAssigned = mutableSetOf<Long>()
+        // PRIORIDAD 1: Entrenamientos (máxima prioridad - permanecen juntos)
+        assignTrainingPairsWithPriority(systemData, firstHalfAssignments, secondHalfAssignments, workerStationMap)
         
-        // FASE 1: Asignar líderes a sus rotaciones específicas
-        assignLeadersToRotations(systemData, firstHalfAssignments, secondHalfAssignments, 
-                                firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        // PRIORIDAD 2: Líderes (permanecen en sus estaciones de liderazgo)
+        assignLeadersWithPriority(systemData, firstHalfAssignments, secondHalfAssignments, workerStationMap)
         
-        // FASE 2: Asignar parejas de entrenamiento a ambas rotaciones
-        assignTrainingPairsToBothRotations(systemData, firstHalfAssignments, secondHalfAssignments,
-                                          firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        // PRIORIDAD 3: Trabajadores con discapacidades/restricciones
+        assignWorkersWithDisabilities(systemData, firstHalfAssignments, secondHalfAssignments, workerStationMap)
         
-        // FASE 3: Distribuir trabajadores restantes equitativamente
-        distributeRemainingWorkersEquitably(systemData, firstHalfAssignments, secondHalfAssignments,
-                                           firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        // PRIORIDAD 4: Trabajadores regulares (pueden rotar entre estaciones)
+        assignRegularWorkersWithRotation(systemData, firstHalfAssignments, secondHalfAssignments, workerStationMap)
         
-        // FASE 4: Verificar que todos los trabajadores estén asignados
-        ensureAllWorkersAssigned(systemData, firstHalfAssignments, secondHalfAssignments,
-                                firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        // FASE FINAL: Balancear y completar cobertura
+        finalizeRotationCoverage(systemData, firstHalfAssignments, secondHalfAssignments, workerStationMap)
         
-        println("SQL_DEBUG: ✅ Algoritmo dual completado")
-        println("SQL_DEBUG: Primera rotación: ${firstHalfAssigned.size} trabajadores")
-        println("SQL_DEBUG: Segunda rotación: ${secondHalfAssigned.size} trabajadores")
+        val firstTotal = firstHalfAssignments.values.sumOf { it.size }
+        val secondTotal = secondHalfAssignments.values.sumOf { it.size }
+        
+        println("SQL_DEBUG: ✅ Rotación con prioridades completada")
+        println("SQL_DEBUG: Primera rotación: $firstTotal asignaciones")
+        println("SQL_DEBUG: Segunda rotación: $secondTotal asignaciones")
         
         return Pair(
             firstHalfAssignments.mapValues { it.value.toList() },
@@ -1367,48 +1366,732 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Asigna líderes a sus rotaciones específicas según su tipo de liderazgo.
+     * Asigna líderes que permanecen fijos en sus estaciones de liderazgo.
      */
-    private suspend fun assignLeadersToRotations(
+    private suspend fun assignFixedLeaders(
         systemData: DualSystemData,
         firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
         secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
-        firstHalfAssigned: MutableSet<Long>,
-        secondHalfAssigned: MutableSet<Long>,
         workerStationMap: Map<Long, List<Long>>
     ) {
-        println("SQL_DEBUG: === ASIGNANDO LÍDERES A ROTACIONES ===")
+        println("SQL_DEBUG: === ASIGNANDO LÍDERES FIJOS ===")
         
-        // Asignar líderes de primera rotación
+        // Líderes de primera rotación
         systemData.firstHalfLeaders.forEach { leader ->
             leader.leaderWorkstationId?.let { stationId ->
                 val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
                 if (canWork) {
                     firstHalfAssignments[stationId]?.add(leader)
-                    firstHalfAssigned.add(leader.id)
-                    println("SQL_DEBUG: ✅ Líder ${leader.name} asignado a primera rotación, estación $stationId")
+                    println("SQL_DEBUG: ✅ Líder ${leader.name} fijo en primera rotación, estación $stationId")
                 }
             }
         }
         
-        // Asignar líderes de segunda rotación
+        // Líderes de segunda rotación
         systemData.secondHalfLeaders.forEach { leader ->
             leader.leaderWorkstationId?.let { stationId ->
                 val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
                 if (canWork) {
                     secondHalfAssignments[stationId]?.add(leader)
-                    secondHalfAssigned.add(leader.id)
-                    println("SQL_DEBUG: ✅ Líder ${leader.name} asignado a segunda rotación, estación $stationId")
+                    println("SQL_DEBUG: ✅ Líder ${leader.name} fijo en segunda rotación, estación $stationId")
                 }
             }
         }
         
-        println("SQL_DEBUG: Líderes primera rotación: ${systemData.firstHalfLeaders.size}")
-        println("SQL_DEBUG: Líderes segunda rotación: ${systemData.secondHalfLeaders.size}")
+        // Líderes BOTH aparecen en ambas rotaciones en su estación de liderazgo
+        val bothLeaders = systemData.eligibleWorkers.filter { 
+            it.isLeader && it.leadershipType == "BOTH" 
+        }
+        
+        bothLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork) {
+                    // Solo agregar si no está ya asignado
+                    if (!firstHalfAssignments[stationId]!!.contains(leader)) {
+                        firstHalfAssignments[stationId]?.add(leader)
+                    }
+                    if (!secondHalfAssignments[stationId]!!.contains(leader)) {
+                        secondHalfAssignments[stationId]?.add(leader)
+                    }
+                    println("SQL_DEBUG: ✅ Líder BOTH ${leader.name} fijo en ambas rotaciones, estación $stationId")
+                }
+            }
+        }
     }
     
     /**
-     * Asigna parejas de entrenamiento a ambas rotaciones para continuidad.
+     * PRIORIDAD 1: Asigna parejas de entrenamiento (máxima prioridad).
+     * Las parejas permanecen juntas en su estación de entrenamiento en ambas rotaciones.
+     */
+    private suspend fun assignTrainingPairsWithPriority(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === PRIORIDAD 1: ASIGNANDO ENTRENAMIENTOS ===")
+        
+        systemData.trainingPairs.forEach { trainee ->
+            val trainer = systemData.eligibleWorkers.find { it.id == trainee.trainerId }
+            val trainingStationId = trainee.trainingWorkstationId
+            
+            if (trainer != null && trainingStationId != null) {
+                val traineeCanWork = workerStationMap[trainee.id]?.contains(trainingStationId) ?: false
+                val trainerCanWork = workerStationMap[trainer.id]?.contains(trainingStationId) ?: false
+                
+                if (traineeCanWork && trainerCanWork) {
+                    val station = systemData.workstations.find { it.id == trainingStationId }
+                    
+                    if (station != null) {
+                        // Verificar capacidad antes de asignar
+                        val firstCurrentCount = firstHalfAssignments[trainingStationId]?.size ?: 0
+                        val secondCurrentCount = secondHalfAssignments[trainingStationId]?.size ?: 0
+                        
+                        // Asignar a primera rotación si hay espacio
+                        if (firstCurrentCount + 2 <= station.requiredWorkers) {
+                            firstHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                            println("SQL_DEBUG: 🎯 ENTRENAMIENTO: ${trainer.name}-${trainee.name} → Primera rotación, ${station.name}")
+                        }
+                        
+                        // Asignar a segunda rotación si hay espacio (continuidad)
+                        if (secondCurrentCount + 2 <= station.requiredWorkers) {
+                            secondHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                            println("SQL_DEBUG: 🎯 ENTRENAMIENTO: ${trainer.name}-${trainee.name} → Segunda rotación, ${station.name}")
+                        }
+                        
+                        println("SQL_DEBUG: ✅ PRIORIDAD MÁXIMA: Pareja de entrenamiento asegurada")
+                    }
+                } else {
+                    println("SQL_DEBUG: ⚠️ Pareja ${trainer?.name}-${trainee.name} no puede trabajar en estación de entrenamiento")
+                }
+            }
+        }
+    }
+    
+    /**
+     * PRIORIDAD 2: Asigna líderes a sus estaciones de liderazgo.
+     */
+    private suspend fun assignLeadersWithPriority(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === PRIORIDAD 2: ASIGNANDO LÍDERES ===")
+        
+        // Líderes de primera rotación
+        systemData.firstHalfLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork && !isWorkerAlreadyAssigned(leader, firstHalfAssignments)) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    val currentCount = firstHalfAssignments[stationId]?.size ?: 0
+                    
+                    if (station != null && currentCount < station.requiredWorkers) {
+                        firstHalfAssignments[stationId]?.add(leader)
+                        println("SQL_DEBUG: 👑 LÍDER: ${leader.name} → Primera rotación, ${station.name}")
+                    }
+                }
+            }
+        }
+        
+        // Líderes de segunda rotación
+        systemData.secondHalfLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork && !isWorkerAlreadyAssigned(leader, secondHalfAssignments)) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    val currentCount = secondHalfAssignments[stationId]?.size ?: 0
+                    
+                    if (station != null && currentCount < station.requiredWorkers) {
+                        secondHalfAssignments[stationId]?.add(leader)
+                        println("SQL_DEBUG: 👑 LÍDER: ${leader.name} → Segunda rotación, ${station.name}")
+                    }
+                }
+            }
+        }
+        
+        // Líderes BOTH (aparecen en ambas rotaciones)
+        val bothLeaders = systemData.eligibleWorkers.filter { 
+            it.isLeader && it.leadershipType == "BOTH" 
+        }
+        
+        bothLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    
+                    if (station != null) {
+                        // Asignar a primera rotación si no está ya
+                        if (!isWorkerAlreadyAssigned(leader, firstHalfAssignments)) {
+                            val firstCount = firstHalfAssignments[stationId]?.size ?: 0
+                            if (firstCount < station.requiredWorkers) {
+                                firstHalfAssignments[stationId]?.add(leader)
+                                println("SQL_DEBUG: 👑 LÍDER BOTH: ${leader.name} → Primera rotación, ${station.name}")
+                            }
+                        }
+                        
+                        // Asignar a segunda rotación si no está ya
+                        if (!isWorkerAlreadyAssigned(leader, secondHalfAssignments)) {
+                            val secondCount = secondHalfAssignments[stationId]?.size ?: 0
+                            if (secondCount < station.requiredWorkers) {
+                                secondHalfAssignments[stationId]?.add(leader)
+                                println("SQL_DEBUG: 👑 LÍDER BOTH: ${leader.name} → Segunda rotación, ${station.name}")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * PRIORIDAD 3: Asigna trabajadores con discapacidades o restricciones especiales.
+     */
+    private suspend fun assignWorkersWithDisabilities(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === PRIORIDAD 3: ASIGNANDO TRABAJADORES CON RESTRICCIONES ===")
+        
+        // Obtener trabajadores ya asignados
+        val alreadyAssigned = getAllAssignedWorkerIds(firstHalfAssignments, secondHalfAssignments)
+        
+        // Filtrar trabajadores con restricciones o discapacidades
+        val workersWithRestrictions = systemData.eligibleWorkers.filter { worker ->
+            !alreadyAssigned.contains(worker.id) && 
+            (worker.restrictionNotes.isNotEmpty() || worker.availabilityPercentage < 100)
+        }
+        
+        println("SQL_DEBUG: Trabajadores con restricciones encontrados: ${workersWithRestrictions.size}")
+        
+        workersWithRestrictions.forEach { worker ->
+            val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+            
+            // Buscar estaciones donde puede trabajar, priorizando las que más necesitan trabajadores
+            val availableStations = eligibleStations.mapNotNull { stationId ->
+                val station = systemData.workstations.find { it.id == stationId }
+                if (station != null) {
+                    val firstCount = firstHalfAssignments[stationId]?.size ?: 0
+                    val secondCount = secondHalfAssignments[stationId]?.size ?: 0
+                    val firstNeed = station.requiredWorkers - firstCount
+                    val secondNeed = station.requiredWorkers - secondCount
+                    
+                    Triple(station, firstNeed, secondNeed)
+                } else null
+            }.filter { it.second > 0 || it.third > 0 }
+            .sortedByDescending { it.first.isPriority }
+            
+            if (availableStations.isNotEmpty()) {
+                val bestStation = availableStations.first()
+                val station = bestStation.first
+                
+                // Asignar a la rotación que más necesite trabajadores
+                if (bestStation.second > 0 && bestStation.second >= bestStation.third) {
+                    firstHalfAssignments[station.id]?.add(worker)
+                    println("SQL_DEBUG: ♿ RESTRICCIÓN: ${worker.name} → Primera rotación, ${station.name} (${worker.availabilityPercentage}%)")
+                } else if (bestStation.third > 0) {
+                    secondHalfAssignments[station.id]?.add(worker)
+                    println("SQL_DEBUG: ♿ RESTRICCIÓN: ${worker.name} → Segunda rotación, ${station.name} (${worker.availabilityPercentage}%)")
+                }
+            }
+        }
+    }
+    
+    /**
+     * PRIORIDAD 4: Asigna trabajadores regulares con rotación entre estaciones.
+     */
+    private suspend fun assignRegularWorkersWithRotation(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === PRIORIDAD 4: ASIGNANDO TRABAJADORES REGULARES CON ROTACIÓN ===")
+        
+        // Obtener trabajadores ya asignados
+        val alreadyAssigned = getAllAssignedWorkerIds(firstHalfAssignments, secondHalfAssignments)
+        
+        // Filtrar trabajadores regulares
+        val regularWorkers = systemData.eligibleWorkers.filter { worker ->
+            !alreadyAssigned.contains(worker.id) && 
+            !worker.isLeader && 
+            !worker.isTrainer && 
+            !worker.isTrainee &&
+            worker.restrictionNotes.isEmpty() &&
+            worker.availabilityPercentage >= 100
+        }
+        
+        println("SQL_DEBUG: Trabajadores regulares para rotar: ${regularWorkers.size}")
+        
+        regularWorkers.forEach { worker ->
+            val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+            
+            if (eligibleStations.size >= 2) {
+                // Trabajador puede rotar entre múltiples estaciones
+                val rotationPlan = createWorkerRotationPlan(worker, eligibleStations, systemData.workstations, 
+                                                           firstHalfAssignments, secondHalfAssignments)
+                
+                if (rotationPlan.first != null && rotationPlan.second != null) {
+                    val firstStation = systemData.workstations.find { it.id == rotationPlan.first }
+                    val secondStation = systemData.workstations.find { it.id == rotationPlan.second }
+                    
+                    if (firstStation != null && secondStation != null) {
+                        firstHalfAssignments[rotationPlan.first!!]?.add(worker)
+                        secondHalfAssignments[rotationPlan.second!!]?.add(worker)
+                        
+                        println("SQL_DEBUG: 🔄 ROTACIÓN: ${worker.name} → ${firstStation.name} ↔ ${secondStation.name}")
+                    }
+                }
+            } else if (eligibleStations.size == 1) {
+                // Trabajador solo puede trabajar en una estación
+                val stationId = eligibleStations[0]
+                val station = systemData.workstations.find { it.id == stationId }
+                
+                if (station != null) {
+                    val firstCount = firstHalfAssignments[stationId]?.size ?: 0
+                    val secondCount = secondHalfAssignments[stationId]?.size ?: 0
+                    
+                    // Asignar a la rotación que más necesite trabajadores
+                    if (firstCount < station.requiredWorkers && firstCount <= secondCount) {
+                        firstHalfAssignments[stationId]?.add(worker)
+                        println("SQL_DEBUG: 📍 FIJO: ${worker.name} → Primera rotación, ${station.name}")
+                    } else if (secondCount < station.requiredWorkers) {
+                        secondHalfAssignments[stationId]?.add(worker)
+                        println("SQL_DEBUG: 📍 FIJO: ${worker.name} → Segunda rotación, ${station.name}")
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Verifica si un trabajador ya está asignado en alguna rotación.
+     */
+    private fun isWorkerAlreadyAssigned(
+        worker: Worker, 
+        assignments: Map<Long, List<Worker>>
+    ): Boolean {
+        return assignments.values.any { workers -> 
+            workers.any { it.id == worker.id } 
+        }
+    }
+    
+    /**
+     * Obtiene todos los IDs de trabajadores ya asignados.
+     */
+    private fun getAllAssignedWorkerIds(
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ): Set<Long> {
+        val assigned = mutableSetOf<Long>()
+        
+        firstHalfAssignments.values.forEach { workers ->
+            assigned.addAll(workers.map { it.id })
+        }
+        
+        secondHalfAssignments.values.forEach { workers ->
+            assigned.addAll(workers.map { it.id })
+        }
+        
+        return assigned
+    }
+    
+    /**
+     * Crea un plan de rotación específico para un trabajador.
+     */
+    private fun createWorkerRotationPlan(
+        worker: Worker,
+        eligibleStations: List<Long>,
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ): Pair<Long?, Long?> {
+        
+        // Calcular necesidad de cada estación
+        val stationNeeds = eligibleStations.map { stationId ->
+            val station = workstations.find { it.id == stationId }
+            if (station != null) {
+                val firstCount = firstHalfAssignments[stationId]?.size ?: 0
+                val secondCount = secondHalfAssignments[stationId]?.size ?: 0
+                val firstNeed = station.requiredWorkers - firstCount
+                val secondNeed = station.requiredWorkers - secondCount
+                
+                Triple(stationId, firstNeed, secondNeed)
+            } else {
+                Triple(stationId, 0, 0)
+            }
+        }.filter { it.second > 0 || it.third > 0 }
+        
+        if (stationNeeds.size >= 2) {
+            // Ordenar por necesidad y prioridad
+            val sortedNeeds = stationNeeds.sortedWith(
+                compareByDescending<Triple<Long, Int, Int>> { 
+                    workstations.find { ws -> ws.id == it.first }?.isPriority ?: false 
+                }.thenByDescending { it.second + it.third }
+            )
+            
+            val firstChoice = sortedNeeds[0]
+            val secondChoice = sortedNeeds[1]
+            
+            // Asignar a diferentes estaciones para rotación verdadera
+            return Pair(firstChoice.first, secondChoice.first)
+        }
+        
+        return Pair(null, null)
+    }
+    
+    /**
+     * Finaliza la cobertura de rotación completando espacios faltantes.
+     */
+    private suspend fun finalizeRotationCoverage(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === FINALIZANDO COBERTURA DE ROTACIÓN ===")
+        
+        // Verificar estaciones que necesitan más trabajadores
+        systemData.workstations.forEach { station ->
+            val firstCount = firstHalfAssignments[station.id]?.size ?: 0
+            val secondCount = secondHalfAssignments[station.id]?.size ?: 0
+            val firstNeed = station.requiredWorkers - firstCount
+            val secondNeed = station.requiredWorkers - secondCount
+            
+            if (firstNeed > 0 || secondNeed > 0) {
+                println("SQL_DEBUG: ${station.name} necesita: Primera=$firstNeed, Segunda=$secondNeed")
+                
+                // Buscar trabajadores disponibles que puedan trabajar en esta estación
+                val availableWorkers = findAvailableWorkersForStation(
+                    station.id, systemData.eligibleWorkers, workerStationMap,
+                    firstHalfAssignments, secondHalfAssignments
+                )
+                
+                // Asignar trabajadores disponibles
+                availableWorkers.take(firstNeed + secondNeed).forEachIndexed { index, worker ->
+                    if (index < firstNeed && firstCount + index < station.requiredWorkers) {
+                        firstHalfAssignments[station.id]?.add(worker)
+                        println("SQL_DEBUG: ✅ ${worker.name} → Primera rotación, ${station.name} (completar)")
+                    } else if (secondCount < station.requiredWorkers) {
+                        secondHalfAssignments[station.id]?.add(worker)
+                        println("SQL_DEBUG: ✅ ${worker.name} → Segunda rotación, ${station.name} (completar)")
+                    }
+                }
+            }
+        }
+        
+        // Reportar estado final con prioridades
+        reportFinalStatusWithPriorities(systemData.workstations, firstHalfAssignments, secondHalfAssignments)
+    }
+    
+    /**
+     * Encuentra trabajadores disponibles para una estación específica.
+     */
+    private fun findAvailableWorkersForStation(
+        stationId: Long,
+        allWorkers: List<Worker>,
+        workerStationMap: Map<Long, List<Long>>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ): List<Worker> {
+        
+        val alreadyAssigned = getAllAssignedWorkerIds(firstHalfAssignments, secondHalfAssignments)
+        
+        return allWorkers.filter { worker ->
+            !alreadyAssigned.contains(worker.id) &&
+            (workerStationMap[worker.id]?.contains(stationId) ?: false)
+        }
+    }
+    
+    /**
+     * Reporta el estado final incluyendo información de prioridades.
+     */
+    private fun reportFinalStatusWithPriorities(
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ) {
+        println("SQL_DEBUG: === ESTADO FINAL CON PRIORIDADES ===")
+        
+        workstations.forEach { station ->
+            val firstWorkers = firstHalfAssignments[station.id] ?: emptyList()
+            val secondWorkers = secondHalfAssignments[station.id] ?: emptyList()
+            
+            println("SQL_DEBUG: ${station.name} (${if (station.isPriority) "PRIORITARIA" else "NORMAL"}):")
+            println("SQL_DEBUG:   - Primera rotación: ${firstWorkers.size}/${station.requiredWorkers}")
+            println("SQL_DEBUG:   - Segunda rotación: ${secondWorkers.size}/${station.requiredWorkers}")
+            
+            // Mostrar trabajadores por prioridad
+            firstWorkers.forEach { worker ->
+                val priority = when {
+                    worker.isTrainee || worker.isTrainer -> "🎯 ENTRENAMIENTO"
+                    worker.isLeader -> "👑 LÍDER"
+                    worker.restrictionNotes.isNotEmpty() || worker.availabilityPercentage < 100 -> "♿ RESTRICCIÓN"
+                    else -> "👤 REGULAR"
+                }
+                
+                val inSecond = secondWorkers.any { it.id == worker.id }
+                val rotation = if (inSecond) "📍 AMBAS" else "🔄 ROTA"
+                
+                println("SQL_DEBUG:     $priority ${worker.name} $rotation")
+            }
+        }
+    }
+    
+    /**
+     * Genera rotación verdadera para trabajadores regulares.
+     * Los trabajadores cambian de estación entre primera y segunda rotación.
+     */
+    private suspend fun generateTrueRotation(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === GENERANDO ROTACIÓN VERDADERA ===")
+        
+        // Obtener trabajadores que ya están asignados (líderes y parejas de entrenamiento)
+        val alreadyAssigned = mutableSetOf<Long>()
+        
+        firstHalfAssignments.values.forEach { workers ->
+            alreadyAssigned.addAll(workers.map { it.id })
+        }
+        secondHalfAssignments.values.forEach { workers ->
+            alreadyAssigned.addAll(workers.map { it.id })
+        }
+        
+        // Obtener trabajadores regulares (no líderes, no en entrenamiento)
+        val regularWorkers = systemData.eligibleWorkers.filter { worker ->
+            !alreadyAssigned.contains(worker.id) && 
+            !worker.isLeader && 
+            !worker.isTrainer && 
+            !worker.isTrainee
+        }
+        
+        println("SQL_DEBUG: Trabajadores regulares para rotar: ${regularWorkers.size}")
+        
+        // Crear plan de rotación: cada trabajador va a una estación diferente en cada rotación
+        val rotationPlan = createRotationPlan(regularWorkers, systemData.workstations, workerStationMap)
+        
+        // Aplicar el plan de rotación
+        applyRotationPlan(rotationPlan, firstHalfAssignments, secondHalfAssignments, systemData.workstations)
+    }
+    
+    /**
+     * Crea un plan de rotación donde cada trabajador va a estaciones diferentes.
+     */
+    private fun createRotationPlan(
+        workers: List<Worker>,
+        workstations: List<Workstation>,
+        workerStationMap: Map<Long, List<Long>>
+    ): Map<Long, Pair<Long?, Long?>> {
+        println("SQL_DEBUG: === CREANDO PLAN DE ROTACIÓN ===")
+        
+        val rotationPlan = mutableMapOf<Long, Pair<Long?, Long?>>()
+        
+        workers.forEach { worker ->
+            val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+            
+            if (eligibleStations.size >= 2) {
+                // Trabajador puede rotar entre al menos 2 estaciones
+                val firstStation = eligibleStations[0]
+                val secondStation = eligibleStations[1]
+                rotationPlan[worker.id] = Pair(firstStation, secondStation)
+                
+                println("SQL_DEBUG: 🔄 ${worker.name}: Estación $firstStation → Estación $secondStation")
+                
+            } else if (eligibleStations.size == 1) {
+                // Trabajador solo puede trabajar en una estación (permanece fijo)
+                val onlyStation = eligibleStations[0]
+                rotationPlan[worker.id] = Pair(onlyStation, onlyStation)
+                
+                println("SQL_DEBUG: 📍 ${worker.name}: Fijo en estación $onlyStation (solo una opción)")
+                
+            } else {
+                // Trabajador sin estaciones asignadas
+                rotationPlan[worker.id] = Pair(null, null)
+                println("SQL_DEBUG: ❌ ${worker.name}: Sin estaciones asignadas")
+            }
+        }
+        
+        return rotationPlan
+    }
+    
+    /**
+     * Aplica el plan de rotación a las asignaciones.
+     */
+    private suspend fun applyRotationPlan(
+        rotationPlan: Map<Long, Pair<Long?, Long?>>,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workstations: List<Workstation>
+    ) {
+        println("SQL_DEBUG: === APLICANDO PLAN DE ROTACIÓN ===")
+        
+        rotationPlan.forEach { (workerId, stationPair) ->
+            val worker = findWorkerById(workerId)
+            val (firstStationId, secondStationId) = stationPair
+            
+            if (worker != null) {
+                // Asignar a primera rotación
+                if (firstStationId != null) {
+                    val firstStation = workstations.find { it.id == firstStationId }
+                    if (firstStation != null) {
+                        val currentCount = firstHalfAssignments[firstStationId]?.size ?: 0
+                        if (currentCount < firstStation.requiredWorkers) {
+                            firstHalfAssignments[firstStationId]?.add(worker)
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a primera rotación, estación ${firstStation.name}")
+                        }
+                    }
+                }
+                
+                // Asignar a segunda rotación
+                if (secondStationId != null) {
+                    val secondStation = workstations.find { it.id == secondStationId }
+                    if (secondStation != null) {
+                        val currentCount = secondHalfAssignments[secondStationId]?.size ?: 0
+                        if (currentCount < secondStation.requiredWorkers) {
+                            secondHalfAssignments[secondStationId]?.add(worker)
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a segunda rotación, estación ${secondStation.name}")
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Encuentra un trabajador por ID en la lista de trabajadores elegibles.
+     */
+    private suspend fun findWorkerById(workerId: Long): Worker? {
+        return rotationDao.getAllEligibleWorkers().find { it.id == workerId }
+    }
+    
+    /**
+     * Balancea las rotaciones asegurando cobertura completa.
+     */
+    private suspend fun balanceRotations(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === BALANCEANDO ROTACIONES ===")
+        
+        // Obtener trabajadores no asignados
+        val allAssignedIds = mutableSetOf<Long>()
+        firstHalfAssignments.values.forEach { workers ->
+            allAssignedIds.addAll(workers.map { it.id })
+        }
+        secondHalfAssignments.values.forEach { workers ->
+            allAssignedIds.addAll(workers.map { it.id })
+        }
+        
+        val unassignedWorkers = systemData.eligibleWorkers.filter { 
+            !allAssignedIds.contains(it.id) 
+        }
+        
+        if (unassignedWorkers.isNotEmpty()) {
+            println("SQL_DEBUG: Asignando ${unassignedWorkers.size} trabajadores no asignados")
+            
+            unassignedWorkers.forEach { worker ->
+                val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+                
+                // Buscar estación con espacio en primera rotación
+                for (stationId in eligibleStations) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    if (station != null) {
+                        val currentCount = firstHalfAssignments[stationId]?.size ?: 0
+                        if (currentCount < station.requiredWorkers) {
+                            firstHalfAssignments[stationId]?.add(worker)
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a primera rotación (balanceo)")
+                            break
+                        }
+                    }
+                }
+                
+                // Buscar estación con espacio en segunda rotación (puede ser diferente)
+                for (stationId in eligibleStations) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    if (station != null) {
+                        val currentCount = secondHalfAssignments[stationId]?.size ?: 0
+                        if (currentCount < station.requiredWorkers) {
+                            secondHalfAssignments[stationId]?.add(worker)
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a segunda rotación (balanceo)")
+                            break
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Reportar estado final
+        reportFinalStatus(systemData.workstations, firstHalfAssignments, secondHalfAssignments)
+    }
+    
+    /**
+     * Reporta el estado final de las rotaciones.
+     */
+    private fun reportFinalStatus(
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ) {
+        println("SQL_DEBUG: === ESTADO FINAL DE ROTACIONES ===")
+        
+        workstations.forEach { station ->
+            val firstCount = firstHalfAssignments[station.id]?.size ?: 0
+            val secondCount = secondHalfAssignments[station.id]?.size ?: 0
+            val required = station.requiredWorkers
+            
+            println("SQL_DEBUG: ${station.name}:")
+            println("SQL_DEBUG:   - Primera rotación: $firstCount/$required")
+            println("SQL_DEBUG:   - Segunda rotación: $secondCount/$required")
+            
+            // Mostrar quién rota
+            val firstWorkers = firstHalfAssignments[station.id] ?: emptyList()
+            val secondWorkers = secondHalfAssignments[station.id] ?: emptyList()
+            
+            firstWorkers.forEach { worker ->
+                val inSecond = secondWorkers.any { it.id == worker.id }
+                if (inSecond) {
+                    println("SQL_DEBUG:     📍 ${worker.name} (permanece en ambas)")
+                } else {
+                    val secondStation = findWorkerInSecondRotation(worker, secondHalfAssignments, workstations)
+                    if (secondStation != null) {
+                        println("SQL_DEBUG:     🔄 ${worker.name} → rota a ${secondStation.name}")
+                    } else {
+                        println("SQL_DEBUG:     ⚠️ ${worker.name} (solo en primera)")
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Encuentra en qué estación está un trabajador en la segunda rotación.
+     */
+    private fun findWorkerInSecondRotation(
+        worker: Worker,
+        secondHalfAssignments: Map<Long, List<Worker>>,
+        workstations: List<Workstation>
+    ): Workstation? {
+        secondHalfAssignments.forEach { (stationId, workers) ->
+            if (workers.any { it.id == worker.id }) {
+                return workstations.find { it.id == stationId }
+            }
+        }
+        return null
+    }
+    
+    /**
+     * Asigna parejas de entrenamiento priorizando continuidad.
+     * MEJORADO: Asigna a ambas rotaciones cuando es posible para continuidad.
      */
     private suspend fun assignTrainingPairsToBothRotations(
         systemData: DualSystemData,
@@ -1429,25 +2112,48 @@ class SqlRotationViewModel(
                 val trainerCanWork = workerStationMap[trainer.id]?.contains(trainingStationId) ?: false
                 
                 if (traineeCanWork && trainerCanWork) {
-                    // Asignar a ambas rotaciones para continuidad del entrenamiento
-                    if (!firstHalfAssigned.contains(trainee.id) && !firstHalfAssigned.contains(trainer.id)) {
-                        firstHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
-                        firstHalfAssigned.addAll(listOf(trainer.id, trainee.id))
-                    }
+                    val station = systemData.workstations.find { it.id == trainingStationId }
                     
-                    if (!secondHalfAssigned.contains(trainee.id) && !secondHalfAssigned.contains(trainer.id)) {
-                        secondHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
-                        secondHalfAssigned.addAll(listOf(trainer.id, trainee.id))
+                    if (station != null) {
+                        // Intentar asignar a primera rotación
+                        val firstCurrentCount = firstHalfAssignments[trainingStationId]?.size ?: 0
+                        if (firstCurrentCount + 2 <= station.requiredWorkers && 
+                            !firstHalfAssigned.contains(trainee.id) && 
+                            !firstHalfAssigned.contains(trainer.id)) {
+                            
+                            firstHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                            firstHalfAssigned.addAll(listOf(trainer.id, trainee.id))
+                            println("SQL_DEBUG: ✅ Pareja ${trainer.name}-${trainee.name} asignada a primera rotación")
+                        }
+                        
+                        // Intentar asignar a segunda rotación (pueden estar en ambas)
+                        val secondCurrentCount = secondHalfAssignments[trainingStationId]?.size ?: 0
+                        if (secondCurrentCount + 2 <= station.requiredWorkers && 
+                            !secondHalfAssigned.contains(trainee.id) && 
+                            !secondHalfAssigned.contains(trainer.id)) {
+                            
+                            secondHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                            secondHalfAssigned.addAll(listOf(trainer.id, trainee.id))
+                            println("SQL_DEBUG: ✅ Pareja ${trainer.name}-${trainee.name} asignada a segunda rotación")
+                        }
+                        
+                        // Si están en ambas rotaciones, reportar continuidad
+                        if (firstHalfAssigned.contains(trainee.id) && secondHalfAssigned.contains(trainee.id)) {
+                            println("SQL_DEBUG: 🎯 Pareja ${trainer.name}-${trainee.name} tiene continuidad en ambas rotaciones")
+                        }
                     }
-                    
-                    println("SQL_DEBUG: ✅ Pareja ${trainer.name}-${trainee.name} asignada a ambas rotaciones")
+                } else {
+                    println("SQL_DEBUG: ⚠️ Pareja ${trainer?.name}-${trainee.name} no puede trabajar en estación de entrenamiento")
                 }
+            } else {
+                println("SQL_DEBUG: ⚠️ Pareja de entrenamiento incompleta para ${trainee.name}")
             }
         }
     }
     
     /**
-     * Distribuye trabajadores restantes equitativamente entre ambas rotaciones.
+     * Distribuye trabajadores para llenar ambas rotaciones según capacidad de estaciones.
+     * CORREGIDO: Permite que trabajadores aparezcan en ambas rotaciones si es necesario.
      */
     private suspend fun distributeRemainingWorkersEquitably(
         systemData: DualSystemData,
@@ -1457,25 +2163,85 @@ class SqlRotationViewModel(
         secondHalfAssigned: MutableSet<Long>,
         workerStationMap: Map<Long, List<Long>>
     ) {
-        println("SQL_DEBUG: === DISTRIBUYENDO TRABAJADORES RESTANTES ===")
+        println("SQL_DEBUG: === DISTRIBUYENDO TRABAJADORES PARA LLENAR ESTACIONES ===")
         
-        // Obtener trabajadores no asignados
-        val unassignedWorkers = systemData.eligibleWorkers.filter { worker ->
+        // Obtener trabajadores disponibles (no asignados aún)
+        val availableWorkers = systemData.eligibleWorkers.filter { worker ->
             !firstHalfAssigned.contains(worker.id) && !secondHalfAssigned.contains(worker.id)
         }
         
-        println("SQL_DEBUG: Trabajadores sin asignar: ${unassignedWorkers.size}")
+        println("SQL_DEBUG: Trabajadores disponibles: ${availableWorkers.size}")
         
-        // Distribuir alternadamente entre rotaciones
-        unassignedWorkers.forEachIndexed { index, worker ->
-            val assignToFirst = index % 2 == 0
+        // PASO 1: Llenar primera rotación hasta capacidad requerida
+        fillRotationToCapacity(
+            availableWorkers, 
+            firstHalfAssignments, 
+            firstHalfAssigned, 
+            systemData.workstations, 
+            workerStationMap, 
+            "PRIMERA"
+        )
+        
+        // PASO 2: Llenar segunda rotación hasta capacidad requerida
+        // Los trabajadores pueden aparecer en ambas rotaciones si es necesario
+        fillRotationToCapacity(
+            systemData.eligibleWorkers, // Usar TODOS los trabajadores elegibles
+            secondHalfAssignments, 
+            secondHalfAssigned, 
+            systemData.workstations, 
+            workerStationMap, 
+            "SEGUNDA"
+        )
+        
+        println("SQL_DEBUG: ✅ Distribución completada")
+        println("SQL_DEBUG: Primera rotación: ${firstHalfAssigned.size} trabajadores")
+        println("SQL_DEBUG: Segunda rotación: ${secondHalfAssigned.size} trabajadores")
+    }
+    
+    /**
+     * Llena una rotación hasta la capacidad requerida de las estaciones.
+     */
+    private suspend fun fillRotationToCapacity(
+        availableWorkers: List<Worker>,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        assignedSet: MutableSet<Long>,
+        workstations: List<Workstation>,
+        workerStationMap: Map<Long, List<Long>>,
+        rotationName: String
+    ) {
+        println("SQL_DEBUG: === LLENANDO $rotationName ROTACIÓN ===")
+        
+        // Ordenar estaciones por prioridad (prioritarias primero, luego por capacidad requerida)
+        val orderedStations = workstations.sortedWith(
+            compareByDescending<Workstation> { it.isPriority }
+                .thenByDescending { it.requiredWorkers }
+        )
+        
+        for (station in orderedStations) {
+            val currentCount = assignments[station.id]?.size ?: 0
+            val needed = station.requiredWorkers - currentCount
             
-            if (assignToFirst) {
-                assignWorkerToRotation(worker, firstHalfAssignments, firstHalfAssigned, 
-                                     systemData.workstations, workerStationMap, "PRIMERA")
+            if (needed > 0) {
+                println("SQL_DEBUG: Estación ${station.name} necesita $needed trabajadores más")
+                
+                // Obtener trabajadores elegibles para esta estación que no estén ya asignados a esta rotación
+                val eligibleWorkers = availableWorkers.filter { worker ->
+                    val canWork = workerStationMap[worker.id]?.contains(station.id) ?: false
+                    val notAlreadyInThisRotation = !assignedSet.contains(worker.id)
+                    canWork && notAlreadyInThisRotation
+                }.take(needed)
+                
+                eligibleWorkers.forEach { worker ->
+                    assignments[station.id]?.add(worker)
+                    assignedSet.add(worker.id)
+                    println("SQL_DEBUG: ✅ ${worker.name} asignado a $rotationName rotación, estación ${station.name}")
+                }
+                
+                if (eligibleWorkers.size < needed) {
+                    println("SQL_DEBUG: ⚠️ Estación ${station.name} en $rotationName rotación solo pudo llenarse ${eligibleWorkers.size}/$needed")
+                }
             } else {
-                assignWorkerToRotation(worker, secondHalfAssignments, secondHalfAssigned,
-                                     systemData.workstations, workerStationMap, "SEGUNDA")
+                println("SQL_DEBUG: ✅ Estación ${station.name} ya completa en $rotationName rotación")
             }
         }
     }
@@ -1508,7 +2274,8 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Asegura que todos los trabajadores estén asignados a al menos una rotación.
+     * Verifica cobertura y optimiza distribución entre rotaciones.
+     * MEJORADO: Permite trabajadores en ambas rotaciones para maximizar cobertura.
      */
     private suspend fun ensureAllWorkersAssigned(
         systemData: DualSystemData,
@@ -1518,12 +2285,17 @@ class SqlRotationViewModel(
         secondHalfAssigned: MutableSet<Long>,
         workerStationMap: Map<Long, List<Long>>
     ) {
-        println("SQL_DEBUG: === VERIFICANDO COBERTURA COMPLETA ===")
+        println("SQL_DEBUG: === VERIFICANDO Y OPTIMIZANDO COBERTURA ===")
         
-        val totalAssigned = (firstHalfAssigned + secondHalfAssigned).size
-        val totalWorkers = systemData.eligibleWorkers.size
+        val workersInFirstRotation = firstHalfAssigned.size
+        val workersInSecondRotation = secondHalfAssigned.size
+        val workersInBothRotations = (firstHalfAssigned intersect secondHalfAssigned).size
+        val totalUniqueWorkers = (firstHalfAssigned + secondHalfAssigned).size
         
-        println("SQL_DEBUG: Trabajadores con al menos una asignación: $totalAssigned/$totalWorkers")
+        println("SQL_DEBUG: Trabajadores en primera rotación: $workersInFirstRotation")
+        println("SQL_DEBUG: Trabajadores en segunda rotación: $workersInSecondRotation")
+        println("SQL_DEBUG: Trabajadores en ambas rotaciones: $workersInBothRotations")
+        println("SQL_DEBUG: Total trabajadores únicos participando: $totalUniqueWorkers/${systemData.eligibleWorkers.size}")
         
         // Encontrar trabajadores sin ninguna asignación
         val unassignedWorkers = systemData.eligibleWorkers.filter { worker ->
@@ -1531,31 +2303,85 @@ class SqlRotationViewModel(
         }
         
         if (unassignedWorkers.isNotEmpty()) {
-            println("SQL_DEBUG: ⚠️ Asignando ${unassignedWorkers.size} trabajadores restantes")
+            println("SQL_DEBUG: ⚠️ Asignando ${unassignedWorkers.size} trabajadores sin asignación")
             
             unassignedWorkers.forEach { worker ->
-                // Intentar asignar a la rotación con menos trabajadores
-                val firstHalfCount = firstHalfAssigned.size
-                val secondHalfCount = secondHalfAssigned.size
+                var assigned = false
                 
-                if (firstHalfCount <= secondHalfCount) {
-                    assignWorkerToRotation(worker, firstHalfAssignments, firstHalfAssigned,
-                                         systemData.workstations, workerStationMap, "PRIMERA (forzado)")
-                } else {
-                    assignWorkerToRotation(worker, secondHalfAssignments, secondHalfAssigned,
-                                         systemData.workstations, workerStationMap, "SEGUNDA (forzado)")
+                // Intentar asignar a cualquier rotación donde pueda trabajar
+                val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+                
+                for (stationId in eligibleStations) {
+                    val station = systemData.workstations.find { it.id == stationId }
+                    if (station != null) {
+                        // Verificar si hay espacio en primera rotación
+                        val firstCurrentCount = firstHalfAssignments[stationId]?.size ?: 0
+                        if (firstCurrentCount < station.requiredWorkers && !firstHalfAssigned.contains(worker.id)) {
+                            firstHalfAssignments[stationId]?.add(worker)
+                            firstHalfAssigned.add(worker.id)
+                            assigned = true
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a primera rotación, estación ${station.name} (forzado)")
+                            break
+                        }
+                        
+                        // Verificar si hay espacio en segunda rotación
+                        val secondCurrentCount = secondHalfAssignments[stationId]?.size ?: 0
+                        if (secondCurrentCount < station.requiredWorkers && !secondHalfAssigned.contains(worker.id)) {
+                            secondHalfAssignments[stationId]?.add(worker)
+                            secondHalfAssigned.add(worker.id)
+                            assigned = true
+                            println("SQL_DEBUG: ✅ ${worker.name} asignado a segunda rotación, estación ${station.name} (forzado)")
+                            break
+                        }
+                    }
+                }
+                
+                if (!assigned) {
+                    println("SQL_DEBUG: ❌ No se pudo asignar ${worker.name} a ninguna rotación")
                 }
             }
         }
         
+        // Verificar si hay estaciones con capacidad insuficiente
+        checkStationCapacities(systemData.workstations, firstHalfAssignments, secondHalfAssignments)
+        
         val finalFirstCount = firstHalfAssigned.size
         val finalSecondCount = secondHalfAssigned.size
+        val finalWorkersInBoth = (firstHalfAssigned intersect secondHalfAssigned).size
         val finalTotalUnique = (firstHalfAssigned + secondHalfAssigned).size
         
-        println("SQL_DEBUG: ✅ Distribución final:")
+        println("SQL_DEBUG: ✅ DISTRIBUCIÓN FINAL OPTIMIZADA:")
         println("SQL_DEBUG:   - Primera rotación: $finalFirstCount trabajadores")
         println("SQL_DEBUG:   - Segunda rotación: $finalSecondCount trabajadores")
-        println("SQL_DEBUG:   - Total único: $finalTotalUnique trabajadores")
+        println("SQL_DEBUG:   - En ambas rotaciones: $finalWorkersInBoth trabajadores")
+        println("SQL_DEBUG:   - Total único participando: $finalTotalUnique/${systemData.eligibleWorkers.size} trabajadores")
+        
+        val coveragePercentage = (finalTotalUnique * 100) / systemData.eligibleWorkers.size
+        println("SQL_DEBUG:   - Cobertura: $coveragePercentage%")
+    }
+    
+    /**
+     * Verifica las capacidades de las estaciones y reporta el estado.
+     */
+    private fun checkStationCapacities(
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ) {
+        println("SQL_DEBUG: === VERIFICANDO CAPACIDADES DE ESTACIONES ===")
+        
+        workstations.forEach { station ->
+            val firstCount = firstHalfAssignments[station.id]?.size ?: 0
+            val secondCount = secondHalfAssignments[station.id]?.size ?: 0
+            val required = station.requiredWorkers
+            
+            val firstStatus = if (firstCount >= required) "✅ COMPLETA" else "⚠️ INCOMPLETA"
+            val secondStatus = if (secondCount >= required) "✅ COMPLETA" else "⚠️ INCOMPLETA"
+            
+            println("SQL_DEBUG: ${station.name} (${if (station.isPriority) "PRIORITARIA" else "NORMAL"}):")
+            println("SQL_DEBUG:   - Primera rotación: $firstCount/$required $firstStatus")
+            println("SQL_DEBUG:   - Segunda rotación: $secondCount/$required $secondStatus")
+        }
     }
     
     /**
