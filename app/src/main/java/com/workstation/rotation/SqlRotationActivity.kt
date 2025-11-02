@@ -53,6 +53,39 @@ class SqlRotationActivity : AppCompatActivity() {
         binding.btnClearRotation.setOnClickListener {
             clearRotation()
         }
+        
+        // Agregar diagnóstico al botón de limpiar (long press)
+        binding.btnClearRotation.setOnLongClickListener {
+            runDiagnostic()
+            true
+        }
+    }
+    
+    private fun runDiagnostic() {
+        lifecycleScope.launch {
+            try {
+                val diagnosticResult = sqlViewModel.diagnosticarSistema()
+                
+                // Mostrar resultado en un diálogo
+                androidx.appcompat.app.AlertDialog.Builder(this@SqlRotationActivity)
+                    .setTitle("🔍 Diagnóstico del Sistema SQL")
+                    .setMessage(diagnosticResult)
+                    .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+                    .setNeutralButton("Copiar") { _, _ ->
+                        val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("Diagnóstico SQL", diagnosticResult)
+                        clipboard.setPrimaryClip(clip)
+                        
+                        Snackbar.make(binding.root, "📋 Diagnóstico copiado al portapapeles", Snackbar.LENGTH_SHORT).show()
+                    }
+                    .show()
+                    
+            } catch (e: Exception) {
+                Snackbar.make(binding.root, "❌ Error en diagnóstico: ${e.message}", Snackbar.LENGTH_LONG)
+                    .setBackgroundTint(ContextCompat.getColor(this@SqlRotationActivity, R.color.status_error))
+                    .show()
+            }
+        }
     }
     
     private fun observeViewModel() {

@@ -660,6 +660,120 @@ class SqlRotationViewModel(
     fun getValidationResults() = validator.validationResults
     
     /**
+     * Método de diagnóstico directo para probar el sistema sin generar rotación completa.
+     * Útil para identificar problemas específicos.
+     */
+    suspend fun diagnosticarSistema(): String {
+        return try {
+            val diagnostico = StringBuilder()
+            diagnostico.appendLine("🔍 === DIAGNÓSTICO DEL SISTEMA SQL ===")
+            
+            // Paso 1: Verificar datos básicos
+            diagnostico.appendLine("\n📊 PASO 1: VERIFICANDO DATOS BÁSICOS")
+            
+            val eligibleWorkers = rotationDao.getAllEligibleWorkers()
+            diagnostico.appendLine("👥 Trabajadores elegibles: ${eligibleWorkers.size}")
+            
+            val workstations = rotationDao.getAllActiveWorkstationsOrdered()
+            diagnostico.appendLine("🏭 Estaciones activas: ${workstations.size}")
+            
+            if (eligibleWorkers.isEmpty()) {
+                diagnostico.appendLine("❌ PROBLEMA: No hay trabajadores elegibles")
+                diagnostico.appendLine("💡 SOLUCIÓN: Agregar trabajadores activos y asignarles estaciones")
+                return diagnostico.toString()
+            }
+            
+            if (workstations.isEmpty()) {
+                diagnostico.appendLine("❌ PROBLEMA: No hay estaciones activas")
+                diagnostico.appendLine("💡 SOLUCIÓN: Agregar estaciones activas")
+                return diagnostico.toString()
+            }
+            
+            // Paso 2: Verificar relaciones
+            diagnostico.appendLine("\n🔗 PASO 2: VERIFICANDO RELACIONES")
+            
+            var trabajadoresSinEstaciones = 0
+            eligibleWorkers.forEach { worker ->
+                try {
+                    val stationIds = workerDao.getWorkerWorkstationIds(worker.id)
+                    if (stationIds.isEmpty()) {
+                        trabajadoresSinEstaciones++
+                        diagnostico.appendLine("⚠️ ${worker.name} no tiene estaciones asignadas")
+                    } else {
+                        diagnostico.appendLine("✅ ${worker.name} puede trabajar en ${stationIds.size} estaciones")
+                    }
+                } catch (e: Exception) {
+                    diagnostico.appendLine("❌ Error verificando estaciones para ${worker.name}: ${e.message}")
+                }
+            }
+            
+            if (trabajadoresSinEstaciones > 0) {
+                diagnostico.appendLine("❌ PROBLEMA: $trabajadoresSinEstaciones trabajadores sin estaciones")
+                diagnostico.appendLine("💡 SOLUCIÓN: Configurar relaciones worker_workstations")
+            }
+            
+            // Paso 3: Verificar líderes
+            diagnostico.appendLine("\n👑 PASO 3: VERIFICANDO LÍDERES")
+            
+            val activeLeaders = rotationDao.getActiveLeadersForRotationFixed(isFirstHalfRotation)
+            diagnostico.appendLine("👑 Líderes activos para esta rotación: ${activeLeaders.size}")
+            
+            activeLeaders.forEach { leader ->
+                if (leader.leaderWorkstationId == null) {
+                    diagnostico.appendLine("⚠️ Líder ${leader.name} sin estación de liderazgo")
+                } else {
+                    diagnostico.appendLine("✅ Líder ${leader.name} -> Estación ${leader.leaderWorkstationId}")
+                }
+            }
+            
+            // Paso 4: Verificar parejas de entrenamiento
+            diagnostico.appendLine("\n🎯 PASO 4: VERIFICANDO ENTRENAMIENTO")
+            
+            val trainingPairs = rotationDao.getValidTrainingPairs()
+            diagnostico.appendLine("🎯 Parejas de entrenamiento: ${trainingPairs.size}")
+            
+            trainingPairs.forEach { trainee ->
+                if (trainee.trainingWorkstationId == null) {
+                    diagnostico.appendLine("⚠️ Entrenado ${trainee.name} sin estación de entrenamiento")
+                } else {
+                    diagnostico.appendLine("✅ Entrenado ${trainee.name} -> Estación ${trainee.trainingWorkstationId}")
+                }
+            }
+            
+            // Paso 5: Verificar capacidades
+            diagnostico.appendLine("\n📊 PASO 5: VERIFICANDO CAPACIDADES")
+            
+            val capacidadTotal = workstations.sumOf { it.requiredWorkers }
+            val trabajadoresDisponibles = eligibleWorkers.size
+            
+            diagnostico.appendLine("🏭 Capacidad total requerida: $capacidadTotal")
+            diagnostico.appendLine("👥 Trabajadores disponibles: $trabajadoresDisponibles")
+            
+            if (trabajadoresDisponibles < capacidadTotal) {
+                diagnostico.appendLine("⚠️ No hay suficientes trabajadores para llenar todas las estaciones")
+            } else {
+                diagnostico.appendLine("✅ Hay suficientes trabajadores")
+            }
+            
+            // Conclusión
+            diagnostico.appendLine("\n🎯 CONCLUSIÓN DEL DIAGNÓSTICO")
+            
+            if (eligibleWorkers.isNotEmpty() && workstations.isNotEmpty() && trabajadoresSinEstaciones == 0) {
+                diagnostico.appendLine("✅ SISTEMA LISTO: Todos los componentes están configurados correctamente")
+                diagnostico.appendLine("🚀 La rotación SQL debería funcionar sin problemas")
+            } else {
+                diagnostico.appendLine("❌ SISTEMA INCOMPLETO: Hay problemas de configuración")
+                diagnostico.appendLine("🔧 Revisar las soluciones sugeridas arriba")
+            }
+            
+            diagnostico.toString()
+            
+        } catch (e: Exception) {
+            "❌ ERROR EN DIAGNÓSTICO: ${e.message}\n${e.stackTraceToString()}"
+        }
+    }
+    
+    /**
      * Data class para datos del sistema.
      */
     private data class SystemData(
