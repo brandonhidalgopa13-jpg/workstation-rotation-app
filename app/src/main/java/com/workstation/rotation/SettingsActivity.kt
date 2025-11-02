@@ -158,7 +158,7 @@ class SettingsActivity : AppCompatActivity() {
         
         // Nuevas funcionalidades
         binding.btnGenerateReport?.setOnClickListener {
-            Toast.makeText(this, "Función de reportes próximamente disponible", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, ReportsActivity::class.java))
         }
         
         binding.btnNotificationSettings?.setOnClickListener {

@@ -143,4 +143,10 @@
     <color name="secondary">#FFFF9800</color>
     <color name="surface">#FFFFFFFF</color>
     
+    <!-- Colores para tipos de trabajadores en reportes -->
+    <color name="leader_color">#FF9800</color>
+    <color name="trainer_color">#2196F3</color>
+    <color name="trainee_color">#4CAF50</color>
+    <color name="regular_worker_color">#757575</color>
+    
 </resources>

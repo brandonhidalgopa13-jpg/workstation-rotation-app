@@ -70,6 +70,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workerDao(): WorkerDao
     abstract fun workstationDao(): WorkstationDao
     abstract fun workerRestrictionDao(): WorkerRestrictionDao
+    abstract fun reportsDao(): com.workstation.rotation.data.dao.ReportsDao
     abstract fun rotationDao(): RotationDao
     
     companion object {
