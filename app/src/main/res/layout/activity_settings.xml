@@ -554,7 +554,7 @@
                     android:orientation="horizontal">
 
                     <Button
-                        android:id="@+id/btnNotificationSettings"
+                        android:id="@+id/btnNotificationSettingsShortcut"
                         style="@style/SecondaryButtonStyle"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
