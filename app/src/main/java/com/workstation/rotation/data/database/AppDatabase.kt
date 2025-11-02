@@ -14,6 +14,8 @@ import com.workstation.rotation.data.entities.Workstation
 import com.workstation.rotation.data.entities.WorkerWorkstation
 import com.workstation.rotation.data.entities.WorkerRestriction
 import com.workstation.rotation.data.dao.WorkerRestrictionDao
+import com.workstation.rotation.data.entities.RotationHistory
+import com.workstation.rotation.data.dao.RotationHistoryDao
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -61,8 +63,8 @@ import com.workstation.rotation.data.dao.WorkerRestrictionDao
  */
 
 @Database(
-    entities = [Worker::class, Workstation::class, WorkerWorkstation::class, WorkerRestriction::class],
-    version = 8, // Incrementar versión para los nuevos campos de liderazgo
+    entities = [Worker::class, Workstation::class, WorkerWorkstation::class, WorkerRestriction::class, RotationHistory::class],
+    version = 9, // Incrementar versión para historial de rotaciones
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -72,6 +74,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workerRestrictionDao(): WorkerRestrictionDao
     abstract fun reportsDao(): com.workstation.rotation.data.dao.ReportsDao
     abstract fun rotationDao(): RotationDao
+    abstract fun rotationHistoryDao(): RotationHistoryDao
     
     companion object {
         @Volatile

@@ -15,6 +15,13 @@ import com.workstation.rotation.data.sync.BackupManager
 import com.workstation.rotation.databinding.ActivitySettingsBinding
 import com.workstation.rotation.viewmodels.WorkerViewModel
 import com.workstation.rotation.viewmodels.WorkerViewModelFactory
+import com.workstation.rotation.notifications.NotificationSettingsActivity
+import com.workstation.rotation.notifications.IntelligentNotificationSystem
+import com.workstation.rotation.notifications.NotificationPreferences
+import com.workstation.rotation.animations.closeSettings
+import com.workstation.rotation.animations.navigateToMainSection
+import com.workstation.rotation.animations.AnimationManager
+import com.workstation.rotation.animations.slideInChildrenFromBottom
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -145,6 +152,19 @@ class SettingsActivity : AppCompatActivity() {
         
         binding.btnShowOnboarding?.setOnClickListener {
             showOnboardingTutorial()
+        }
+        
+        // Notificaciones
+        binding.btnNotificationSettings.setOnClickListener {
+            startActivity(Intent(this, NotificationSettingsActivity::class.java))
+        }
+        
+        binding.btnTestNotifications.setOnClickListener {
+            testNotificationSystem()
+        }
+        
+        binding.btnNotificationStatus.setOnClickListener {
+            showNotificationStatus()
         }
         
         binding.btnCertifyWorkers.setOnClickListener {
@@ -2592,5 +2612,160 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancelar", null)
             .show()
+    }
+}    
+ 
+   // ═══════════════════════════════════════════════════════════════════════════════════════════
+    // 🔔 MÉTODOS DE NOTIFICACIONES INTELIGENTES
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    
+    /**
+     * Prueba el sistema de notificaciones con una notificación de ejemplo
+     */
+    private fun testNotificationSystem() {
+        val notificationSystem = IntelligentNotificationSystem(this)
+        
+        val testOptions = arrayOf(
+            "🔄 Recordatorio de Rotación",
+            "🚨 Alerta de Capacidad",
+            "🎓 Entrenamiento Completado",
+            "📊 Reporte Semanal",
+            "🔮 Alerta Proactiva"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Probar Sistema de Notificaciones")
+            .setMessage("Selecciona el tipo de notificación que deseas probar:")
+            .setItems(testOptions) { _, which ->
+                when (which) {
+                    0 -> {
+                        notificationSystem.showRotationReminder(
+                            hoursActive = 5L,
+                            activeRotations = 8,
+                            predictedOptimalTime = "Momento óptimo detectado (PRUEBA)"
+                        )
+                        Toast.makeText(this, "✅ Recordatorio de rotación enviado", Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> {
+                        notificationSystem.showCapacityAlert(
+                            stationName = "Estación de Prueba A1",
+                            currentCapacity = 4,
+                            requiredCapacity = 5,
+                            utilizationPercent = 0.85
+                        )
+                        Toast.makeText(this, "✅ Alerta de capacidad enviada", Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> {
+                        notificationSystem.showTrainingCompleted(
+                            traineeName = "Juan Pérez (PRUEBA)",
+                            trainerName = "María García (PRUEBA)",
+                            stationName = "Estación B2 (PRUEBA)",
+                            totalHours = 40,
+                            finalScore = 8.7
+                        )
+                        Toast.makeText(this, "✅ Notificación de entrenamiento enviada", Toast.LENGTH_SHORT).show()
+                    }
+                    3 -> {
+                        notificationSystem.showWeeklyReport(
+                            totalRotations = 52,
+                            averageDuration = 245.5,
+                            topPerformer = "Ana López (PRUEBA)",
+                            topPerformanceScore = 9.3,
+                            totalTrainingsCompleted = 4,
+                            efficiencyTrend = "up"
+                        )
+                        Toast.makeText(this, "✅ Reporte semanal enviado", Toast.LENGTH_SHORT).show()
+                    }
+                    4 -> {
+                        notificationSystem.showProactiveAlert(
+                            "🔮 Análisis Predictivo (PRUEBA)",
+                            "Se detectó un patrón que requiere atención",
+                            "Esta es una notificación de prueba del sistema de análisis predictivo. En un escenario real, aquí aparecerían recomendaciones basadas en datos históricos.",
+                            IntelligentNotificationSystem.ProactiveAlertType.NO_ACTIVE_ROTATIONS
+                        )
+                        Toast.makeText(this, "✅ Alerta proactiva enviada", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Muestra el estado actual del sistema de notificaciones
+     */
+    private fun showNotificationStatus() {
+        val preferences = NotificationPreferences(this)
+        val notificationSystem = IntelligentNotificationSystem(this)
+        
+        val statusMessage = buildString {
+            appendLine("📊 Estado del Sistema de Notificaciones")
+            appendLine()
+            
+            // Estado general
+            val notificationsEnabled = notificationSystem.areNotificationsEnabled()
+            appendLine("🔔 Notificaciones del sistema: ${if (notificationsEnabled) "✅ Habilitadas" else "❌ Deshabilitadas"}")
+            appendLine()
+            
+            // Tipos de notificaciones
+            appendLine("📋 Tipos de Notificaciones:")
+            appendLine("  • Recordatorios de rotación: ${if (preferences.rotationRemindersEnabled) "✅" else "❌"}")
+            appendLine("  • Alertas de capacidad: ${if (preferences.capacityAlertsEnabled) "✅" else "❌"}")
+            appendLine("  • Actualizaciones de entrenamiento: ${if (preferences.trainingUpdatesEnabled) "✅" else "❌"}")
+            appendLine("  • Reportes semanales: ${if (preferences.weeklyReportsEnabled) "✅" else "❌"}")
+            appendLine("  • Alertas proactivas: ${if (preferences.proactiveAlertsEnabled) "✅" else "❌"}")
+            appendLine()
+            
+            // Configuración de timing
+            appendLine("⏰ Configuración de Timing:")
+            appendLine("  • Recordatorios cada: ${preferences.rotationReminderHours} horas")
+            appendLine("  • Verificación de capacidad: cada ${preferences.capacityCheckMinutes} minutos")
+            appendLine("  • Reportes semanales: ${getDayName(preferences.weeklyReportDay)} a las ${String.format("%02d:00", preferences.weeklyReportHour)}")
+            appendLine()
+            
+            // Horarios de trabajo
+            appendLine("🕐 Horarios de Trabajo:")
+            if (preferences.quietHoursEnabled) {
+                appendLine("  • Horario laboral: ${String.format("%02d:00", preferences.workStartHour)} - ${String.format("%02d:00", preferences.workEndHour)}")
+                appendLine("  • Estado actual: ${if (preferences.isWorkingHours()) "🟢 En horario laboral" else "🔴 Fuera de horario"}")
+            } else {
+                appendLine("  • Horarios respetados: ❌ No (notificaciones 24/7)")
+            }
+            appendLine()
+            
+            // Umbrales
+            appendLine("🚨 Umbrales de Alertas:")
+            appendLine("  • Capacidad crítica: ${(preferences.criticalCapacityThreshold * 100).toInt()}%")
+            appendLine("  • Rendimiento bajo: < ${preferences.lowPerformanceThreshold}")
+            appendLine("  • Rotación larga: > ${preferences.longRotationThresholdHours} horas")
+        }
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Estado de Notificaciones")
+            .setMessage(statusMessage)
+            .setPositiveButton("Configurar") { _, _ ->
+                startActivity(Intent(this, NotificationSettingsActivity::class.java))
+            }
+            .setNeutralButton("Probar") { _, _ ->
+                testNotificationSystem()
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
+    }
+    
+    /**
+     * Convierte número de día a nombre
+     */
+    private fun getDayName(dayOfWeek: Int): String {
+        return when (dayOfWeek) {
+            1 -> "Domingo"
+            2 -> "Lunes"
+            3 -> "Martes"
+            4 -> "Miércoles"
+            5 -> "Jueves"
+            6 -> "Viernes"
+            7 -> "Sábado"
+            else -> "Desconocido"
+        }
     }
 }

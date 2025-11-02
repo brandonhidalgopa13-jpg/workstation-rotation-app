@@ -15,8 +15,14 @@
     
     <!-- Permiso para feedback táctil -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    
+    <!-- Permisos para notificaciones -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
+        android:name=".RotationApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher_foreground"
         android:label="@string/app_name"
@@ -59,6 +65,26 @@
             android:name=".BenchmarkActivity"
             android:exported="false"
             android:label="Benchmark de Algoritmos" />
+            
+        <activity
+            android:name=".RotationHistoryActivity"
+            android:exported="false"
+            android:label="Historial de Rotaciones" />
+            
+        <activity
+            android:name=".notifications.NotificationSettingsActivity"
+            android:exported="false"
+            android:label="Configuración de Notificaciones" />
+            
+        <activity
+            android:name=".dashboard.ExecutiveDashboardActivity"
+            android:exported="false"
+            android:label="Dashboard Ejecutivo" />
+            
+        <activity
+            android:name=".analytics.AdvancedAnalyticsActivity"
+            android:exported="false"
+            android:label="Analytics Avanzados" />
             
         <!-- FileProvider para compartir archivos de respaldo -->
         <provider

@@ -149,4 +149,15 @@
     <color name="trainee_color">#4CAF50</color>
     <color name="regular_worker_color">#757575</color>
     
+    <!-- Colores para historial de rotaciones -->
+    <color name="accent">#FFFF9800</color>
+    <color name="accent_light">#FFFFCC80</color>
+    <color name="success">#FF4CAF50</color>
+    <color name="success_light">#FFC8E6C9</color>
+    <color name="error">#FFF44336</color>
+    <color name="error_light">#FFFFCDD2</color>
+    <color name="warning">#FFFF9800</color>
+    <color name="warning_light">#FFFFE0B2</color>
+    <color name="divider">#FFE0E0E0</color>
+    
 </resources>
