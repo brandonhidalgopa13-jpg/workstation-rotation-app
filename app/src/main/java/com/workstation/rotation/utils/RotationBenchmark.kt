@@ -46,6 +46,13 @@ class RotationBenchmark(
     private val sqlService = SqlRotationService(rotationDao, workstationDao)
     
     /**
+     * Obtiene estadísticas del sistema de rotación.
+     */
+    suspend fun getSystemStatistics(): com.workstation.rotation.data.dao.RotationStats {
+        return rotationDao.getRotationStatistics()
+    }
+    
+    /**
      * Ejecuta un benchmark completo comparando ambos algoritmos.
      */
     suspend fun runCompleteBenchmark(): BenchmarkResult = withContext(Dispatchers.Default) {

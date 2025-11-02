@@ -148,7 +148,7 @@ class BenchmarkActivity : AppCompatActivity() {
     private fun loadInitialStatistics() {
         lifecycleScope.launch {
             try {
-                val stats = benchmark.rotationDao.getRotationStatistics()
+                val stats = benchmark.getSystemStatistics()
                 val initialStats = buildString {
                     appendLine("📊 ESTADÍSTICAS DEL SISTEMA")
                     appendLine("=" .repeat(30))
