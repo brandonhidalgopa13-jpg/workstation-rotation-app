@@ -299,8 +299,8 @@ class SettingsActivity : AppCompatActivity() {
                     database.workerDao().getAllWorkerWorkstationsSync()
                 }
                 
-                // Crear respaldo
-                val backupJson = backupManager.createBackup(workers, workstations, workerWorkstations)
+                // Crear respaldo con migración (incluye todos los campos)
+                val backupJson = backupManager.createMigrationBackup(workers, workstations, workerWorkstations)
                 
                 // Guardar archivo
                 val file = backupManager.saveBackupToFile(backupJson)
@@ -351,7 +351,7 @@ class SettingsActivity : AppCompatActivity() {
                     database.workerDao().getAllWorkerWorkstationsSync()
                 }
                 
-                val backupJson = backupManager.createBackup(workers, workstations, workerWorkstations)
+                val backupJson = backupManager.createMigrationBackup(workers, workstations, workerWorkstations)
                 
                 // Escribir al URI seleccionado
                 contentResolver.openOutputStream(uri)?.use { output ->
@@ -420,13 +420,16 @@ class SettingsActivity : AppCompatActivity() {
                 val database = AppDatabase.getDatabase(this@SettingsActivity)
                 
                 withContext(Dispatchers.IO) {
+                    // Reparar datos del respaldo si es necesario (para compatibilidad con versiones anteriores)
+                    val repairedBackupData = backupManager.repairBackupData(backupData)
+                    
                     // Limpiar datos existentes
                     database.workerDao().deleteAllWorkerWorkstations()
                     database.workerDao().deleteAllWorkers()
                     database.workstationDao().deleteAllWorkstations()
                     
-                    // Importar nuevos datos
-                    backupData.workstations.forEach { ws ->
+                    // Importar estaciones usando función de conversión
+                    repairedBackupData.workstations.forEach { ws ->
                         database.workstationDao().insertWorkstation(
                             com.workstation.rotation.data.entities.Workstation(
                                 id = ws.id,
@@ -438,7 +441,8 @@ class SettingsActivity : AppCompatActivity() {
                         )
                     }
                     
-                    backupData.workers.forEach { w ->
+                    // Importar trabajadores usando función de conversión (incluye campos de liderazgo)
+                    repairedBackupData.workers.forEach { w ->
                         database.workerDao().insertWorker(
                             com.workstation.rotation.data.entities.Worker(
                                 id = w.id,
@@ -451,6 +455,13 @@ class SettingsActivity : AppCompatActivity() {
                                 trainerId = w.trainerId,
                                 trainingWorkstationId = w.trainingWorkstationId,
                                 isActive = w.isActive,
+                                isCertified = w.isCertified,
+                                certificationDate = w.certificationDate,
+                                // CAMPOS CRÍTICOS DE LIDERAZGO - AHORA INCLUIDOS
+                                isLeader = w.isLeader,
+                                leaderWorkstationId = w.leaderWorkstationId,
+                                leadershipType = w.leadershipType,
+                                // Campos de seguimiento
                                 currentWorkstationId = w.currentWorkstationId,
                                 rotationsInCurrentStation = w.rotationsInCurrentStation,
                                 lastRotationTimestamp = w.lastRotationTimestamp
@@ -458,7 +469,8 @@ class SettingsActivity : AppCompatActivity() {
                         )
                     }
                     
-                    backupData.workerWorkstations.forEach { ww ->
+                    // Importar relaciones trabajador-estación
+                    repairedBackupData.workerWorkstations.forEach { ww ->
                         database.workerDao().insertWorkerWorkstation(
                             com.workstation.rotation.data.entities.WorkerWorkstation(
                                 workerId = ww.workerId,
@@ -468,10 +480,10 @@ class SettingsActivity : AppCompatActivity() {
                     }
                 }
                 
-                Toast.makeText(this@SettingsActivity, "Datos importados exitosamente", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SettingsActivity, "✅ Datos importados exitosamente con todos los campos", Toast.LENGTH_SHORT).show()
                 
             } catch (e: Exception) {
-                Toast.makeText(this@SettingsActivity, "Error al importar datos: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@SettingsActivity, "❌ Error al importar datos: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
