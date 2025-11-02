@@ -56,6 +56,13 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this@MainActivity, RotationActivity::class.java))
             }
             
+            // Agregar funcionalidad para rotación SQL (long press en botón de rotación)
+            btnRotation.setOnLongClickListener {
+                provideTactileFeedback()
+                startActivity(Intent(this@MainActivity, SqlRotationActivity::class.java))
+                true
+            }
+            
             btnSettings.setOnClickListener {
                 provideTactileFeedback()
                 startActivity(Intent(this@MainActivity, SettingsActivity::class.java))

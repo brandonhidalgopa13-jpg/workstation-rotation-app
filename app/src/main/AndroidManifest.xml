@@ -45,6 +45,11 @@
             android:exported="false" />
             
         <activity
+            android:name=".SqlRotationActivity"
+            android:exported="false"
+            android:label="Rotación SQL Optimizada" />
+            
+        <activity
             android:name=".SettingsActivity"
             android:exported="false" />
             
