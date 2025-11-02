@@ -77,23 +77,23 @@ class SqlRotationViewModel(
     }
     
     /**
-     * Genera una rotación usando el algoritmo SQL simplificado con analytics integrado.
-     * GARANTIZADO: Funciona sin conflictos y errores.
+     * Genera una rotación completa con distribución equitativa entre ambas fases.
+     * MEJORADO: Todos los trabajadores participan en al menos una rotación.
      */
     suspend fun generateOptimizedRotation(): Boolean {
         return try {
             _isLoading.value = true
             _errorMessage.value = null
             
-            println("SQL_DEBUG: ===== INICIANDO ROTACIÓN SQL OPTIMIZADA =====")
-            println("SQL_DEBUG: Rotación: ${getCurrentRotationHalf()}")
+            println("SQL_DEBUG: ===== INICIANDO ROTACIÓN SQL MEJORADA =====")
+            println("SQL_DEBUG: Generando AMBAS rotaciones simultáneamente")
             
             // Registrar inicio de operación
-            analytics.recordUsageMetric("rotation_generated", mapOf("type" to "sql"))
+            analytics.recordUsageMetric("rotation_generated", mapOf("type" to "sql_dual"))
             
-            // Paso 1: Obtener datos básicos del sistema con medición de tiempo
+            // Paso 1: Obtener datos básicos del sistema
             val systemData = analytics.measureOperation("system_data_loading") {
-                loadSystemData()
+                loadSystemDataForBothRotations()
             }
             
             if (!systemData.isValid()) {
@@ -137,24 +137,25 @@ class SqlRotationViewModel(
                 println("SQL_DEBUG: ✅ VALIDACIÓN EXITOSA - Sistema listo para generar rotación")
             }
             
-            // Paso 2: Ejecutar algoritmo SQL simplificado con medición
-            val (currentAssignments, nextAssignments) = analytics.measureOperation("sql_rotation_generation") {
-                executeSimplifiedSqlAlgorithm(systemData)
+            // Paso 2: Ejecutar algoritmo mejorado que genera ambas rotaciones
+            val (firstHalfAssignments, secondHalfAssignments) = analytics.measureOperation("dual_rotation_generation") {
+                generateDualRotationAlgorithm(systemData, workerStationMap)
             }
             
             // Paso 3: Crear elementos de visualización
-            val rotationItems = createRotationItems(systemData.workstations, currentAssignments, nextAssignments)
-            val rotationTable = createRotationTable(systemData.workstations, currentAssignments, nextAssignments)
+            val rotationItems = createDualRotationItems(systemData.workstations, firstHalfAssignments, secondHalfAssignments)
+            val rotationTable = createDualRotationTable(systemData.workstations, firstHalfAssignments, secondHalfAssignments)
             
             // Paso 4: Registrar métricas de calidad
-            recordQualityMetrics(systemData, currentAssignments, nextAssignments)
+            recordDualQualityMetrics(systemData, firstHalfAssignments, secondHalfAssignments)
             
             // Paso 5: Actualizar UI
             _rotationItems.value = rotationItems
             _rotationTable.value = rotationTable
             
-            println("SQL_DEBUG: ✅ ROTACIÓN GENERADA EXITOSAMENTE")
-            println("SQL_DEBUG: Items generados: ${rotationItems.size}")
+            println("SQL_DEBUG: ✅ ROTACIÓN DUAL GENERADA EXITOSAMENTE")
+            println("SQL_DEBUG: Primera rotación: ${firstHalfAssignments.values.sumOf { it.size }} asignaciones")
+            println("SQL_DEBUG: Segunda rotación: ${secondHalfAssignments.values.sumOf { it.size }} asignaciones")
             println("SQL_DEBUG: ==========================================")
             
             _isLoading.value = false
@@ -171,6 +172,44 @@ class SqlRotationViewModel(
         }
     }
     
+    /**
+     * Carga los datos del sistema para ambas rotaciones.
+     */
+    private suspend fun loadSystemDataForBothRotations(): DualSystemData {
+        println("SQL_DEBUG: === CARGANDO DATOS PARA AMBAS ROTACIONES ===")
+        
+        try {
+            // Obtener datos básicos
+            val eligibleWorkers = rotationDao.getAllEligibleWorkers()
+            val workstations = rotationDao.getAllActiveWorkstationsOrdered()
+            
+            // Obtener líderes para ambas rotaciones
+            val firstHalfLeaders = rotationDao.getActiveLeadersForRotationFixed(true)
+            val secondHalfLeaders = rotationDao.getActiveLeadersForRotationFixed(false)
+            
+            // Obtener parejas de entrenamiento
+            val trainingPairs = rotationDao.getValidTrainingPairs()
+            
+            println("SQL_DEBUG: ✅ Trabajadores elegibles: ${eligibleWorkers.size}")
+            println("SQL_DEBUG: ✅ Estaciones activas: ${workstations.size}")
+            println("SQL_DEBUG: ✅ Líderes primera rotación: ${firstHalfLeaders.size}")
+            println("SQL_DEBUG: ✅ Líderes segunda rotación: ${secondHalfLeaders.size}")
+            println("SQL_DEBUG: ✅ Parejas de entrenamiento: ${trainingPairs.size}")
+            
+            return DualSystemData(
+                eligibleWorkers = eligibleWorkers,
+                workstations = workstations,
+                firstHalfLeaders = firstHalfLeaders,
+                secondHalfLeaders = secondHalfLeaders,
+                trainingPairs = trainingPairs
+            )
+            
+        } catch (e: Exception) {
+            println("SQL_DEBUG: ❌ ERROR en loadSystemDataForBothRotations(): ${e.message}")
+            throw e
+        }
+    }
+
     /**
      * Carga los datos básicos del sistema usando consultas SQL optimizadas.
      */
@@ -1278,12 +1317,359 @@ class SqlRotationViewModel(
     }
     
     /**
+     * Algoritmo mejorado que genera ambas rotaciones simultáneamente.
+     * GARANTIZA: Distribución equitativa de todos los trabajadores.
+     */
+    private suspend fun generateDualRotationAlgorithm(
+        systemData: DualSystemData,
+        workerStationMap: Map<Long, List<Long>>
+    ): Pair<Map<Long, List<Worker>>, Map<Long, List<Worker>>> {
+        
+        println("SQL_DEBUG: === ALGORITMO DUAL DE ROTACIÓN ===")
+        
+        // Inicializar asignaciones para ambas rotaciones
+        val firstHalfAssignments = mutableMapOf<Long, MutableList<Worker>>()
+        val secondHalfAssignments = mutableMapOf<Long, MutableList<Worker>>()
+        
+        systemData.workstations.forEach { station ->
+            firstHalfAssignments[station.id] = mutableListOf()
+            secondHalfAssignments[station.id] = mutableListOf()
+        }
+        
+        // Conjuntos para rastrear trabajadores asignados
+        val firstHalfAssigned = mutableSetOf<Long>()
+        val secondHalfAssigned = mutableSetOf<Long>()
+        
+        // FASE 1: Asignar líderes a sus rotaciones específicas
+        assignLeadersToRotations(systemData, firstHalfAssignments, secondHalfAssignments, 
+                                firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        
+        // FASE 2: Asignar parejas de entrenamiento a ambas rotaciones
+        assignTrainingPairsToBothRotations(systemData, firstHalfAssignments, secondHalfAssignments,
+                                          firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        
+        // FASE 3: Distribuir trabajadores restantes equitativamente
+        distributeRemainingWorkersEquitably(systemData, firstHalfAssignments, secondHalfAssignments,
+                                           firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        
+        // FASE 4: Verificar que todos los trabajadores estén asignados
+        ensureAllWorkersAssigned(systemData, firstHalfAssignments, secondHalfAssignments,
+                                firstHalfAssigned, secondHalfAssigned, workerStationMap)
+        
+        println("SQL_DEBUG: ✅ Algoritmo dual completado")
+        println("SQL_DEBUG: Primera rotación: ${firstHalfAssigned.size} trabajadores")
+        println("SQL_DEBUG: Segunda rotación: ${secondHalfAssigned.size} trabajadores")
+        
+        return Pair(
+            firstHalfAssignments.mapValues { it.value.toList() },
+            secondHalfAssignments.mapValues { it.value.toList() }
+        )
+    }
+    
+    /**
+     * Asigna líderes a sus rotaciones específicas según su tipo de liderazgo.
+     */
+    private suspend fun assignLeadersToRotations(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        firstHalfAssigned: MutableSet<Long>,
+        secondHalfAssigned: MutableSet<Long>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === ASIGNANDO LÍDERES A ROTACIONES ===")
+        
+        // Asignar líderes de primera rotación
+        systemData.firstHalfLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork) {
+                    firstHalfAssignments[stationId]?.add(leader)
+                    firstHalfAssigned.add(leader.id)
+                    println("SQL_DEBUG: ✅ Líder ${leader.name} asignado a primera rotación, estación $stationId")
+                }
+            }
+        }
+        
+        // Asignar líderes de segunda rotación
+        systemData.secondHalfLeaders.forEach { leader ->
+            leader.leaderWorkstationId?.let { stationId ->
+                val canWork = workerStationMap[leader.id]?.contains(stationId) ?: false
+                if (canWork) {
+                    secondHalfAssignments[stationId]?.add(leader)
+                    secondHalfAssigned.add(leader.id)
+                    println("SQL_DEBUG: ✅ Líder ${leader.name} asignado a segunda rotación, estación $stationId")
+                }
+            }
+        }
+        
+        println("SQL_DEBUG: Líderes primera rotación: ${systemData.firstHalfLeaders.size}")
+        println("SQL_DEBUG: Líderes segunda rotación: ${systemData.secondHalfLeaders.size}")
+    }
+    
+    /**
+     * Asigna parejas de entrenamiento a ambas rotaciones para continuidad.
+     */
+    private suspend fun assignTrainingPairsToBothRotations(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        firstHalfAssigned: MutableSet<Long>,
+        secondHalfAssigned: MutableSet<Long>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === ASIGNANDO PAREJAS DE ENTRENAMIENTO ===")
+        
+        systemData.trainingPairs.forEach { trainee ->
+            val trainer = systemData.eligibleWorkers.find { it.id == trainee.trainerId }
+            val trainingStationId = trainee.trainingWorkstationId
+            
+            if (trainer != null && trainingStationId != null) {
+                val traineeCanWork = workerStationMap[trainee.id]?.contains(trainingStationId) ?: false
+                val trainerCanWork = workerStationMap[trainer.id]?.contains(trainingStationId) ?: false
+                
+                if (traineeCanWork && trainerCanWork) {
+                    // Asignar a ambas rotaciones para continuidad del entrenamiento
+                    if (!firstHalfAssigned.contains(trainee.id) && !firstHalfAssigned.contains(trainer.id)) {
+                        firstHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                        firstHalfAssigned.addAll(listOf(trainer.id, trainee.id))
+                    }
+                    
+                    if (!secondHalfAssigned.contains(trainee.id) && !secondHalfAssigned.contains(trainer.id)) {
+                        secondHalfAssignments[trainingStationId]?.addAll(listOf(trainer, trainee))
+                        secondHalfAssigned.addAll(listOf(trainer.id, trainee.id))
+                    }
+                    
+                    println("SQL_DEBUG: ✅ Pareja ${trainer.name}-${trainee.name} asignada a ambas rotaciones")
+                }
+            }
+        }
+    }
+    
+    /**
+     * Distribuye trabajadores restantes equitativamente entre ambas rotaciones.
+     */
+    private suspend fun distributeRemainingWorkersEquitably(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        firstHalfAssigned: MutableSet<Long>,
+        secondHalfAssigned: MutableSet<Long>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === DISTRIBUYENDO TRABAJADORES RESTANTES ===")
+        
+        // Obtener trabajadores no asignados
+        val unassignedWorkers = systemData.eligibleWorkers.filter { worker ->
+            !firstHalfAssigned.contains(worker.id) && !secondHalfAssigned.contains(worker.id)
+        }
+        
+        println("SQL_DEBUG: Trabajadores sin asignar: ${unassignedWorkers.size}")
+        
+        // Distribuir alternadamente entre rotaciones
+        unassignedWorkers.forEachIndexed { index, worker ->
+            val assignToFirst = index % 2 == 0
+            
+            if (assignToFirst) {
+                assignWorkerToRotation(worker, firstHalfAssignments, firstHalfAssigned, 
+                                     systemData.workstations, workerStationMap, "PRIMERA")
+            } else {
+                assignWorkerToRotation(worker, secondHalfAssignments, secondHalfAssigned,
+                                     systemData.workstations, workerStationMap, "SEGUNDA")
+            }
+        }
+    }
+    
+    /**
+     * Asigna un trabajador a una rotación específica.
+     */
+    private suspend fun assignWorkerToRotation(
+        worker: Worker,
+        assignments: MutableMap<Long, MutableList<Worker>>,
+        assignedSet: MutableSet<Long>,
+        workstations: List<Workstation>,
+        workerStationMap: Map<Long, List<Long>>,
+        rotationName: String
+    ) {
+        val eligibleStations = workerStationMap[worker.id] ?: emptyList()
+        
+        // Buscar estación con menor ocupación
+        val bestStation = workstations
+            .filter { station -> eligibleStations.contains(station.id) }
+            .minByOrNull { station -> assignments[station.id]?.size ?: 0 }
+        
+        if (bestStation != null) {
+            assignments[bestStation.id]?.add(worker)
+            assignedSet.add(worker.id)
+            println("SQL_DEBUG: ✅ ${worker.name} asignado a $rotationName rotación, estación ${bestStation.name}")
+        } else {
+            println("SQL_DEBUG: ⚠️ No se pudo asignar ${worker.name} a $rotationName rotación")
+        }
+    }
+    
+    /**
+     * Asegura que todos los trabajadores estén asignados a al menos una rotación.
+     */
+    private suspend fun ensureAllWorkersAssigned(
+        systemData: DualSystemData,
+        firstHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        secondHalfAssignments: MutableMap<Long, MutableList<Worker>>,
+        firstHalfAssigned: MutableSet<Long>,
+        secondHalfAssigned: MutableSet<Long>,
+        workerStationMap: Map<Long, List<Long>>
+    ) {
+        println("SQL_DEBUG: === VERIFICANDO COBERTURA COMPLETA ===")
+        
+        val totalAssigned = (firstHalfAssigned + secondHalfAssigned).size
+        val totalWorkers = systemData.eligibleWorkers.size
+        
+        println("SQL_DEBUG: Trabajadores con al menos una asignación: $totalAssigned/$totalWorkers")
+        
+        // Encontrar trabajadores sin ninguna asignación
+        val unassignedWorkers = systemData.eligibleWorkers.filter { worker ->
+            !firstHalfAssigned.contains(worker.id) && !secondHalfAssigned.contains(worker.id)
+        }
+        
+        if (unassignedWorkers.isNotEmpty()) {
+            println("SQL_DEBUG: ⚠️ Asignando ${unassignedWorkers.size} trabajadores restantes")
+            
+            unassignedWorkers.forEach { worker ->
+                // Intentar asignar a la rotación con menos trabajadores
+                val firstHalfCount = firstHalfAssigned.size
+                val secondHalfCount = secondHalfAssigned.size
+                
+                if (firstHalfCount <= secondHalfCount) {
+                    assignWorkerToRotation(worker, firstHalfAssignments, firstHalfAssigned,
+                                         systemData.workstations, workerStationMap, "PRIMERA (forzado)")
+                } else {
+                    assignWorkerToRotation(worker, secondHalfAssignments, secondHalfAssigned,
+                                         systemData.workstations, workerStationMap, "SEGUNDA (forzado)")
+                }
+            }
+        }
+        
+        val finalFirstCount = firstHalfAssigned.size
+        val finalSecondCount = secondHalfAssigned.size
+        val finalTotalUnique = (firstHalfAssigned + secondHalfAssigned).size
+        
+        println("SQL_DEBUG: ✅ Distribución final:")
+        println("SQL_DEBUG:   - Primera rotación: $finalFirstCount trabajadores")
+        println("SQL_DEBUG:   - Segunda rotación: $finalSecondCount trabajadores")
+        println("SQL_DEBUG:   - Total único: $finalTotalUnique trabajadores")
+    }
+    
+    /**
+     * Crea elementos de rotación para visualización dual.
+     */
+    private fun createDualRotationItems(
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ): List<RotationItem> {
+        val items = mutableListOf<RotationItem>()
+        var order = 1
+        
+        // Crear items para primera rotación
+        workstations.forEach { station ->
+            val workers = firstHalfAssignments[station.id] ?: emptyList()
+            workers.forEach { worker ->
+                items.add(
+                    RotationItem(
+                        workerName = "${createWorkerLabel(worker)} [1ª]",
+                        currentWorkstation = "${station.name} (${workers.size}/${station.requiredWorkers})",
+                        nextWorkstation = "Primera Rotación",
+                        rotationOrder = order++
+                    )
+                )
+            }
+        }
+        
+        // Crear items para segunda rotación
+        workstations.forEach { station ->
+            val workers = secondHalfAssignments[station.id] ?: emptyList()
+            workers.forEach { worker ->
+                items.add(
+                    RotationItem(
+                        workerName = "${createWorkerLabel(worker)} [2ª]",
+                        currentWorkstation = "${station.name} (${workers.size}/${station.requiredWorkers})",
+                        nextWorkstation = "Segunda Rotación",
+                        rotationOrder = order++
+                    )
+                )
+            }
+        }
+        
+        return items
+    }
+    
+    /**
+     * Crea tabla de rotación para visualización dual.
+     */
+    private fun createDualRotationTable(
+        workstations: List<Workstation>,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ): RotationTable {
+        return RotationTable(
+            workstations = workstations,
+            currentPhase = firstHalfAssignments,
+            nextPhase = secondHalfAssignments
+        )
+    }
+    
+    /**
+     * Registra métricas de calidad para rotación dual.
+     */
+    private fun recordDualQualityMetrics(
+        systemData: DualSystemData,
+        firstHalfAssignments: Map<Long, List<Worker>>,
+        secondHalfAssignments: Map<Long, List<Worker>>
+    ) {
+        try {
+            val firstHalfWorkers = firstHalfAssignments.values.sumOf { it.size }
+            val secondHalfWorkers = secondHalfAssignments.values.sumOf { it.size }
+            val totalUniqueWorkers = (firstHalfAssignments.values.flatten() + secondHalfAssignments.values.flatten())
+                .map { it.id }.toSet().size
+            
+            analytics.recordQualityMetric(
+                workersAssigned = totalUniqueWorkers,
+                stationsCompleted = systemData.workstations.size,
+                totalStations = systemData.workstations.size,
+                leadersCorrectlyAssigned = systemData.firstHalfLeaders.size + systemData.secondHalfLeaders.size,
+                totalLeaders = systemData.firstHalfLeaders.size + systemData.secondHalfLeaders.size,
+                trainingPairsKeptTogether = systemData.trainingPairs.size,
+                totalTrainingPairs = systemData.trainingPairs.size
+            )
+            
+            println("SQL_DEBUG: ✅ Métricas registradas - Trabajadores únicos: $totalUniqueWorkers")
+            
+        } catch (e: Exception) {
+            println("SQL_DEBUG: Error registrando métricas duales: ${e.message}")
+        }
+    }
+
+    /**
      * Data class para datos del sistema.
      */
     private data class SystemData(
         val eligibleWorkers: List<Worker>,
         val workstations: List<Workstation>,
         val activeLeaders: List<Worker>,
+        val trainingPairs: List<Worker>
+    ) {
+        fun isValid(): Boolean {
+            return eligibleWorkers.isNotEmpty() && workstations.isNotEmpty()
+        }
+    }
+    
+    /**
+     * Data class para datos del sistema dual.
+     */
+    private data class DualSystemData(
+        val eligibleWorkers: List<Worker>,
+        val workstations: List<Workstation>,
+        val firstHalfLeaders: List<Worker>,
+        val secondHalfLeaders: List<Worker>,
         val trainingPairs: List<Worker>
     ) {
         fun isValid(): Boolean {
