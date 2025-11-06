@@ -53,6 +53,33 @@ class NewRotationViewModel(
         observeActiveSession()
     }
 
+    /**
+     * Carga los datos iniciales necesarios para la rotación
+     */
+    fun loadInitialData() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, loadingMessage = "Cargando datos...")
+            
+            try {
+                // Verificar si hay una sesión activa usando el flow
+                rotationService.getActiveSessionFlow().collect { activeSession ->
+                    if (activeSession == null) {
+                        // Crear una sesión inicial si no existe
+                        createNewSession("Sesión Inicial", "Sesión creada automáticamente")
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false, loadingMessage = null)
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    loadingMessage = null,
+                    error = "Error al cargar datos: ${e.message}"
+                )
+            }
+        }
+    }
+
     private fun observeActiveSession() {
         viewModelScope.launch {
             rotationService.getActiveSessionFlow().collect { session ->

@@ -201,11 +201,24 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
                     android:text="Siguiente → Actual"
                     android:textColor="@android:color/white"
                     app:backgroundTint="@color/accent"
                     app:icon="@drawable/ic_arrow_forward"
+                    app:iconTint="@android:color/white" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCapturePhoto"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Capturar"
+                    android:textColor="@android:color/white"
+                    app:backgroundTint="@color/success"
+                    app:icon="@drawable/ic_camera"
                     app:iconTint="@android:color/white" />
 
             </LinearLayout>

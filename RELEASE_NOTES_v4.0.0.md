@@ -85,11 +85,26 @@
 - ✅ **Memoria**: Eliminadas fugas de memoria en adaptadores RecyclerView
 - ✅ **Notificaciones**: Corregidos problemas de entrega de notificaciones
 
+### Correcciones Post-Release v4.0.1
+- ✅ **Crash en Botón Rotación**: Solucionado problema que causaba cierre de app al tocar botón de rotación
+  - Corregida inicialización incorrecta del ViewModel en NewRotationActivity
+  - Agregados drawables faltantes (ic_arrow_back, ic_arrow_forward, ic_camera)
+  - Implementadas animaciones de transición faltantes (slide_in_left, slide_out_right)
+  - Corregida duplicación de método checkAndCreateInitialSession()
+  - Agregado método loadInitialData() faltante en NewRotationViewModel
+
+- ✅ **Botón de Cámara**: Implementada funcionalidad de captura de rotaciones
+  - Agregado botón "Capturar" en interfaz de nueva rotación
+  - Implementada captura de screenshot del grid de rotación
+  - Guardado automático en galería con timestamp
+  - Opción para ver imagen capturada directamente
+
 ### Mejoras de Estabilidad
 - **Manejo de Errores**: Sistema robusto de manejo de excepciones
 - **Recuperación Automática**: Auto-recuperación de errores transitorios
 - **Validación de Datos**: Validación exhaustiva en todas las entradas
 - **Testing Mejorado**: Cobertura de testing aumentada al 85%
+- **Inicialización Segura**: Orden correcto de inicialización de componentes
 
 ---
 

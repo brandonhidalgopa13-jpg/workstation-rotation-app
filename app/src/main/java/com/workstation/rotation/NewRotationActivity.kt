@@ -41,10 +41,7 @@ class NewRotationActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityNewRotationBinding
     private lateinit var rotationService: NewRotationService
-    
-    private val viewModel: NewRotationViewModel by viewModels {
-        NewRotationViewModel.Factory(rotationService)
-    }
+    private lateinit var viewModel: NewRotationViewModel
     
     private lateinit var gridAdapter: RotationGridRowAdapter
     private lateinit var workersAdapter: AvailableWorkersAdapter
@@ -54,8 +51,11 @@ class NewRotationActivity : AppCompatActivity() {
         binding = ActivityNewRotationBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        // Inicializar servicio
+        // Inicializar servicio primero
         rotationService = NewRotationService(this)
+        
+        // Inicializar ViewModel después del servicio
+        viewModel = NewRotationViewModel(rotationService)
         
         setupUI()
         setupRecyclerViews()
@@ -151,6 +151,11 @@ class NewRotationActivity : AppCompatActivity() {
             showPromoteRotationDialog()
         }
         
+        // Botón capturar foto
+        binding.btnCapturePhoto.setOnClickListener {
+            captureRotationPhoto()
+        }
+        
         // FAB para acciones rápidas
         binding.fabQuickActions.setOnClickListener {
             showQuickActionsMenu()
@@ -220,33 +225,7 @@ class NewRotationActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkAndCreateInitialSession() {
-        lifecycleScope.launch {
-            // Inicializar datos de prueba si es necesario
-            val dataService = DataInitializationService(this@NewRotationActivity)
-            if (!dataService.hasInitializedData()) {
-                binding.loadingOverlay.visibility = View.VISIBLE
-                binding.tvLoadingMessage.text = "Inicializando datos de prueba..."
-                
-                val success = dataService.initializeTestData()
-                if (success) {
-                    Snackbar.make(binding.root, "Datos de prueba inicializados", Snackbar.LENGTH_SHORT).show()
-                } else {
-                    Snackbar.make(binding.root, "Error al inicializar datos", Snackbar.LENGTH_LONG)
-                        .setBackgroundTint(getColor(R.color.error))
-                        .show()
-                }
-                
-                binding.loadingOverlay.visibility = View.GONE
-            }
-            
-            // Crear sesión si no existe
-            val activeSession = viewModel.activeSession.value
-            if (activeSession == null) {
-                viewModel.createNewSession()
-            }
-        }
-    }
+
 
     private fun showGenerateRotationDialog() {
         val options = arrayOf("Rotación Actual", "Siguiente Rotación", "Ambas")
@@ -381,6 +360,72 @@ class NewRotationActivity : AppCompatActivity() {
             .setItems(state.conflicts.toTypedArray()) { _, _ -> }
             .setPositiveButton("Entendido", null)
             .show()
+    }
+
+    private fun checkAndCreateInitialSession() {
+        lifecycleScope.launch {
+            try {
+                // Verificar si hay datos inicializados
+                val dataService = DataInitializationService(this@NewRotationActivity)
+                if (!dataService.hasInitializedData()) {
+                    // Inicializar datos de prueba
+                    val success = dataService.initializeTestData()
+                    if (success) {
+                        Snackbar.make(binding.root, "Datos de prueba inicializados", Snackbar.LENGTH_SHORT).show()
+                    } else {
+                        Snackbar.make(binding.root, "Error al inicializar datos", Snackbar.LENGTH_LONG).show()
+                    }
+                }
+                
+                // Cargar datos iniciales en el ViewModel
+                viewModel.loadInitialData()
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Snackbar.make(binding.root, "Error al inicializar: ${e.message}", Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun captureRotationPhoto() {
+        try {
+            // Crear un bitmap de la vista del grid de rotación
+            val gridView = binding.recyclerViewRotationGrid
+            val bitmap = android.graphics.Bitmap.createBitmap(
+                gridView.width, 
+                gridView.height, 
+                android.graphics.Bitmap.Config.ARGB_8888
+            )
+            val canvas = android.graphics.Canvas(bitmap)
+            gridView.draw(canvas)
+            
+            // Guardar la imagen en la galería
+            val savedUri = android.provider.MediaStore.Images.Media.insertImage(
+                contentResolver,
+                bitmap,
+                "Rotacion_${System.currentTimeMillis()}",
+                "Captura de rotación del ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}"
+            )
+            
+            if (savedUri != null) {
+                Snackbar.make(binding.root, "Foto guardada en la galería", Snackbar.LENGTH_LONG)
+                    .setAction("Ver") {
+                        // Abrir la imagen en la galería
+                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                            data = android.net.Uri.parse(savedUri)
+                            type = "image/*"
+                        }
+                        startActivity(intent)
+                    }
+                    .show()
+            } else {
+                Snackbar.make(binding.root, "Error al guardar la foto", Snackbar.LENGTH_LONG).show()
+            }
+            
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Snackbar.make(binding.root, "Error al capturar foto: ${e.message}", Snackbar.LENGTH_LONG).show()
+        }
     }
 
     override fun onBackPressed() {
