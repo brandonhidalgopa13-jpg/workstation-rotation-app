@@ -193,4 +193,28 @@
     <color name="cell_leader">#FFFFF3E0</color>         <!-- Naranja claro - Líder -->
     <color name="cell_conflict">#FFFFEBEE</color>       <!-- Rojo claro - Conflicto -->
     
+    <!-- Security Colors -->
+    <color name="security_critical">#FFFF1744</color>   <!-- Rojo crítico -->
+    <color name="security_high">#FFFF9800</color>       <!-- Naranja alto -->
+    <color name="security_medium">#FFFFC107</color>     <!-- Amarillo medio -->
+    <color name="security_low">#FF4CAF50</color>        <!-- Verde bajo -->
+    <color name="security_safe">#FF2E7D32</color>       <!-- Verde seguro -->
+    
+    <!-- Authentication Colors -->
+    <color name="auth_primary">#FF1976D2</color>        <!-- Azul primario -->
+    <color name="auth_secondary">#FF424242</color>      <!-- Gris secundario -->
+    <color name="auth_success">#FF388E3C</color>        <!-- Verde éxito -->
+    <color name="auth_error">#FFD32F2F</color>          <!-- Rojo error -->
+    <color name="auth_warning">#FFF57C00</color>        <!-- Naranja advertencia -->
+    
+    <!-- Biometric Colors -->
+    <color name="biometric_available">#FF4CAF50</color> <!-- Verde disponible -->
+    <color name="biometric_unavailable">#FF9E9E9E</color> <!-- Gris no disponible -->
+    <color name="biometric_error">#FFF44336</color>     <!-- Rojo error -->
+    
+    <!-- Session Colors -->
+    <color name="session_active">#FF4CAF50</color>      <!-- Verde activa -->
+    <color name="session_expired">#FFFF9800</color>     <!-- Naranja expirada -->
+    <color name="session_invalid">#FFF44336</color>     <!-- Rojo inválida -->
+    
 </resources>
