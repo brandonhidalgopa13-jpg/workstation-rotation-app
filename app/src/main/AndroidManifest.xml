@@ -18,6 +18,14 @@
     
     <!-- Permisos para notificaciones -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- Permisos para seguridad biométrica -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    
+    <!-- Permisos para detección de seguridad del dispositivo -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -69,6 +77,12 @@
             
         <activity
             android:name=".OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.REWS.NoActionBar" />
+            
+        <!-- Actividad de Login Seguro -->
+        <activity
+            android:name=".security.LoginActivity"
             android:exported="false"
             android:theme="@style/Theme.REWS"
             android:screenOrientation="portrait" />

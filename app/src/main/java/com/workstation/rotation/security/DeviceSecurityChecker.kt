@@ -5,7 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
-import com.scottyab.rootbeer.RootBeer
+// import com.scottyab.rootbeer.RootBeer // Comentado temporalmente
 import java.io.File
 
 /**
@@ -48,7 +48,7 @@ class DeviceSecurityChecker(private val context: Context) {
         )
     }
     
-    private val rootBeer = RootBeer(context)
+    // private val rootBeer = RootBeer(context) // Comentado temporalmente
     
     /**
      * Realiza una verificación completa de seguridad del dispositivo
@@ -88,22 +88,17 @@ class DeviceSecurityChecker(private val context: Context) {
      */
     private fun checkRootStatus(): Boolean {
         return try {
-            // Usar RootBeer library para detección avanzada
-            val rootBeerResult = rootBeer.isRooted
-            
-            // Verificaciones adicionales manuales
+            // Usar solo verificaciones manuales por ahora
             val manualCheck = checkRootManually()
             
-            val isRooted = rootBeerResult || manualCheck
-            
-            if (isRooted) {
+            if (manualCheck) {
                 SecurityLogger.logCritical(
                     "Dispositivo rooteado detectado",
-                    "RootBeer: $rootBeerResult, Manual: $manualCheck"
+                    "Detección manual: $manualCheck"
                 )
             }
             
-            isRooted
+            manualCheck
         } catch (e: Exception) {
             SecurityLogger.logError("Error verificando root status", e)
             false

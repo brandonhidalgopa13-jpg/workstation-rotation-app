@@ -151,7 +151,7 @@ dependencies {
     implementation 'net.zetetic:android-database-sqlcipher:4.5.4'
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation 'androidx.security:security-crypto:1.1.0'
-    implementation 'com.scottyab.rootbeer:rootbeer-lib:0.1.0'
+    // implementation 'com.scottyab:rootbeer-lib:0.0.8' // Comentado temporalmente
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
