@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="@drawable/item_background_selector">
+
+        <!-- Avatar del trabajador -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="2dp"
+            app:strokeColor="@color/primary">
+
+            <TextView
+                android:id="@+id/tvWorkerAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="JP"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary"
+                android:gravity="center"
+                android:background="@color/primary_light" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Información del trabajador -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvWorkerName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Juan Pérez"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    tools:text="Juan Pérez" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipWorkerStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Disponible"
+                    android:textSize="10sp"
+                    app:chipMinHeight="24dp"
+                    app:chipBackgroundColor="@color/success"
+                    android:textColor="@android:color/white" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvEmployeeId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ID: EMP001"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="2dp"
+                tools:text="ID: EMP001" />
+
+            <!-- Estaciones disponibles -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupWorkstations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                app:singleLine="false"
+                app:chipSpacing="4dp">
+
+                <!-- Los chips se agregan dinámicamente -->
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </LinearLayout>
+
+        <!-- Indicadores de asignación -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="8dp">
+
+            <!-- Asignación actual -->
+            <LinearLayout
+                android:id="@+id/layoutCurrentAssignment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/assignment_indicator_background"
+                android:backgroundTint="@color/primary"
+                android:padding="4dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="A"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvCurrentWorkstation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Est. A"
+                    android:textSize="8sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginStart="2dp" />
+
+            </LinearLayout>
+
+            <!-- Asignación siguiente -->
+            <LinearLayout
+                android:id="@+id/layoutNextAssignment"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/assignment_indicator_background"
+                android:backgroundTint="@color/accent"
+                android:padding="4dp"
+                android:layout_marginTop="2dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="S"
+                    android:textSize="10sp"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvNextWorkstation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Est. B"
+                    android:textSize="8sp"
+                    android:textColor="@android:color/white"
+                    android:layout_marginStart="2dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Botón de acción -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnWorkerAction"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/ic_drag_handle"
+            app:iconTint="@color/text_secondary" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

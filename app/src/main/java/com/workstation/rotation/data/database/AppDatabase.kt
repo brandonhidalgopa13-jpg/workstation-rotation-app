@@ -16,6 +16,10 @@ import com.workstation.rotation.data.entities.WorkerRestriction
 import com.workstation.rotation.data.dao.WorkerRestrictionDao
 import com.workstation.rotation.data.entities.RotationHistory
 import com.workstation.rotation.data.dao.RotationHistoryDao
+// Nuevas entidades v4.0
+import com.workstation.rotation.data.entities.RotationSession
+import com.workstation.rotation.data.entities.RotationAssignment
+import com.workstation.rotation.data.entities.WorkerWorkstationCapability
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -63,18 +67,34 @@ import com.workstation.rotation.data.dao.RotationHistoryDao
  */
 
 @Database(
-    entities = [Worker::class, Workstation::class, WorkerWorkstation::class, WorkerRestriction::class, RotationHistory::class],
-    version = 9, // Incrementar versión para historial de rotaciones
+    entities = [
+        Worker::class, 
+        Workstation::class, 
+        WorkerWorkstation::class, 
+        WorkerRestriction::class, 
+        RotationHistory::class,
+        // Nuevas entidades v4.0
+        RotationSession::class,
+        RotationAssignment::class,
+        WorkerWorkstationCapability::class
+    ],
+    version = 10, // Nueva versión para arquitectura v4.0
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     
+    // DAOs existentes
     abstract fun workerDao(): WorkerDao
     abstract fun workstationDao(): WorkstationDao
     abstract fun workerRestrictionDao(): WorkerRestrictionDao
     abstract fun reportsDao(): com.workstation.rotation.data.dao.ReportsDao
     abstract fun rotationDao(): RotationDao
     abstract fun rotationHistoryDao(): RotationHistoryDao
+    
+    // Nuevos DAOs v4.0
+    abstract fun rotationSessionDao(): com.workstation.rotation.data.dao.RotationSessionDao
+    abstract fun rotationAssignmentDao(): com.workstation.rotation.data.dao.RotationAssignmentDao
+    abstract fun workerWorkstationCapabilityDao(): com.workstation.rotation.data.dao.WorkerWorkstationCapabilityDao
     
     companion object {
         @Volatile

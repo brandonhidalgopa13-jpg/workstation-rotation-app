@@ -68,6 +68,7 @@ data class Worker(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
+    val employeeId: String? = null,
     val email: String = "",
     val availabilityPercentage: Int = 100,
     val restrictionNotes: String = "",

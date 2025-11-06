@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="100dp"
+    android:layout_height="60dp"
+    android:layout_margin="2dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/divider">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="4dp"
+        android:background="@drawable/cell_background_selector">
+
+        <!-- Icono de estado -->
+        <TextView
+            android:id="@+id/tvCellIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="👑"
+            android:textSize="16sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <!-- Nombre del trabajador -->
+        <TextView
+            android:id="@+id/tvWorkerName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Juan Pérez"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="Juan Pérez" />
+
+        <!-- Indicador de competencia -->
+        <LinearLayout
+            android:id="@+id/layoutCompetencyIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginTop="2dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/competency_dot"
+                android:backgroundTint="@color/success" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/competency_dot"
+                android:backgroundTint="@color/success" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/competency_dot"
+                android:backgroundTint="@color/success" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/competency_dot"
+                android:backgroundTint="@color/divider" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_margin="1dp"
+                android:background="@drawable/competency_dot"
+                android:backgroundTint="@color/divider" />
+
+        </LinearLayout>
+
+        <!-- Mensaje de celda vacía -->
+        <TextView
+            android:id="@+id/tvEmptyMessage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="Toca para\nasignar"
+            android:textSize="10sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
+        <!-- Indicador de conflicto -->
+        <LinearLayout
+            android:id="@+id/layoutConflictIndicator"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@color/error"
+            android:padding="2dp"
+            android:visibility="gone"
+            tools:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️"
+                android:textSize="10sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Conflicto"
+                android:textSize="8sp"
+                android:textColor="@android:color/white"
+                android:layout_marginStart="2dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

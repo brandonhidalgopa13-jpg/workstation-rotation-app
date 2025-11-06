@@ -165,4 +165,29 @@
     <color name="accent_color">#FFFF9800</color>
     <color name="divider_color">#FFE0E0E0</color>
     
+    <!-- Colores para Nueva Arquitectura de Rotación v4.0 -->
+    <color name="info">#FF2196F3</color>
+    
+    <!-- Colores para niveles de competencia -->
+    <color name="expert_level">#FF2196F3</color>        <!-- Azul - Experto -->
+    <color name="advanced_level">#FF4CAF50</color>      <!-- Verde - Avanzado -->
+    <color name="intermediate_level">#FFFF9800</color>  <!-- Naranja - Intermedio -->
+    <color name="basic_level">#FFFF5722</color>         <!-- Naranja Oscuro - Básico -->
+    <color name="beginner_level">#FFF44336</color>      <!-- Rojo - Principiante -->
+    <color name="unknown_level">#FF9E9E9E</color>       <!-- Gris - Desconocido -->
+    
+    <!-- Colores para estados de trabajadores -->
+    <color name="worker_available">#FF4CAF50</color>    <!-- Verde - Disponible -->
+    <color name="worker_partial">#FFFF9800</color>      <!-- Naranja - Parcialmente asignado -->
+    <color name="worker_full">#FF2196F3</color>         <!-- Azul - Completamente asignado -->
+    <color name="worker_inactive">#FFF44336</color>     <!-- Rojo - Inactivo -->
+    
+    <!-- Colores para celdas del grid -->
+    <color name="cell_empty">#FFF5F5F5</color>          <!-- Gris claro - Vacío -->
+    <color name="cell_assigned">#FFFFFFFF</color>       <!-- Blanco - Asignado -->
+    <color name="cell_optimal">#FFE8F5E8</color>        <!-- Verde claro - Óptimo -->
+    <color name="cell_expert">#FFE3F2FD</color>         <!-- Azul claro - Experto -->
+    <color name="cell_leader">#FFFFF3E0</color>         <!-- Naranja claro - Líder -->
+    <color name="cell_conflict">#FFFFEBEE</color>       <!-- Rojo claro - Conflicto -->
+    
 </resources>

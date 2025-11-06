@@ -62,7 +62,8 @@ class MainActivity : AppCompatActivity() {
             btnRotation?.setOnClickListener {
                 provideTactileFeedback()
                 btnRotation?.let { AnimationManager.clickFeedback(it) }
-                openDetails(Intent(this@MainActivity, SqlRotationActivity::class.java))
+                // Usar la nueva arquitectura de rotación v4.0
+                openDetails(Intent(this@MainActivity, NewRotationActivity::class.java))
             }
             
             // Acceso al dashboard ejecutivo (long press)
