@@ -99,6 +99,14 @@
   - Guardado automático en galería con timestamp
   - Opción para ver imagen capturada directamente
 
+### Correcciones Post-Release v4.0.2
+- ✅ **Sincronización del Sistema**: Corregida desincronización entre MainActivity y nueva arquitectura
+  - Corregidas funciones de animación faltantes en MainActivity
+  - Implementadas todas las animaciones de transición requeridas
+  - Agregado manejo robusto de errores en NewRotationActivity
+  - Mejorado sistema de loading con feedback visual
+  - Corregidas importaciones incorrectas de funciones de extensión
+
 ### Mejoras de Estabilidad
 - **Manejo de Errores**: Sistema robusto de manejo de excepciones
 - **Recuperación Automática**: Auto-recuperación de errores transitorios

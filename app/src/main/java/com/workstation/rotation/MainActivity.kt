@@ -7,11 +7,8 @@ import android.os.Vibrator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.workstation.rotation.databinding.ActivityMainBinding
-import com.workstation.rotation.animations.navigateToMainSection
-import com.workstation.rotation.animations.openSettings
-import com.workstation.rotation.animations.openDetails
+import com.workstation.rotation.animations.ActivityTransitions
 import com.workstation.rotation.animations.AnimationManager
-import com.workstation.rotation.animations.slideInChildrenFromBottom
 
 /**
  * Actividad principal del sistema de rotación.
@@ -50,26 +47,30 @@ class MainActivity : AppCompatActivity() {
             btnWorkstations?.setOnClickListener {
                 provideTactileFeedback()
                 btnWorkstations?.let { AnimationManager.clickFeedback(it) }
-                navigateToMainSection(Intent(this@MainActivity, WorkstationActivity::class.java))
+                startActivity(Intent(this@MainActivity, WorkstationActivity::class.java))
+                ActivityTransitions.mainNavigation(this@MainActivity)
             }
             
             btnWorkers?.setOnClickListener {
                 provideTactileFeedback()
                 btnWorkers?.let { AnimationManager.clickFeedback(it) }
-                navigateToMainSection(Intent(this@MainActivity, WorkerActivity::class.java))
+                startActivity(Intent(this@MainActivity, WorkerActivity::class.java))
+                ActivityTransitions.mainNavigation(this@MainActivity)
             }
             
             btnRotation?.setOnClickListener {
                 provideTactileFeedback()
                 btnRotation?.let { AnimationManager.clickFeedback(it) }
                 // Usar la nueva arquitectura de rotación v4.0
-                openDetails(Intent(this@MainActivity, NewRotationActivity::class.java))
+                startActivity(Intent(this@MainActivity, NewRotationActivity::class.java))
+                ActivityTransitions.openDetails(this@MainActivity)
             }
             
             // Acceso al dashboard ejecutivo (long press)
             btnSettings?.setOnLongClickListener {
                 provideTactileFeedback()
-                openDetails(Intent(this@MainActivity, com.workstation.rotation.dashboard.ExecutiveDashboardActivity::class.java))
+                startActivity(Intent(this@MainActivity, com.workstation.rotation.dashboard.ExecutiveDashboardActivity::class.java))
+                ActivityTransitions.openDetails(this@MainActivity)
                 true
             }
             
@@ -81,12 +82,14 @@ class MainActivity : AppCompatActivity() {
                     // Doble tap detectado - abrir Analytics Avanzados
                     provideTactileFeedback()
                     btnHistory?.let { AnimationManager.clickFeedback(it) }
-                    openDetails(Intent(this@MainActivity, com.workstation.rotation.analytics.AdvancedAnalyticsActivity::class.java))
+                    startActivity(Intent(this@MainActivity, com.workstation.rotation.analytics.AdvancedAnalyticsActivity::class.java))
+                    ActivityTransitions.openDetails(this@MainActivity)
                 } else {
                     // Click simple - abrir historial normal
                     provideTactileFeedback()
                     btnHistory?.let { AnimationManager.clickFeedback(it) }
-                    openDetails(Intent(this@MainActivity, RotationHistoryActivity::class.java))
+                    startActivity(Intent(this@MainActivity, RotationHistoryActivity::class.java))
+                    ActivityTransitions.openDetails(this@MainActivity)
                 }
                 lastHistoryClickTime = currentTime
             }
@@ -94,7 +97,8 @@ class MainActivity : AppCompatActivity() {
             btnSettings?.setOnClickListener {
                 provideTactileFeedback()
                 btnSettings?.let { AnimationManager.clickFeedback(it) }
-                openSettings(Intent(this@MainActivity, SettingsActivity::class.java))
+                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                ActivityTransitions.openSettings(this@MainActivity)
             }
         }
     }

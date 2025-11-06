@@ -48,22 +48,31 @@ class NewRotationActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityNewRotationBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         
-        // Inicializar servicio primero
-        rotationService = NewRotationService(this)
-        
-        // Inicializar ViewModel después del servicio
-        viewModel = NewRotationViewModel(rotationService)
-        
-        setupUI()
-        setupRecyclerViews()
-        setupObservers()
-        setupClickListeners()
-        
-        // Crear sesión inicial si no existe
-        checkAndCreateInitialSession()
+        try {
+            binding = ActivityNewRotationBinding.inflate(layoutInflater)
+            setContentView(binding.root)
+            
+            // Inicializar servicio primero
+            rotationService = NewRotationService(this)
+            
+            // Inicializar ViewModel después del servicio
+            viewModel = NewRotationViewModel(rotationService)
+            
+            setupUI()
+            setupRecyclerViews()
+            setupObservers()
+            setupClickListeners()
+            
+            // Crear sesión inicial si no existe
+            checkAndCreateInitialSession()
+            
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Mostrar error y cerrar actividad de forma controlada
+            android.widget.Toast.makeText(this, "Error al inicializar rotación: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun setupUI() {
@@ -365,24 +374,43 @@ class NewRotationActivity : AppCompatActivity() {
     private fun checkAndCreateInitialSession() {
         lifecycleScope.launch {
             try {
+                // Mostrar loading
+                binding.loadingOverlay?.visibility = android.view.View.VISIBLE
+                binding.tvLoadingMessage?.text = "Inicializando sistema de rotación..."
+                
                 // Verificar si hay datos inicializados
                 val dataService = DataInitializationService(this@NewRotationActivity)
                 if (!dataService.hasInitializedData()) {
+                    binding.tvLoadingMessage?.text = "Creando datos de prueba..."
+                    
                     // Inicializar datos de prueba
                     val success = dataService.initializeTestData()
                     if (success) {
                         Snackbar.make(binding.root, "Datos de prueba inicializados", Snackbar.LENGTH_SHORT).show()
                     } else {
                         Snackbar.make(binding.root, "Error al inicializar datos", Snackbar.LENGTH_LONG).show()
+                        return@launch
                     }
                 }
+                
+                binding.tvLoadingMessage?.text = "Cargando sesión de rotación..."
                 
                 // Cargar datos iniciales en el ViewModel
                 viewModel.loadInitialData()
                 
+                // Ocultar loading
+                binding.loadingOverlay?.visibility = android.view.View.GONE
+                
             } catch (e: Exception) {
                 e.printStackTrace()
-                Snackbar.make(binding.root, "Error al inicializar: ${e.message}", Snackbar.LENGTH_LONG).show()
+                binding.loadingOverlay?.visibility = android.view.View.GONE
+                
+                val errorMessage = "Error al inicializar rotación: ${e.message}"
+                Snackbar.make(binding.root, errorMessage, Snackbar.LENGTH_LONG)
+                    .setAction("Reintentar") {
+                        checkAndCreateInitialSession()
+                    }
+                    .show()
             }
         }
     }
