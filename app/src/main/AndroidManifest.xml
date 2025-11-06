@@ -47,6 +47,12 @@
             android:exported="false" />
             
         <activity
+            android:name=".monitoring.RealTimeDashboardActivity"
+            android:exported="false"
+            android:label="Dashboard en Tiempo Real"
+            android:theme="@style/Theme.REWS" />
+            
+        <activity
             android:name=".SqlRotationActivity"
             android:exported="false"
             android:label="Sistema de Rotación (Legacy)" />
@@ -55,7 +61,7 @@
             android:name=".NewRotationActivity"
             android:exported="false"
             android:label="Sistema de Rotación v4.0"
-            android:theme="@style/Theme.REWS" />
+            android:theme="@style/Theme.REWS.NoActionBar" />
             
         <activity
             android:name=".SettingsActivity"

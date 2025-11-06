@@ -94,12 +94,40 @@ class MainActivity : AppCompatActivity() {
                 lastHistoryClickTime = currentTime
             }
             
+            // Acceso al Dashboard en Tiempo Real (triple tap en Settings)
+            var settingsClickCount = 0
+            var lastSettingsClickTime = 0L
             btnSettings?.setOnClickListener {
-                provideTactileFeedback()
-                btnSettings?.let { AnimationManager.clickFeedback(it) }
-                startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
-                ActivityTransitions.openSettings(this@MainActivity)
+                val currentTime = System.currentTimeMillis()
+                
+                if (currentTime - lastSettingsClickTime < 500) {
+                    settingsClickCount++
+                } else {
+                    settingsClickCount = 1
+                }
+                
+                lastSettingsClickTime = currentTime
+                
+                if (settingsClickCount >= 3) {
+                    // Triple tap detectado - abrir Dashboard en Tiempo Real
+                    provideTactileFeedback()
+                    btnSettings?.let { AnimationManager.clickFeedback(it) }
+                    startActivity(Intent(this@MainActivity, com.workstation.rotation.monitoring.RealTimeDashboardActivity::class.java))
+                    ActivityTransitions.openDetails(this@MainActivity)
+                    settingsClickCount = 0
+                } else {
+                    // Click normal - abrir configuraciones después de un delay
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (settingsClickCount < 3) {
+                            provideTactileFeedback()
+                            btnSettings?.let { AnimationManager.clickFeedback(it) }
+                            startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
+                            ActivityTransitions.openSettings(this@MainActivity)
+                        }
+                    }, 600)
+                }
             }
+
         }
     }
     

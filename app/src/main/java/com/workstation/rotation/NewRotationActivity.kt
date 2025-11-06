@@ -76,12 +76,18 @@ class NewRotationActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Configurar toolbar
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        
-        binding.toolbar.setNavigationOnClickListener {
-            onBackPressed()
+        try {
+            // Configurar toolbar
+            setSupportActionBar(binding.toolbar)
+            supportActionBar?.setDisplayHomeAsUpEnabled(true)
+            
+            binding.toolbar.setNavigationOnClickListener {
+                onBackPressed()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            android.util.Log.e("NewRotationActivity", "Error configurando UI: ${e.message}")
+            // Continuar sin toolbar si hay error
         }
     }
 

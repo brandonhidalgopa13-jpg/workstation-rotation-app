@@ -51,4 +51,32 @@
         <item name="cornerRadius">12dp</item>
         <item name="android:textSize">16sp</item>
     </style>
+    
+    <!-- Theme for activities with custom toolbar (no ActionBar) - Dark variant -->
+    <style name="Theme.REWS.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color for dark theme -->
+        <item name="colorPrimary">@color/primary_blue_light</item>
+        <item name="colorPrimaryVariant">@color/primary_blue</item>
+        <item name="colorOnPrimary">@color/black</item>
+        
+        <!-- Secondary brand color for dark theme -->
+        <item name="colorSecondary">@color/accent_orange_light</item>
+        <item name="colorSecondaryVariant">@color/accent_green_light</item>
+        <item name="colorOnSecondary">@color/black</item>
+        
+        <!-- Surface colors for dark theme -->
+        <item name="colorSurface">@color/background_card_dark</item>
+        <item name="colorOnSurface">@color/text_primary_dark</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary_dark</item>
+        <item name="android:colorBackground">@color/background_dark</item>
+        
+        <!-- Status bar color for dark theme -->
+        <item name="android:statusBarColor" tools:targetApi="l">@color/background_dark</item>
+        <item name="android:navigationBarColor" tools:targetApi="l">@color/background_dark</item>
+        
+        <!-- Text colors for dark theme -->
+        <item name="android:textColorPrimary">@color/text_primary_dark</item>
+        <item name="android:textColorSecondary">@color/text_secondary_dark</item>
+        <item name="android:textColorHint">@color/text_hint_dark</item>
+    </style>
 </resources>
