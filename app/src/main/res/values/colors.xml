@@ -20,6 +20,7 @@
     <color name="background_card">#FFFFFFFF</color>
     <color name="background_card_dark">#FF424242</color>
     <color name="background_surface">#FFF5F5F5</color>
+    <color name="background_surface_dark">#FF2C2C2C</color>
     
     <!-- Text Colors -->
     <color name="text_primary">#FF212121</color>
@@ -32,6 +33,8 @@
     <!-- Border Colors -->
     <color name="border_light">#FFE0E0E0</color>
     <color name="border_medium">#FFBDBDBD</color>
+    <color name="border_light_dark">#FF404040</color>
+    <color name="border_medium_dark">#FF666666</color>
     
     <!-- Status Colors -->
     <color name="status_success">#FF4CAF50</color>
