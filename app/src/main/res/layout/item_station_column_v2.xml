@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="@color/primary">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Header de la Estación -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/primary"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvStationName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Estación A"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/tvStationCapacity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Capacidad: 3 trabajadores"
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:layout_marginTop="4dp"
+                android:alpha="0.9" />
+
+        </LinearLayout>
+
+        <!-- Contenedor de Rotaciones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <!-- Rotación Actual -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@color/background_light">
+
+                <!-- Header Rotación Actual -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="ACTUAL"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="@color/primary"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:background="@color/surface" />
+
+                <!-- Scroll Vertical para Trabajadores Actuales -->
+                <androidx.core.widget.NestedScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="false"
+                    android:scrollbars="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="4dp">
+
+                        <!-- RecyclerView para Trabajadores Actuales -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerCurrentWorkers"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            tools:listitem="@layout/item_worker_card_v2" />
+
+                    </LinearLayout>
+
+                </androidx.core.widget.NestedScrollView>
+
+                <!-- Indicador de Capacidad Actual -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:background="@color/surface"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvCurrentCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="2/3"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        android:gravity="center" />
+
+                    <ProgressBar
+                        android:id="@+id/progressCurrentCapacity"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="0dp"
+                        android:layout_height="8dp"
+                        android:layout_weight="2"
+                        android:max="100"
+                        android:progress="67"
+                        android:progressTint="@color/primary" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Divisor -->
+            <View
+                android:layout_width="2dp"
+                android:layout_height="match_parent"
+                android:background="@color/divider" />
+
+            <!-- Siguiente Rotación -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@color/background_light">
+
+                <!-- Header Siguiente Rotación -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="SIGUIENTE"
+                    android:textStyle="bold"
+                    android:textSize="12sp"
+                    android:textColor="@color/accent"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:background="@color/surface" />
+
+                <!-- Scroll Vertical para Trabajadores Siguientes -->
+                <androidx.core.widget.NestedScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="false"
+                    android:scrollbars="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="4dp">
+
+                        <!-- RecyclerView para Trabajadores Siguientes -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerNextWorkers"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            tools:listitem="@layout/item_worker_card_v2" />
+
+                    </LinearLayout>
+
+                </androidx.core.widget.NestedScrollView>
+
+                <!-- Indicador de Capacidad Siguiente -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="8dp"
+                    android:background="@color/surface"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvNextCount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="1/3"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/accent"
+                        android:gravity="center" />
+
+                    <ProgressBar
+                        android:id="@+id/progressNextCapacity"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="0dp"
+                        android:layout_height="8dp"
+                        android:layout_weight="2"
+                        android:max="100"
+                        android:progress="33"
+                        android:progressTint="@color/accent" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
