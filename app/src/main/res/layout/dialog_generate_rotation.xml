@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🤖 Generar Rotación Automática"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Descripción -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Selecciona qué rotación deseas generar automáticamente con el algoritmo optimizado:"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Botón Rotación Actual -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_generate_current"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="📋 Rotación Actual"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_rotation"
+        app:iconGravity="start"
+        app:iconSize="24dp"
+        app:cornerRadius="12dp"
+        android:layout_marginBottom="12dp"
+        style="@style/Widget.MaterialComponents.Button" />
+
+    <!-- Botón Siguiente Rotación -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_generate_next"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="➡️ Siguiente Rotación"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_arrow_forward"
+        app:iconGravity="start"
+        app:iconSize="24dp"
+        app:cornerRadius="12dp"
+        android:layout_marginBottom="12dp"
+        style="@style/Widget.MaterialComponents.Button" />
+
+    <!-- Botón Ambas Rotaciones -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_generate_both"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:text="🔄 Ambas Rotaciones"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_sync"
+        app:iconGravity="start"
+        app:iconSize="24dp"
+        app:cornerRadius="12dp"
+        android:backgroundTint="@color/accent_green"
+        android:layout_marginBottom="16dp"
+        style="@style/Widget.MaterialComponents.Button" />
+
+    <!-- Botón Cancelar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="❌ Cancelar"
+        android:textSize="14sp"
+        app:cornerRadius="12dp"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+</LinearLayout>
