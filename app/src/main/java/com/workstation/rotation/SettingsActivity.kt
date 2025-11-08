@@ -407,16 +407,18 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle("📱 Información de la Aplicación")
             .setMessage(
                 "🏭 REWS - Rotation and Workstation System\n" +
-                "📱 Versión: 3.1.0\n" +
+                "📱 Versión: 4.1.0\n" +
                 "👨‍💻 Desarrollador: Brandon Josué Hidalgo Paz\n" +
-                "📅 Año: 2024\n\n" +
+                "📅 Año: 2025\n\n" +
                 "🚀 Funcionalidades:\n" +
+                "• Nueva interfaz visual con scroll horizontal/vertical\n" +
                 "• Analytics Avanzados\n" +
                 "• Dashboard Ejecutivo\n" +
                 "• Sistema de rotación inteligente\n" +
                 "• Gestión completa de trabajadores\n" +
-                "• Respaldo y sincronización\n\n" +
-                "© 2024 - Todos los derechos reservados"
+                "• Respaldo y sincronización\n" +
+                "• Sistema de seguridad integrado\n\n" +
+                "© 2025 - Todos los derechos reservados"
             )
             .setPositiveButton("Cerrar", null)
             .show()
