@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.REWS" parent="Theme.Material3.DayNight">
+    <style name="Theme.REWS" parent="Theme.Material3.Light">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary_blue</item>
         <item name="colorPrimaryVariant">@color/primary_blue_dark</item>
@@ -46,7 +46,7 @@
     <!-- Button styles moved to styles.xml to avoid duplication -->
     
     <!-- Theme for activities with custom toolbar (no ActionBar) -->
-    <style name="Theme.REWS.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.REWS.NoActionBar" parent="Theme.Material3.Light.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary_blue</item>
         <item name="colorPrimaryVariant">@color/primary_blue_dark</item>

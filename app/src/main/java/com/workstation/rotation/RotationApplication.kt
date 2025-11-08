@@ -1,6 +1,7 @@
 package com.workstation.rotation
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.workstation.rotation.notifications.IntelligentNotificationSystem
 
 /**
@@ -22,6 +23,9 @@ class RotationApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
+        
+        // Forzar modo claro (desactivar modo oscuro)
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         
         // Inicializar sistema de notificaciones inteligentes
         initializeNotificationSystem()
