@@ -205,25 +205,25 @@ class MainActivity : AppCompatActivity() {
             try {
                 android.util.Log.d("MainActivity", "🔍 Verificando sincronización de capacidades...")
                 
-                // Verificar si es necesario sincronizar
+                // PASO 1: Sincronizar capacidades
                 val needsSync = com.workstation.rotation.utils.CapabilitySyncUtil.needsSynchronization(this@MainActivity)
                 
                 if (needsSync) {
                     android.util.Log.d("MainActivity", "⚠️ Se detectó desincronización - iniciando sincronización automática...")
                     
                     // Ejecutar sincronización
-                    val result = com.workstation.rotation.utils.CapabilitySyncUtil.syncAllWorkerCapabilities(this@MainActivity)
+                    val syncResult = com.workstation.rotation.utils.CapabilitySyncUtil.syncAllWorkerCapabilities(this@MainActivity)
                     
                     // Mostrar resultado en el log
                     android.util.Log.d("MainActivity", "✅ Sincronización completada:")
-                    android.util.Log.d("MainActivity", result.getSummary())
+                    android.util.Log.d("MainActivity", syncResult.getSummary())
                     
                     // Mostrar notificación al usuario si hubo cambios
-                    if (result.totalChanges > 0) {
+                    if (syncResult.totalChanges > 0) {
                         withContext(Dispatchers.Main) {
                             android.widget.Toast.makeText(
                                 this@MainActivity,
-                                "✅ Se sincronizaron ${result.totalChanges} capacidades de trabajadores",
+                                "✅ Se sincronizaron ${syncResult.totalChanges} capacidades",
                                 android.widget.Toast.LENGTH_LONG
                             ).show()
                         }
@@ -232,8 +232,36 @@ class MainActivity : AppCompatActivity() {
                     android.util.Log.d("MainActivity", "✅ Capacidades sincronizadas correctamente")
                 }
                 
+                // PASO 2: Limpiar asignaciones huérfanas
+                android.util.Log.d("MainActivity", "🔍 Verificando asignaciones de rotación...")
+                val needsCleanup = com.workstation.rotation.utils.RotationCleanupUtil.needsCleanup(this@MainActivity)
+                
+                if (needsCleanup) {
+                    android.util.Log.d("MainActivity", "⚠️ Se detectaron asignaciones inválidas - iniciando limpieza...")
+                    
+                    // Ejecutar limpieza
+                    val cleanupResult = com.workstation.rotation.utils.RotationCleanupUtil.cleanOrphanedAssignments(this@MainActivity)
+                    
+                    // Mostrar resultado en el log
+                    android.util.Log.d("MainActivity", "✅ Limpieza completada:")
+                    android.util.Log.d("MainActivity", cleanupResult.getSummary())
+                    
+                    // Mostrar notificación al usuario si hubo cambios
+                    if (cleanupResult.hadChanges) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                this@MainActivity,
+                                "🧹 Se limpiaron ${cleanupResult.assignmentsRemoved} asignaciones inválidas",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                } else {
+                    android.util.Log.d("MainActivity", "✅ Asignaciones de rotación válidas")
+                }
+                
             } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "❌ Error verificando sincronización: ${e.message}", e)
+                android.util.Log.e("MainActivity", "❌ Error en verificación: ${e.message}", e)
             }
         }
     }

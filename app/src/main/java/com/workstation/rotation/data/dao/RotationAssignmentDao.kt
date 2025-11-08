@@ -55,6 +55,9 @@ interface RotationAssignmentDao {
     @Query("SELECT * FROM rotation_assignments WHERE is_active = 1 ORDER BY assigned_at DESC")
     fun getActiveAssignmentsFlow(): Flow<List<RotationAssignment>>
     
+    @Query("SELECT * FROM rotation_assignments WHERE is_active = 1 ORDER BY assigned_at DESC")
+    suspend fun getAllActiveAssignments(): List<RotationAssignment>
+    
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     // 🔍 CONSULTAS POR SESIÓN
     // ═══════════════════════════════════════════════════════════════════════════════════════════

@@ -215,9 +215,17 @@ class NewRotationService(private val context: Context) {
         }
         
         // Crear lista de trabajadores disponibles
+        // FILTRO CRÍTICO: Solo incluir trabajadores con capacidades activas
         val assignedWorkerIds = assignments.filter { it.is_active }.map { it.worker_id }.toSet()
-        val availableWorkers = workers.map { worker ->
+        val availableWorkers = workers.mapNotNull { worker ->
             val workerCapabilities = capabilities.filter { it.worker_id == worker.id && it.is_active }
+            
+            // ⚠️ VALIDACIÓN: Excluir trabajadores sin capacidades activas
+            if (workerCapabilities.isEmpty()) {
+                android.util.Log.w("NewRotationService", "⚠️ Trabajador '${worker.name}' (ID: ${worker.id}) excluido - sin capacidades activas")
+                return@mapNotNull null
+            }
+            
             val workstationCapabilities = workerCapabilities.map { capability ->
                 val workstation = workstations.find { it.id == capability.workstation_id }
                 WorkstationCapability(
