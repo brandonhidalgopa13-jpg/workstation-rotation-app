@@ -443,6 +443,25 @@ class NewRotationViewModel(
             showContextMenu = false
         )
     }
+    
+    /**
+     * Refresca el grid de rotación manualmente
+     */
+    fun refreshRotationGrid() {
+        val sessionId = _activeSession.value?.id ?: return
+        
+        viewModelScope.launch {
+            try {
+                rotationService.getRotationGridFlow(sessionId).collect { grid ->
+                    _rotationGrid.value = grid
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Error al refrescar grid: ${e.message}"
+                )
+            }
+        }
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     // 🏭 FACTORY

@@ -40,18 +40,18 @@ import kotlinx.coroutines.launch
 
 class NewRotationActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityNewRotationBinding
+    private lateinit var binding: com.workstation.rotation.databinding.ActivityNewRotationV2Binding
     private lateinit var rotationService: NewRotationService
     private lateinit var viewModel: NewRotationViewModel
     
-    private lateinit var gridAdapter: RotationGridRowAdapter
-    private lateinit var workersAdapter: AvailableWorkersAdapter
+    private lateinit var stationColumnAdapter: com.workstation.rotation.adapters.StationColumnAdapter
+    private var currentSessionId: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         try {
-            binding = ActivityNewRotationBinding.inflate(layoutInflater)
+            binding = com.workstation.rotation.databinding.ActivityNewRotationV2Binding.inflate(layoutInflater)
             setContentView(binding.root)
             
             // Inicializar servicio primero
@@ -62,7 +62,7 @@ class NewRotationActivity : AppCompatActivity() {
             
             setupUI()
             setupRecyclerViews()
-            setupObservers()
+            // setupObservers() // Comentado temporalmente - usar nueva arquitectura
             setupClickListeners()
             
             // Crear sesión inicial si no existe
@@ -93,9 +93,31 @@ class NewRotationActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerViews() {
-        // Configurar adapter del grid de rotación
+        // Configurar adapter de columnas de estaciones (nueva interfaz v2)
+        stationColumnAdapter = com.workstation.rotation.adapters.StationColumnAdapter(
+            onWorkerClick = { workerId, workstationId, rotationType ->
+                handleWorkerClick(workerId, workstationId, rotationType)
+            },
+            onEmptySlotClick = { workstationId, rotationType ->
+                handleEmptySlotClick(workstationId, rotationType)
+            }
+        )
+        
+        // Configurar RecyclerView horizontal para estaciones
+        binding.recyclerViewStations.apply {
+            layoutManager = LinearLayoutManager(
+                this@NewRotationActivity,
+                LinearLayoutManager.HORIZONTAL,
+                false
+            )
+            adapter = stationColumnAdapter
+            setHasFixedSize(false)
+        }
+        
+        // Configurar adapter del grid de rotación (legacy - comentado)
+        /*
         gridAdapter = RotationGridRowAdapter(
-            onCellClick = { cell, position, rotationType ->
+            onCellClick = { cell, _, rotationType ->
                 viewModel.onCellClick(cell, rotationType)
             },
             onCellLongClick = { cell, position, rotationType ->
@@ -154,6 +176,7 @@ class NewRotationActivity : AppCompatActivity() {
                 updateRotationGrid(grid)
             }
         }
+        */
     }
 
     private fun setupClickListeners() {
@@ -236,9 +259,119 @@ class NewRotationActivity : AppCompatActivity() {
 
     private fun updateRotationGrid(grid: com.workstation.rotation.models.RotationGrid?) {
         if (grid != null) {
-            gridAdapter.updateRows(grid.rows)
-            workersAdapter.updateWorkers(grid.availableWorkers)
+            // Actualizar adaptador de columnas de estaciones (nueva interfaz v2)
+            stationColumnAdapter.submitList(grid.rows)
+            
+            // Actualizar métricas
+            updateMetrics(grid)
+            
+            // Legacy: gridAdapter.updateRows(grid.rows)
+            // Legacy: workersAdapter.updateWorkers(grid.availableWorkers)
         }
+    }
+    
+    /**
+     * Actualiza las métricas mostradas en el header
+     */
+    private fun updateMetrics(grid: com.workstation.rotation.models.RotationGrid) {
+        val currentAssigned = grid.rows.sumOf { row ->
+            row.currentAssignments.count { it.isAssigned }
+        }
+        val nextAssigned = grid.rows.sumOf { row ->
+            row.nextAssignments.count { it.isAssigned }
+        }
+        val totalRequired = grid.rows.sumOf { it.requiredWorkers } * 2
+        
+        binding.tvCurrentAssigned.text = currentAssigned.toString()
+        binding.tvNextAssigned.text = nextAssigned.toString()
+        binding.tvTotalRequired.text = totalRequired.toString()
+    }
+    
+    /**
+     * Maneja el click en un trabajador asignado
+     */
+    private fun handleWorkerClick(workerId: Long, workstationId: Long, rotationType: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Opciones de Trabajador")
+            .setItems(arrayOf(
+                "Ver detalles",
+                "Mover a otra estación",
+                "Remover de rotación"
+            )) { _, which ->
+                when (which) {
+                    0 -> showWorkerDetailsById(workerId)
+                    1 -> showMoveWorkerDialog(workerId, workstationId, rotationType)
+                    2 -> removeWorkerFromRotation(workerId, rotationType)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+    
+    /**
+     * Maneja el click en un slot vacío
+     */
+    private fun handleEmptySlotClick(workstationId: Long, rotationType: String) {
+        // TODO: Mostrar diálogo para seleccionar trabajador disponible
+        Toast.makeText(
+            this,
+            "Seleccionar trabajador para estación (ID: $workstationId, Tipo: $rotationType)",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+    
+    /**
+     * Muestra detalles de un trabajador por ID
+     */
+    private fun showWorkerDetailsById(workerId: Long) {
+        // TODO: Implementar diálogo de detalles
+        Toast.makeText(this, "Detalles del trabajador ID: $workerId", Toast.LENGTH_SHORT).show()
+    }
+    
+    /**
+     * Muestra diálogo para mover trabajador a otra estación
+     */
+    private fun showMoveWorkerDialog(workerId: Long, fromWorkstationId: Long, rotationType: String) {
+        // TODO: Implementar diálogo de selección de estación destino
+        Toast.makeText(
+            this,
+            "Mover trabajador $workerId desde estación $fromWorkstationId",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+    
+    /**
+     * Remueve un trabajador de la rotación
+     */
+    private fun removeWorkerFromRotation(workerId: Long, rotationType: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Confirmar")
+            .setMessage("¿Remover trabajador de la rotación $rotationType?")
+            .setPositiveButton("Remover") { _, _ ->
+                lifecycleScope.launch {
+                    val result = rotationService.removeWorkerAssignment(
+                        currentSessionId,
+                        workerId,
+                        rotationType
+                    )
+                    if (result) {
+                        Toast.makeText(
+                            this@NewRotationActivity,
+                            "✅ Trabajador removido",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        viewModel.refreshRotationGrid()
+                    } else {
+                        Toast.makeText(
+                            this@NewRotationActivity,
+                            "❌ Error al remover trabajador",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
 
@@ -437,8 +570,8 @@ class NewRotationActivity : AppCompatActivity() {
 
     private fun captureRotationPhoto() {
         try {
-            // Crear un bitmap de la vista del grid de rotación
-            val gridView = binding.recyclerViewRotationGrid
+            // Crear un bitmap de la vista del grid de rotación (nueva interfaz v2)
+            val gridView = binding.recyclerViewStations
             val bitmap = android.graphics.Bitmap.createBitmap(
                 gridView.width, 
                 gridView.height, 
