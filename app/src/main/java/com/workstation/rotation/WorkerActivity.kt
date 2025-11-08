@@ -83,7 +83,8 @@ class WorkerActivity : AppCompatActivity() {
         WorkerViewModelFactory(
             AppDatabase.getDatabase(this).workerDao(),
             AppDatabase.getDatabase(this).workstationDao(),
-            AppDatabase.getDatabase(this).workerRestrictionDao()
+            AppDatabase.getDatabase(this).workerRestrictionDao(),
+            AppDatabase.getDatabase(this).workerWorkstationCapabilityDao()
         )
     }
     

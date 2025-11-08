@@ -6,11 +6,15 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.workstation.rotation.databinding.ActivityMainBinding
 import com.workstation.rotation.animations.ActivityTransitions
 import com.workstation.rotation.animations.AnimationManager
 import com.workstation.rotation.security.SecurityConfig
 import com.workstation.rotation.security.LoginActivity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Actividad principal del sistema de rotación.
@@ -48,6 +52,9 @@ class MainActivity : AppCompatActivity() {
         
         // Inicializar vibrador para feedback táctil
         vibrator = ContextCompat.getSystemService(this, Vibrator::class.java) ?: return
+        
+        // Verificar y sincronizar capacidades si es necesario
+        checkAndSyncCapabilities()
         
         setupUI()
         setupAnimations()
@@ -188,7 +195,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-
+    /**
+     * Verifica y sincroniza las capacidades de trabajadores si es necesario.
+     * Esta función se ejecuta en segundo plano al iniciar la aplicación.
+     */
+    private fun checkAndSyncCapabilities() {
+        // Ejecutar en segundo plano
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                android.util.Log.d("MainActivity", "🔍 Verificando sincronización de capacidades...")
+                
+                // Verificar si es necesario sincronizar
+                val needsSync = com.workstation.rotation.utils.CapabilitySyncUtil.needsSynchronization(this@MainActivity)
+                
+                if (needsSync) {
+                    android.util.Log.d("MainActivity", "⚠️ Se detectó desincronización - iniciando sincronización automática...")
+                    
+                    // Ejecutar sincronización
+                    val result = com.workstation.rotation.utils.CapabilitySyncUtil.syncAllWorkerCapabilities(this@MainActivity)
+                    
+                    // Mostrar resultado en el log
+                    android.util.Log.d("MainActivity", "✅ Sincronización completada:")
+                    android.util.Log.d("MainActivity", result.getSummary())
+                    
+                    // Mostrar notificación al usuario si hubo cambios
+                    if (result.totalChanges > 0) {
+                        withContext(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                this@MainActivity,
+                                "✅ Se sincronizaron ${result.totalChanges} capacidades de trabajadores",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                } else {
+                    android.util.Log.d("MainActivity", "✅ Capacidades sincronizadas correctamente")
+                }
+                
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "❌ Error verificando sincronización: ${e.message}", e)
+            }
+        }
+    }
     
     /**
      * Proporciona feedback táctil al usuario cuando interactúa con los botones.

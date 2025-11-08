@@ -19,7 +19,8 @@ import kotlinx.coroutines.flow.first
 class WorkerViewModel(
     private val workerDao: WorkerDao,
     private val workstationDao: WorkstationDao,
-    private val workerRestrictionDao: WorkerRestrictionDao
+    private val workerRestrictionDao: WorkerRestrictionDao,
+    private val capabilityDao: com.workstation.rotation.data.dao.WorkerWorkstationCapabilityDao
 ) : ViewModel() {
     
     val allWorkers = liveData {
@@ -36,10 +37,24 @@ class WorkerViewModel(
     val workersWithWorkstations = workerDao.getWorkersWithWorkstations().asLiveData()
     
     suspend fun insertWorkerWithWorkstations(worker: Worker, workstationIds: List<Long>) {
+        android.util.Log.d("WorkerViewModel", "=== CREANDO TRABAJADOR CON ESTACIONES ===")
+        android.util.Log.d("WorkerViewModel", "Trabajador: ${worker.name}")
+        android.util.Log.d("WorkerViewModel", "Estaciones a asignar: $workstationIds")
+        
         val workerId = workerDao.insertWorker(worker)
+        android.util.Log.d("WorkerViewModel", "Trabajador creado con ID: $workerId")
+        
+        // Insertar relaciones en worker_workstations (tabla legacy)
         workstationIds.forEach { workstationId ->
             workerDao.insertWorkerWorkstation(WorkerWorkstation(workerId, workstationId))
         }
+        android.util.Log.d("WorkerViewModel", "Relaciones worker_workstations creadas")
+        
+        // SINCRONIZACIÓN: Crear capacidades en worker_workstation_capabilities
+        syncWorkerCapabilities(workerId, workstationIds)
+        
+        android.util.Log.d("WorkerViewModel", "✅ Trabajador creado y sincronizado correctamente")
+        android.util.Log.d("WorkerViewModel", "==========================================")
     }
     
     suspend fun updateWorkerWithWorkstations(worker: Worker, workstationIds: List<Long>) {
@@ -75,6 +90,9 @@ class WorkerViewModel(
         } else {
             android.util.Log.d("WorkerViewModel", "✅ Todas las asignaciones guardadas correctamente")
         }
+        
+        // SINCRONIZACIÓN: Actualizar capacidades en worker_workstation_capabilities
+        syncWorkerCapabilities(worker.id, workstationIds)
         
         android.util.Log.d("WorkerViewModel", "===============================================")
     }
@@ -375,17 +393,139 @@ class WorkerViewModel(
         workerDao.updateWorkerLeadership(workerId, isLeader, workstationId, leadershipType)
         android.util.Log.d("WorkerViewModel", "==============================")
     }
+    
+    /**
+     * ═══════════════════════════════════════════════════════════════════════════════════════════
+     * 🔄 SINCRONIZACIÓN DE CAPACIDADES
+     * ═══════════════════════════════════════════════════════════════════════════════════════════
+     * 
+     * Sincroniza las asignaciones de estaciones (worker_workstations) con las capacidades
+     * (worker_workstation_capabilities) para que el sistema de rotaciones funcione correctamente.
+     * 
+     * IMPORTANTE: Esta función debe llamarse cada vez que se crean o actualizan las estaciones
+     * asignadas a un trabajador.
+     */
+    private suspend fun syncWorkerCapabilities(workerId: Long, workstationIds: List<Long>) {
+        android.util.Log.d("WorkerViewModel", "=== SINCRONIZANDO CAPACIDADES ===")
+        android.util.Log.d("WorkerViewModel", "Trabajador ID: $workerId")
+        android.util.Log.d("WorkerViewModel", "Estaciones: $workstationIds")
+        
+        try {
+            // Obtener información del trabajador
+            val worker = workerDao.getWorkerById(workerId)
+            if (worker == null) {
+                android.util.Log.e("WorkerViewModel", "ERROR: Trabajador no encontrado")
+                return
+            }
+            
+            // Obtener capacidades existentes
+            val existingCapabilities = capabilityDao.getByWorker(workerId)
+            val existingWorkstationIds = existingCapabilities.map { it.workstation_id }.toSet()
+            
+            android.util.Log.d("WorkerViewModel", "Capacidades existentes: ${existingWorkstationIds.size}")
+            
+            // Determinar nivel de competencia base según el estado del trabajador
+            val baseCompetencyLevel = when {
+                worker.isTrainee -> com.workstation.rotation.data.entities.WorkerWorkstationCapability.LEVEL_BEGINNER
+                worker.isCertified -> com.workstation.rotation.data.entities.WorkerWorkstationCapability.LEVEL_INTERMEDIATE
+                worker.isTrainer -> com.workstation.rotation.data.entities.WorkerWorkstationCapability.LEVEL_ADVANCED
+                else -> com.workstation.rotation.data.entities.WorkerWorkstationCapability.LEVEL_BASIC
+            }
+            
+            // Estaciones a agregar (nuevas)
+            val workstationsToAdd = workstationIds.filter { !existingWorkstationIds.contains(it) }
+            
+            // Estaciones a desactivar (ya no asignadas)
+            val workstationsToDeactivate = existingWorkstationIds.filter { !workstationIds.contains(it) }
+            
+            // Estaciones a reactivar (ya existían pero estaban inactivas)
+            val workstationsToReactivate = workstationIds.filter { workstationId ->
+                existingCapabilities.any { it.workstation_id == workstationId && !it.is_active }
+            }
+            
+            android.util.Log.d("WorkerViewModel", "A agregar: ${workstationsToAdd.size}")
+            android.util.Log.d("WorkerViewModel", "A desactivar: ${workstationsToDeactivate.size}")
+            android.util.Log.d("WorkerViewModel", "A reactivar: ${workstationsToReactivate.size}")
+            
+            // Agregar nuevas capacidades
+            workstationsToAdd.forEach { workstationId ->
+                val capability = com.workstation.rotation.data.entities.WorkerWorkstationCapability(
+                    worker_id = workerId,
+                    workstation_id = workstationId,
+                    competency_level = baseCompetencyLevel,
+                    is_active = true,
+                    is_certified = worker.isCertified,
+                    can_be_leader = worker.isLeader && worker.leaderWorkstationId == workstationId,
+                    can_train = worker.isTrainer,
+                    certified_at = if (worker.isCertified) worker.certificationDate else null,
+                    notes = "Capacidad creada automáticamente al asignar estación"
+                )
+                
+                capabilityDao.insert(capability)
+                android.util.Log.d("WorkerViewModel", "✅ Capacidad creada: Trabajador $workerId -> Estación $workstationId (Nivel: $baseCompetencyLevel)")
+            }
+            
+            // Desactivar capacidades que ya no aplican
+            workstationsToDeactivate.forEach { workstationId ->
+                val capability = existingCapabilities.find { it.workstation_id == workstationId }
+                capability?.let {
+                    val updated = it.copy(
+                        is_active = false,
+                        updated_at = System.currentTimeMillis()
+                    )
+                    capabilityDao.update(updated)
+                    android.util.Log.d("WorkerViewModel", "⚠️ Capacidad desactivada: Trabajador $workerId -> Estación $workstationId")
+                }
+            }
+            
+            // Reactivar capacidades existentes
+            workstationsToReactivate.forEach { workstationId ->
+                val capability = existingCapabilities.find { it.workstation_id == workstationId }
+                capability?.let {
+                    val updated = it.copy(
+                        is_active = true,
+                        competency_level = baseCompetencyLevel,
+                        is_certified = worker.isCertified,
+                        can_be_leader = worker.isLeader && worker.leaderWorkstationId == workstationId,
+                        can_train = worker.isTrainer,
+                        updated_at = System.currentTimeMillis()
+                    )
+                    capabilityDao.update(updated)
+                    android.util.Log.d("WorkerViewModel", "🔄 Capacidad reactivada: Trabajador $workerId -> Estación $workstationId")
+                }
+            }
+            
+            // Verificar sincronización
+            val finalCapabilities = capabilityDao.getByWorker(workerId)
+            val activeCapabilities = finalCapabilities.filter { it.is_active }
+            
+            android.util.Log.d("WorkerViewModel", "Capacidades finales activas: ${activeCapabilities.size}")
+            
+            if (activeCapabilities.size != workstationIds.size) {
+                android.util.Log.e("WorkerViewModel", "⚠️ ADVERTENCIA: Desincronización detectada!")
+                android.util.Log.e("WorkerViewModel", "Esperadas: ${workstationIds.size}, Activas: ${activeCapabilities.size}")
+            } else {
+                android.util.Log.d("WorkerViewModel", "✅ Sincronización completada exitosamente")
+            }
+            
+        } catch (e: Exception) {
+            android.util.Log.e("WorkerViewModel", "ERROR en sincronización de capacidades: ${e.message}", e)
+        }
+        
+        android.util.Log.d("WorkerViewModel", "=================================")
+    }
 }
 
 class WorkerViewModelFactory(
     private val workerDao: WorkerDao,
     private val workstationDao: WorkstationDao,
-    private val workerRestrictionDao: WorkerRestrictionDao
+    private val workerRestrictionDao: WorkerRestrictionDao,
+    private val capabilityDao: com.workstation.rotation.data.dao.WorkerWorkstationCapabilityDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(WorkerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return WorkerViewModel(workerDao, workstationDao, workerRestrictionDao) as T
+            return WorkerViewModel(workerDao, workstationDao, workerRestrictionDao, capabilityDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
