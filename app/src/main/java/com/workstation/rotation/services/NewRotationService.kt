@@ -133,6 +133,25 @@ class NewRotationService(private val context: Context) {
         capabilities: List<WorkerWorkstationCapability>
     ): RotationGrid {
         
+        // 🔍 LOGS DE DIAGNÓSTICO
+        android.util.Log.d("NewRotationService", "═══════════════════════════════════════════════════════")
+        android.util.Log.d("NewRotationService", "🔍 CONSTRUYENDO GRID DE ROTACIÓN")
+        android.util.Log.d("NewRotationService", "═══════════════════════════════════════════════════════")
+        android.util.Log.d("NewRotationService", "📊 Datos recibidos:")
+        android.util.Log.d("NewRotationService", "  • Estaciones: ${workstations.size}")
+        android.util.Log.d("NewRotationService", "  • Asignaciones: ${assignments.size}")
+        android.util.Log.d("NewRotationService", "  • Trabajadores: ${workers.size}")
+        android.util.Log.d("NewRotationService", "  • Capacidades: ${capabilities.size}")
+        
+        workstations.forEach { ws ->
+            android.util.Log.d("NewRotationService", "  📍 Estación: ${ws.name} (ID: ${ws.id}, Req: ${ws.requiredWorkers})")
+        }
+        
+        workers.forEach { w ->
+            val workerCaps = capabilities.filter { it.worker_id == w.id && it.is_active }
+            android.util.Log.d("NewRotationService", "  👤 Trabajador: ${w.name} (ID: ${w.id}, Caps activas: ${workerCaps.size})")
+        }
+        
         val session = sessionDao.getById(sessionId)
         
         // Agrupar asignaciones por estación y tipo
@@ -258,6 +277,16 @@ class NewRotationService(private val context: Context) {
                 isAssignedInNext = nextAssignment != null
             )
         }
+        
+        // 🔍 LOGS DE RESULTADO
+        android.util.Log.d("NewRotationService", "═══════════════════════════════════════════════════════")
+        android.util.Log.d("NewRotationService", "✅ GRID CONSTRUIDO:")
+        android.util.Log.d("NewRotationService", "  • Filas (estaciones): ${rows.size}")
+        android.util.Log.d("NewRotationService", "  • Trabajadores disponibles: ${availableWorkers.size}")
+        rows.forEach { row ->
+            android.util.Log.d("NewRotationService", "  📍 ${row.workstationName}: ${row.currentAssignments.count { it.isAssigned }}/${row.requiredWorkers} actual, ${row.nextAssignments.count { it.isAssigned }}/${row.requiredWorkers} siguiente")
+        }
+        android.util.Log.d("NewRotationService", "═══════════════════════════════════════════════════════")
         
         return RotationGrid(
             sessionId = sessionId,

@@ -91,7 +91,12 @@ class NewRotationViewModel(
 
     private fun observeRotationGrid(sessionId: Long) {
         viewModelScope.launch {
+            android.util.Log.d("NewRotationViewModel", "🔍 Observando grid de rotación para sesión: $sessionId")
             rotationService.getRotationGridFlow(sessionId).collect { grid ->
+                android.util.Log.d("NewRotationViewModel", "📊 Grid recibido en ViewModel:")
+                android.util.Log.d("NewRotationViewModel", "  • Filas: ${grid.rows.size}")
+                android.util.Log.d("NewRotationViewModel", "  • Trabajadores: ${grid.availableWorkers.size}")
+                
                 _rotationGrid.value = grid
                 updateUiMetrics(grid)
             }

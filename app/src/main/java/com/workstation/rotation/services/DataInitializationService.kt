@@ -201,6 +201,11 @@ class DataInitializationService(private val context: Context) {
         val workers = workerDao.getAllWorkersSync()
         val workstations = workstationDao.getAllWorkstationsSync()
         
+        android.util.Log.d("DataInitService", "═══════════════════════════════════════════════════════")
+        android.util.Log.d("DataInitService", "🔧 CREANDO CAPACIDADES")
+        android.util.Log.d("DataInitService", "  • Trabajadores: ${workers.size}")
+        android.util.Log.d("DataInitService", "  • Estaciones: ${workstations.size}")
+        
         val capabilities = mutableListOf<WorkerWorkstationCapability>()
         
         workers.forEachIndexed { workerIndex, worker ->
@@ -261,7 +266,14 @@ class DataInitializationService(private val context: Context) {
         }
         
         // Insertar todas las capacidades
+        android.util.Log.d("DataInitService", "✅ Capacidades creadas: ${capabilities.size}")
+        capabilities.take(5).forEach { cap ->
+            android.util.Log.d("DataInitService", "  📋 Worker ${cap.worker_id} -> Workstation ${cap.workstation_id} (Nivel: ${cap.competency_level}, Activa: ${cap.is_active})")
+        }
+        
         capabilityDao.insertAll(capabilities)
+        android.util.Log.d("DataInitService", "✅ Capacidades insertadas en BD")
+        android.util.Log.d("DataInitService", "═══════════════════════════════════════════════════════")
     }
     
     /**

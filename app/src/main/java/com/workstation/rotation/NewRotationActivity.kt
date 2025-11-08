@@ -62,7 +62,7 @@ class NewRotationActivity : AppCompatActivity() {
             
             setupUI()
             setupRecyclerViews()
-            // setupObservers() // Comentado temporalmente - usar nueva arquitectura
+            setupObservers() // ✅ ACTIVADO: Observar cambios en el grid de rotación
             setupClickListeners()
             
             // Crear sesión inicial si no existe
@@ -113,46 +113,6 @@ class NewRotationActivity : AppCompatActivity() {
             adapter = stationColumnAdapter
             setHasFixedSize(false)
         }
-        
-        // Configurar adapter del grid de rotación (legacy - comentado)
-        /*
-        gridAdapter = RotationGridRowAdapter(
-            onCellClick = { cell, _, rotationType ->
-                viewModel.onCellClick(cell, rotationType)
-            },
-            onCellLongClick = { cell, position, rotationType ->
-                viewModel.onCellLongClick(cell, rotationType)
-            }
-        )
-        
-        binding.recyclerViewRotationGrid.apply {
-            layoutManager = LinearLayoutManager(this@NewRotationActivity)
-            adapter = gridAdapter
-            setHasFixedSize(true)
-        }
-        
-        // Configurar adapter de trabajadores disponibles
-        workersAdapter = AvailableWorkersAdapter(
-            onWorkerClick = { worker ->
-                // Manejar click en trabajador
-                showWorkerDetails(worker)
-            },
-            onWorkerLongClick = { worker ->
-                // Manejar long click para drag & drop
-                startWorkerDrag(worker)
-                true
-            },
-            onWorkerDrag = { worker ->
-                // Iniciar drag & drop
-                startWorkerDrag(worker)
-            }
-        )
-        
-        binding.recyclerViewAvailableWorkers.apply {
-            layoutManager = LinearLayoutManager(this@NewRotationActivity)
-            adapter = workersAdapter
-            setHasFixedSize(true)
-        }
     }
 
     private fun setupObservers() {
@@ -176,7 +136,6 @@ class NewRotationActivity : AppCompatActivity() {
                 updateRotationGrid(grid)
             }
         }
-        */
     }
 
     private fun setupClickListeners() {
@@ -258,16 +217,27 @@ class NewRotationActivity : AppCompatActivity() {
     }
 
     private fun updateRotationGrid(grid: com.workstation.rotation.models.RotationGrid?) {
+        android.util.Log.d("NewRotationActivity", "═══════════════════════════════════════════════════════")
+        android.util.Log.d("NewRotationActivity", "🔄 ACTUALIZANDO GRID EN UI")
+        android.util.Log.d("NewRotationActivity", "═══════════════════════════════════════════════════════")
+        
         if (grid != null) {
+            android.util.Log.d("NewRotationActivity", "✅ Grid recibido:")
+            android.util.Log.d("NewRotationActivity", "  • Sesión: ${grid.sessionName}")
+            android.util.Log.d("NewRotationActivity", "  • Filas: ${grid.rows.size}")
+            android.util.Log.d("NewRotationActivity", "  • Trabajadores disponibles: ${grid.availableWorkers.size}")
+            
             // Actualizar adaptador de columnas de estaciones (nueva interfaz v2)
             stationColumnAdapter.submitList(grid.rows)
+            android.util.Log.d("NewRotationActivity", "✅ Adapter actualizado con ${grid.rows.size} estaciones")
             
             // Actualizar métricas
             updateMetrics(grid)
-            
-            // Legacy: gridAdapter.updateRows(grid.rows)
-            // Legacy: workersAdapter.updateWorkers(grid.availableWorkers)
+        } else {
+            android.util.Log.w("NewRotationActivity", "⚠️ Grid es NULL - no hay datos para mostrar")
         }
+        
+        android.util.Log.d("NewRotationActivity", "═══════════════════════════════════════════════════════")
     }
     
     /**
