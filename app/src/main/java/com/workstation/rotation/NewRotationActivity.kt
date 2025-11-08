@@ -2,6 +2,7 @@ package com.workstation.rotation
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -243,23 +244,36 @@ class NewRotationActivity : AppCompatActivity() {
 
 
     private fun showGenerateRotationDialog() {
-        val options = arrayOf("Rotación Actual", "Siguiente Rotación", "Ambas")
+        val dialogView = layoutInflater.inflate(R.layout.dialog_generate_rotation, null)
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(dialogView)
+            .create()
         
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Generar Rotación Automática")
-            .setMessage("¿Qué rotación deseas generar?")
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> viewModel.generateOptimizedRotation("CURRENT")
-                    1 -> viewModel.generateOptimizedRotation("NEXT")
-                    2 -> {
-                        viewModel.generateOptimizedRotation("CURRENT")
-                        viewModel.generateOptimizedRotation("NEXT")
-                    }
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+        // Configurar botones
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_generate_current).setOnClickListener {
+            viewModel.generateOptimizedRotation("CURRENT")
+            Toast.makeText(this, "✅ Generando rotación actual...", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_generate_next).setOnClickListener {
+            viewModel.generateOptimizedRotation("NEXT")
+            Toast.makeText(this, "✅ Generando siguiente rotación...", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_generate_both).setOnClickListener {
+            viewModel.generateOptimizedRotation("CURRENT")
+            viewModel.generateOptimizedRotation("NEXT")
+            Toast.makeText(this, "✅ Generando ambas rotaciones...", Toast.LENGTH_LONG).show()
+            dialog.dismiss()
+        }
+        
+        dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialog.show()
     }
 
     private fun showPromoteRotationDialog() {
