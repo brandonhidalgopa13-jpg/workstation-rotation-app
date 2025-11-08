@@ -83,12 +83,40 @@ class SettingsActivity : AppCompatActivity() {
         
         // Actualizar texto según el modo actual
         updateDarkModeText(isDarkMode)
+        
+        // Configurar estado inicial de seguridad
+        setupSecurityUI()
+    }
+    
+    private fun setupSecurityUI() {
+        val isSecurityEnabled = com.workstation.rotation.security.SecurityConfig.isSecurityEnabled(this)
+        val isBiometricEnabled = com.workstation.rotation.security.SecurityConfig.isBiometricEnabled(this)
+        
+        binding.switchSecurity.isChecked = isSecurityEnabled
+        binding.switchBiometric.isChecked = isBiometricEnabled
+        
+        // Mostrar/ocultar opciones de seguridad según el estado
+        binding.layoutBiometric.visibility = if (isSecurityEnabled) android.view.View.VISIBLE else android.view.View.GONE
+        binding.btnSecuritySettings.visibility = if (isSecurityEnabled) android.view.View.VISIBLE else android.view.View.GONE
     }
     
     private fun setupListeners() {
         // Modo oscuro
         binding.switchDarkMode.setOnCheckedChangeListener { _, isChecked ->
             toggleDarkMode(isChecked)
+        }
+        
+        // Sistema de seguridad
+        binding.switchSecurity.setOnCheckedChangeListener { _, isChecked ->
+            toggleSecurity(isChecked)
+        }
+        
+        binding.switchBiometric.setOnCheckedChangeListener { _, isChecked ->
+            toggleBiometric(isChecked)
+        }
+        
+        binding.btnSecuritySettings.setOnClickListener {
+            showSecuritySettings()
         }
         
         // Respaldo y sincronización
@@ -145,6 +173,77 @@ class SettingsActivity : AppCompatActivity() {
             "☀️ Modo Claro Activado"
         }
         binding.tvDarkModeDescription.text = text
+    }
+    
+    private fun toggleSecurity(enabled: Boolean) {
+        com.workstation.rotation.security.SecurityConfig.setSecurityEnabled(this, enabled)
+        
+        // Mostrar/ocultar opciones de seguridad
+        binding.layoutBiometric.visibility = if (enabled) android.view.View.VISIBLE else android.view.View.GONE
+        binding.btnSecuritySettings.visibility = if (enabled) android.view.View.VISIBLE else android.view.View.GONE
+        
+        val message = if (enabled) {
+            "🔐 Sistema de seguridad activado. Deberás iniciar sesión la próxima vez."
+        } else {
+            "🔓 Sistema de seguridad desactivado"
+        }
+        
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        
+        // Si se activa, mostrar información de credenciales de prueba
+        if (enabled) {
+            showSecurityInfoDialog()
+        }
+    }
+    
+    private fun toggleBiometric(enabled: Boolean) {
+        com.workstation.rotation.security.SecurityConfig.setBiometricEnabled(this, enabled)
+        
+        val message = if (enabled) {
+            "👆 Autenticación biométrica habilitada"
+        } else {
+            "🔑 Solo login con contraseña"
+        }
+        
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun showSecuritySettings() {
+        val config = com.workstation.rotation.security.SecurityConfig.getConfigSummary(this)
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("⚙️ Configuración de Seguridad")
+            .setMessage(config)
+            .setPositiveButton("Entendido", null)
+            .show()
+    }
+    
+    private fun showSecurityInfoDialog() {
+        val message = """
+            🔐 Sistema de Seguridad Activado
+            
+            Credenciales de prueba:
+            
+            👤 Usuario: admin
+            🔑 Contraseña: admin123
+            🎭 Rol: Super Admin
+            
+            👤 Usuario: supervisor
+            🔑 Contraseña: super123
+            🎭 Rol: Supervisor
+            
+            👤 Usuario: viewer
+            🔑 Contraseña: view123
+            🎭 Rol: Visualizador
+            
+            ⚠️ Nota: Estas son credenciales de prueba. En producción deberías cambiarlas.
+        """.trimIndent()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("🔐 Información de Seguridad")
+            .setMessage(message)
+            .setPositiveButton("Entendido", null)
+            .show()
     }
     
     private fun createBackup() {

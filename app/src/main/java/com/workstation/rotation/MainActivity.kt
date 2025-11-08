@@ -9,6 +9,8 @@ import androidx.core.content.ContextCompat
 import com.workstation.rotation.databinding.ActivityMainBinding
 import com.workstation.rotation.animations.ActivityTransitions
 import com.workstation.rotation.animations.AnimationManager
+import com.workstation.rotation.security.SecurityConfig
+import com.workstation.rotation.security.LoginActivity
 
 /**
  * Actividad principal del sistema de rotación.
@@ -21,6 +23,18 @@ class MainActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Verificar si el sistema de seguridad está activado
+        if (SecurityConfig.isSecurityEnabled(this)) {
+            // Verificar si hay una sesión activa válida
+            val hasValidSession = checkValidSession()
+            if (!hasValidSession) {
+                // Redirigir a LoginActivity
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return
+            }
+        }
         
         // Verificar si debe mostrar onboarding
         if (OnboardingActivity.shouldShowOnboarding(this)) {
@@ -37,6 +51,23 @@ class MainActivity : AppCompatActivity() {
         
         setupUI()
         setupAnimations()
+    }
+    
+    /**
+     * Verifica si hay una sesión activa válida
+     */
+    private fun checkValidSession(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        val sessionToken = prefs.getString("current_session_token", null)
+        
+        // Si no hay token, no hay sesión
+        if (sessionToken == null) {
+            return false
+        }
+        
+        // Aquí podrías validar el token con SessionManager
+        // Por ahora, simplemente verificamos que exista
+        return true
     }
     
     /**
