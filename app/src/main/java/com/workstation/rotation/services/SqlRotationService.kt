@@ -183,8 +183,9 @@ class SqlRotationService(
     }
     
     /**
-     * Fase 3: Completar estaciones prioritarias.
+     * Fase 3: Completar estaciones prioritarias con ROTACIÓN ALEATORIA.
      * Las estaciones prioritarias DEBEN tener su capacidad completa.
+     * Los trabajadores regulares se asignan aleatoriamente para variar la rotación.
      */
     private suspend fun completePriorityStations(
         allWorkstations: List<Workstation>,
@@ -198,8 +199,10 @@ class SqlRotationService(
             val needed = station.requiredWorkers - currentAssignments
             
             if (needed > 0) {
+                // Obtener trabajadores disponibles y MEZCLARLOS aleatoriamente
                 val availableWorkers = rotationDao.getWorkersForStationFixed(station.id)
                     .filter { it.id !in assignedWorkerIds }
+                    .shuffled() // ✨ ALEATORIZACIÓN: Mezclar trabajadores
                     .take(needed)
                 
                 for (worker in availableWorkers) {
@@ -225,8 +228,9 @@ class SqlRotationService(
     }
     
     /**
-     * Fase 4: Asignación inteligente de trabajadores restantes.
-     * Distribuye trabajadores no asignados de manera balanceada.
+     * Fase 4: Asignación inteligente de trabajadores restantes con ROTACIÓN ALEATORIA.
+     * Los trabajadores regulares (sin especificaciones especiales) rotan aleatoriamente
+     * entre sus estaciones asignadas para variar la experiencia y evitar monotonía.
      */
     private suspend fun assignRemainingWorkers(
         allWorkstations: List<Workstation>,
@@ -243,8 +247,13 @@ class SqlRotationService(
         }
         
         for (worker in remainingWorkers) {
-            // Encontrar la mejor estación para este trabajador
-            val bestStation = findBestStationForWorker(worker, stationsByNeed, assignments)
+            // Para trabajadores regulares (sin especificaciones especiales), usar rotación aleatoria
+            val bestStation = if (!worker.isLeader && !worker.isTrainer && !worker.isTrainee) {
+                findRandomStationForWorker(worker, stationsByNeed, assignments)
+            } else {
+                // Para trabajadores con roles especiales, usar asignación inteligente
+                findBestStationForWorker(worker, stationsByNeed, assignments)
+            }
             
             if (bestStation != null) {
                 assignments.add(
@@ -267,7 +276,37 @@ class SqlRotationService(
     }
     
     /**
+     * Encuentra una estación ALEATORIA para un trabajador regular.
+     * Esto asegura que los trabajadores roten entre diferentes estaciones
+     * en cada generación de rotación, evitando monotonía.
+     */
+    private suspend fun findRandomStationForWorker(
+        worker: Worker,
+        stations: List<Workstation>,
+        currentAssignments: List<RotationItem>
+    ): Workstation? {
+        
+        // Obtener todas las estaciones donde el trabajador puede trabajar
+        val eligibleStations = stations.filter { station ->
+            val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
+            val currentCount = currentAssignments.count { it.workstationId == station.id }
+            val needsWorkers = currentCount < station.requiredWorkers
+            
+            canWork && needsWorkers
+        }
+        
+        // Si no hay estaciones elegibles, retornar null
+        if (eligibleStations.isEmpty()) {
+            return null
+        }
+        
+        // Seleccionar una estación ALEATORIA de las elegibles
+        return eligibleStations.random()
+    }
+    
+    /**
      * Encuentra la mejor estación para un trabajador específico.
+     * Usado para trabajadores con roles especiales (entrenadores, etc.)
      */
     private suspend fun findBestStationForWorker(
         worker: Worker,
