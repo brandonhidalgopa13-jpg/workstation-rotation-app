@@ -444,14 +444,31 @@ class NewRotationService(private val context: Context) {
             val assignments = mutableListOf<RotationAssignment>()
             val assignedWorkers = mutableSetOf<Long>()
             
+            // Filtrar solo trabajadores que tienen al menos una estación asignada
+            val workersWithStations = capabilities
+                .filter { it.canBeAssigned() }
+                .map { it.worker_id }
+                .distinct()
+            
+            android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
+            android.util.Log.d("NewRotationService", "🔄 GENERANDO ROTACIÓN OPTIMIZADA")
+            android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
+            android.util.Log.d("NewRotationService", "Estaciones activas: ${workstations.size}")
+            android.util.Log.d("NewRotationService", "Trabajadores activos: ${workers.size}")
+            android.util.Log.d("NewRotationService", "Trabajadores con estaciones asignadas: ${workersWithStations.size}")
+            android.util.Log.d("NewRotationService", "Capacidades totales: ${capabilities.size}")
+            
             // Paso 1: Asignar líderes a estaciones prioritarias
-            workstations.filter { it.isPriority }.forEach { workstation ->
+            workstations.filter { it.isPriority && it.isActive }.forEach { workstation ->
                 val leaders = capabilities.filter { 
                     it.workstation_id == workstation.id && 
                     it.can_be_leader && 
                     it.canBeAssigned() &&
+                    workersWithStations.contains(it.worker_id) &&
                     !assignedWorkers.contains(it.worker_id)
                 }.sortedByDescending { it.calculateSuitabilityScore() }
+                
+                android.util.Log.d("NewRotationService", "Estación prioritaria: ${workstation.name}, Líderes disponibles: ${leaders.size}")
                 
                 leaders.take(1).forEach { leader ->
                     assignments.add(RotationAssignment(
@@ -462,20 +479,27 @@ class NewRotationService(private val context: Context) {
                         priority = 1
                     ))
                     assignedWorkers.add(leader.worker_id)
+                    android.util.Log.d("NewRotationService", "  ✅ Líder asignado: Worker ${leader.worker_id}")
                 }
             }
             
             // Paso 2: Completar estaciones con mejores candidatos
-            workstations.forEach { workstation ->
+            workstations.filter { it.isActive }.forEach { workstation ->
                 val currentAssigned = assignments.count { it.workstation_id == workstation.id }
                 val needed = workstation.requiredWorkers - currentAssigned
+                
+                android.util.Log.d("NewRotationService", "Estación: ${workstation.name}")
+                android.util.Log.d("NewRotationService", "  Requeridos: ${workstation.requiredWorkers}, Asignados: $currentAssigned, Necesarios: $needed")
                 
                 if (needed > 0) {
                     val candidates = capabilities.filter { 
                         it.workstation_id == workstation.id && 
                         it.canBeAssigned() &&
+                        workersWithStations.contains(it.worker_id) &&
                         !assignedWorkers.contains(it.worker_id)
                     }.sortedByDescending { it.calculateSuitabilityScore() }
+                    
+                    android.util.Log.d("NewRotationService", "  Candidatos disponibles: ${candidates.size}")
                     
                     candidates.take(needed).forEach { candidate ->
                         assignments.add(RotationAssignment(
@@ -486,9 +510,19 @@ class NewRotationService(private val context: Context) {
                             priority = if (candidate.can_train) 2 else 3
                         ))
                         assignedWorkers.add(candidate.worker_id)
+                        android.util.Log.d("NewRotationService", "  ✅ Trabajador asignado: Worker ${candidate.worker_id}")
+                    }
+                    
+                    if (candidates.size < needed) {
+                        android.util.Log.w("NewRotationService", "  ⚠️ ADVERTENCIA: Faltan ${needed - candidates.size} trabajadores para completar la estación")
                     }
                 }
             }
+            
+            android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
+            android.util.Log.d("NewRotationService", "✅ Total de asignaciones creadas: ${assignments.size}")
+            android.util.Log.d("NewRotationService", "✅ Trabajadores únicos asignados: ${assignedWorkers.size}")
+            android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
             
             // Insertar todas las asignaciones
             assignmentDao.insertAll(assignments)

@@ -18,6 +18,8 @@ import com.workstation.rotation.services.DataInitializationService
 import com.workstation.rotation.viewmodels.NewRotationViewModel
 import com.workstation.rotation.viewmodels.NewRotationUiState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════════
@@ -513,186 +515,222 @@ class NewRotationActivity : AppCompatActivity() {
     }
 
     private fun captureRotationPhoto() {
-        try {
-            // Mostrar loading
-            binding.loadingOverlay.visibility = View.VISIBLE
-            binding.tvLoadingMessage.text = "Capturando rotaciones completas..."
-            
-            // Obtener ambas rotaciones
-            val rotation1Card = binding.cardRotation1
-            val rotation2Card = binding.cardRotation2
-            val recycler1 = binding.recyclerRotation1
-            val recycler2 = binding.recyclerRotation2
-            val scroll1 = binding.horizontalScrollRotation1
-            val scroll2 = binding.horizontalScrollRotation2
-            
-            // Calcular el ancho máximo entre ambas rotaciones
-            val width1 = recycler1.computeHorizontalScrollRange()
-            val width2 = recycler2.computeHorizontalScrollRange()
-            val maxWidth = maxOf(width1, width2, 1200) // Mínimo 1200px
-            
-            // Calcular altura total (ambas rotaciones + headers + espaciado)
-            val height1 = rotation1Card.height
-            val height2 = rotation2Card.height
-            val headerHeight = 200 // Espacio para título y fecha
-            val spacing = 50 // Espaciado entre rotaciones
-            val totalHeight = headerHeight + height1 + spacing + height2 + 100
-            
-            // Crear bitmap grande para ambas rotaciones
-            val bitmap = android.graphics.Bitmap.createBitmap(
-                maxWidth,
-                totalHeight,
-                android.graphics.Bitmap.Config.ARGB_8888
-            )
-            
-            val canvas = android.graphics.Canvas(bitmap)
-            
-            // Guardar estados originales de scroll
-            val originalScroll1X = scroll1.scrollX
-            val originalScroll2X = scroll2.scrollX
-            
-            // Dibujar fondo blanco
-            canvas.drawColor(android.graphics.Color.WHITE)
-            
-            // Configurar estilos de texto
-            val titlePaint = android.graphics.Paint().apply {
-                textSize = 56f
-                color = android.graphics.Color.BLACK
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                isAntiAlias = true
-            }
-            
-            val datePaint = android.graphics.Paint().apply {
-                textSize = 36f
-                color = android.graphics.Color.GRAY
-                isAntiAlias = true
-            }
-            
-            val labelPaint = android.graphics.Paint().apply {
-                textSize = 40f
-                color = android.graphics.Color.parseColor("#FF9800")
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                isAntiAlias = true
-            }
-            
-            // Dibujar título principal
-            val title = "Sistema de Rotación - Vista Completa"
-            val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
-            
-            canvas.drawText(title, 40f, 80f, titlePaint)
-            canvas.drawText("Fecha: $date", 40f, 140f, datePaint)
-            
-            // Posición Y inicial para las rotaciones
-            var currentY = headerHeight.toFloat()
-            
-            // ===== CAPTURAR ROTACIÓN 1 (ACTUAL) =====
-            canvas.save()
-            canvas.translate(0f, currentY)
-            
-            // Resetear scroll para capturar desde el inicio
-            scroll1.scrollTo(0, 0)
-            
-            // Dibujar etiqueta de Rotación 1
-            canvas.drawText("ROTACIÓN 1 - ACTUAL", 40f, 40f, labelPaint)
-            canvas.translate(0f, 60f)
-            
-            // Capturar todo el contenido horizontal de Rotación 1
-            if (width1 > rotation1Card.width) {
-                // Capturar en secciones si es más ancho que la vista
+        lifecycleScope.launch {
+            try {
+                // Mostrar loading
+                binding.loadingOverlay.visibility = View.VISIBLE
+                binding.tvLoadingMessage.text = "Capturando rotaciones completas..."
+                
+                // Dar tiempo para que se renderice todo
+                kotlinx.coroutines.delay(300)
+                
+                // Obtener ambas rotaciones
+                val rotation1Card = binding.cardRotation1
+                val rotation2Card = binding.cardRotation2
+                val recycler1 = binding.recyclerRotation1
+                val recycler2 = binding.recyclerRotation2
+                val scroll1 = binding.horizontalScrollRotation1
+                val scroll2 = binding.horizontalScrollRotation2
+                
+                // Forzar medición y layout
+                recycler1.measure(
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                )
+                recycler2.measure(
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+                )
+                
+                // Calcular dimensiones reales del contenido
+                val width1 = maxOf(recycler1.measuredWidth, recycler1.computeHorizontalScrollRange(), 1200)
+                val width2 = maxOf(recycler2.measuredWidth, recycler2.computeHorizontalScrollRange(), 1200)
+                val maxWidth = maxOf(width1, width2)
+                
+                val height1 = maxOf(recycler1.measuredHeight, 600)
+                val height2 = maxOf(recycler2.measuredHeight, 600)
+                
+                val headerHeight = 250
+                val spacing = 80
+                val totalHeight = headerHeight + height1 + spacing + height2 + 150
+                
+                android.util.Log.d("CapturePhoto", "Dimensiones calculadas:")
+                android.util.Log.d("CapturePhoto", "  Width1: $width1, Width2: $width2, MaxWidth: $maxWidth")
+                android.util.Log.d("CapturePhoto", "  Height1: $height1, Height2: $height2, TotalHeight: $totalHeight")
+                
+                // Crear bitmap grande
+                val bitmap = android.graphics.Bitmap.createBitmap(
+                    maxWidth,
+                    totalHeight,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                
+                val canvas = android.graphics.Canvas(bitmap)
+                
+                // Guardar estados originales
+                val originalScroll1X = scroll1.scrollX
+                val originalScroll2X = scroll2.scrollX
+                
+                // Fondo blanco
+                canvas.drawColor(android.graphics.Color.WHITE)
+                
+                // Estilos de texto
+                val titlePaint = android.graphics.Paint().apply {
+                    textSize = 64f
+                    color = android.graphics.Color.BLACK
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
+                }
+                
+                val datePaint = android.graphics.Paint().apply {
+                    textSize = 40f
+                    color = android.graphics.Color.GRAY
+                    isAntiAlias = true
+                }
+                
+                val labelPaint = android.graphics.Paint().apply {
+                    textSize = 48f
+                    color = android.graphics.Color.parseColor("#FF9800")
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    isAntiAlias = true
+                }
+                
+                // Título
+                val title = "Sistema de Rotación - Vista Completa"
+                val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+                
+                canvas.drawText(title, 50f, 90f, titlePaint)
+                canvas.drawText("Fecha: $date", 50f, 160f, datePaint)
+                
+                var currentY = headerHeight.toFloat()
+                
+                // ===== CAPTURAR ROTACIÓN 1 =====
+                canvas.save()
+                canvas.translate(0f, currentY)
+                canvas.drawText("ROTACIÓN 1 - ACTUAL", 50f, 50f, labelPaint)
+                canvas.translate(0f, 80f)
+                
+                // Capturar todo el ancho
+                scroll1.scrollTo(0, 0)
+                kotlinx.coroutines.delay(100)
+                
+                // Crear bitmap temporal para la rotación 1
+                val rot1Bitmap = android.graphics.Bitmap.createBitmap(
+                    width1,
+                    height1,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                val rot1Canvas = android.graphics.Canvas(rot1Bitmap)
+                
+                // Capturar en secciones
                 var capturedWidth = 0
+                val sectionWidth = scroll1.width
                 while (capturedWidth < width1) {
                     scroll1.scrollTo(capturedWidth, 0)
-                    rotation1Card.draw(canvas)
-                    capturedWidth += rotation1Card.width
-                    if (capturedWidth < width1) {
-                        canvas.translate(-rotation1Card.width.toFloat(), 0f)
-                    }
+                    kotlinx.coroutines.delay(50)
+                    
+                    rot1Canvas.save()
+                    rot1Canvas.translate(-capturedWidth.toFloat(), 0f)
+                    recycler1.draw(rot1Canvas)
+                    rot1Canvas.restore()
+                    
+                    capturedWidth += sectionWidth
                 }
-            } else {
-                rotation1Card.draw(canvas)
-            }
-            
-            canvas.restore()
-            currentY += height1 + spacing
-            
-            // ===== CAPTURAR ROTACIÓN 2 (SIGUIENTE) =====
-            canvas.save()
-            canvas.translate(0f, currentY)
-            
-            // Resetear scroll para capturar desde el inicio
-            scroll2.scrollTo(0, 0)
-            
-            // Dibujar etiqueta de Rotación 2
-            canvas.drawText("ROTACIÓN 2 - SIGUIENTE", 40f, 40f, labelPaint)
-            canvas.translate(0f, 60f)
-            
-            // Capturar todo el contenido horizontal de Rotación 2
-            if (width2 > rotation2Card.width) {
-                // Capturar en secciones si es más ancho que la vista
-                var capturedWidth = 0
+                
+                // Dibujar bitmap completo de rotación 1
+                canvas.drawBitmap(rot1Bitmap, 0f, 0f, null)
+                rot1Bitmap.recycle()
+                
+                canvas.restore()
+                currentY += height1 + spacing
+                
+                // ===== CAPTURAR ROTACIÓN 2 =====
+                canvas.save()
+                canvas.translate(0f, currentY)
+                canvas.drawText("ROTACIÓN 2 - SIGUIENTE", 50f, 50f, labelPaint)
+                canvas.translate(0f, 80f)
+                
+                // Capturar todo el ancho
+                scroll2.scrollTo(0, 0)
+                kotlinx.coroutines.delay(100)
+                
+                // Crear bitmap temporal para la rotación 2
+                val rot2Bitmap = android.graphics.Bitmap.createBitmap(
+                    width2,
+                    height2,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                val rot2Canvas = android.graphics.Canvas(rot2Bitmap)
+                
+                // Capturar en secciones
+                capturedWidth = 0
                 while (capturedWidth < width2) {
                     scroll2.scrollTo(capturedWidth, 0)
-                    rotation2Card.draw(canvas)
-                    capturedWidth += rotation2Card.width
-                    if (capturedWidth < width2) {
-                        canvas.translate(-rotation2Card.width.toFloat(), 0f)
-                    }
-                }
-            } else {
-                rotation2Card.draw(canvas)
-            }
-            
-            canvas.restore()
-            
-            // Restaurar scrolls originales
-            scroll1.scrollTo(originalScroll1X, 0)
-            scroll2.scrollTo(originalScroll2X, 0)
-            
-            // Guardar la imagen en la galería
-            val timestamp = System.currentTimeMillis()
-            val fileName = "Rotacion_Completa_$timestamp"
-            
-            val savedUri = android.provider.MediaStore.Images.Media.insertImage(
-                contentResolver,
-                bitmap,
-                fileName,
-                "Captura completa: Rotación 1 (Actual) y Rotación 2 (Siguiente) con todas las estaciones - $date"
-            )
-            
-            // Ocultar loading
-            binding.loadingOverlay.visibility = View.GONE
-            
-            if (savedUri != null) {
-                Snackbar.make(binding.root, "✅ Foto guardada: Ambas rotaciones con todas las estaciones", Snackbar.LENGTH_LONG)
-                    .setAction("Ver") {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                            data = android.net.Uri.parse(savedUri)
-                            type = "image/*"
-                        }
-                        startActivity(intent)
-                    }
-                    .setActionTextColor(getColor(R.color.accent))
-                    .show()
+                    kotlinx.coroutines.delay(50)
                     
-                // Mostrar opción para compartir después de 2 segundos
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    showSharePhotoDialog(savedUri)
-                }, 2000)
-            } else {
-                Snackbar.make(binding.root, "❌ Error al guardar la foto", Snackbar.LENGTH_LONG)
+                    rot2Canvas.save()
+                    rot2Canvas.translate(-capturedWidth.toFloat(), 0f)
+                    recycler2.draw(rot2Canvas)
+                    rot2Canvas.restore()
+                    
+                    capturedWidth += sectionWidth
+                }
+                
+                // Dibujar bitmap completo de rotación 2
+                canvas.drawBitmap(rot2Bitmap, 0f, 0f, null)
+                rot2Bitmap.recycle()
+                
+                canvas.restore()
+                
+                // Restaurar scrolls
+                scroll1.scrollTo(originalScroll1X, 0)
+                scroll2.scrollTo(originalScroll2X, 0)
+                
+                // Guardar imagen
+                val timestamp = System.currentTimeMillis()
+                val fileName = "Rotacion_Completa_$timestamp"
+                
+                val savedUri = withContext(Dispatchers.IO) {
+                    android.provider.MediaStore.Images.Media.insertImage(
+                        contentResolver,
+                        bitmap,
+                        fileName,
+                        "Captura completa: Rotación 1 y 2 con todas las estaciones y trabajadores - $date"
+                    )
+                }
+                
+                binding.loadingOverlay.visibility = View.GONE
+                
+                if (savedUri != null) {
+                    Snackbar.make(binding.root, "✅ Foto guardada: Ambas rotaciones completas", Snackbar.LENGTH_LONG)
+                        .setAction("Ver") {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                data = android.net.Uri.parse(savedUri)
+                                type = "image/*"
+                            }
+                            startActivity(intent)
+                        }
+                        .setActionTextColor(getColor(R.color.accent))
+                        .show()
+                        
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        showSharePhotoDialog(savedUri)
+                    }, 2000)
+                } else {
+                    Snackbar.make(binding.root, "❌ Error al guardar la foto", Snackbar.LENGTH_LONG)
+                        .setBackgroundTint(getColor(R.color.error))
+                        .show()
+                }
+                
+                bitmap.recycle()
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+                binding.loadingOverlay.visibility = View.GONE
+                Snackbar.make(binding.root, "❌ Error: ${e.message}", Snackbar.LENGTH_LONG)
                     .setBackgroundTint(getColor(R.color.error))
                     .show()
             }
-            
-            // Liberar el bitmap
-            bitmap.recycle()
-            
-        } catch (e: Exception) {
-            e.printStackTrace()
-            binding.loadingOverlay.visibility = View.GONE
-            Snackbar.make(binding.root, "❌ Error al capturar foto: ${e.message}", Snackbar.LENGTH_LONG)
-                .setBackgroundTint(getColor(R.color.error))
-                .show()
         }
     }
     

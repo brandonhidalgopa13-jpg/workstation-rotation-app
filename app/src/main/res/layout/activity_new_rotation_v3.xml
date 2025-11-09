@@ -121,7 +121,7 @@
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
                         android:scrollbarStyle="outsideOverlay"
-                        android:scrollbarSize="8dp"
+                        android:scrollbarSize="10dp"
                         android:fillViewport="false">
 
                         <!-- RecyclerView para las estaciones con scroll vertical interno -->
@@ -130,10 +130,10 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:padding="8dp"
+                            android:padding="12dp"
                             android:clipToPadding="false"
                             android:overScrollMode="always"
-                            android:minHeight="300dp"
+                            android:minHeight="500dp"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>
@@ -175,7 +175,7 @@
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
                         android:scrollbarStyle="outsideOverlay"
-                        android:scrollbarSize="8dp"
+                        android:scrollbarSize="10dp"
                         android:fillViewport="false">
 
                         <!-- RecyclerView para las estaciones con scroll vertical interno -->
@@ -184,10 +184,10 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:padding="8dp"
+                            android:padding="12dp"
                             android:clipToPadding="false"
                             android:overScrollMode="always"
-                            android:minHeight="300dp"
+                            android:minHeight="500dp"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>
