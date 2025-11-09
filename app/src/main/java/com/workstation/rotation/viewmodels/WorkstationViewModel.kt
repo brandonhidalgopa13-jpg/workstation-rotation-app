@@ -71,6 +71,14 @@ class WorkstationViewModel(
         // Por ahora retornamos false, pero se puede implementar la lógica completa más tarde
         return false
     }
+    
+    /**
+     * Elimina todas las estaciones de trabajo del sistema.
+     * ADVERTENCIA: Esta operación no se puede deshacer.
+     */
+    suspend fun deleteAllWorkstations() {
+        workstationDao.deleteAllWorkstations()
+    }
 }
 
 class WorkstationViewModelFactory(

@@ -105,6 +105,10 @@ class WorkerActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             finish()
         }
+        
+        binding.btnDeleteAllWorkers.setOnClickListener {
+            showDeleteAllWorkersDialog()
+        }
     }
     
     private fun setupRecyclerView() {
@@ -1188,6 +1192,81 @@ class WorkerActivity : AppCompatActivity() {
                 AlertDialog.Builder(this@WorkerActivity)
                     .setTitle("Error")
                     .setMessage("No se pudo actualizar el trabajador: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
+    
+    /**
+     * Muestra un diálogo de confirmación para eliminar todos los trabajadores.
+     */
+    private fun showDeleteAllWorkersDialog() {
+        lifecycleScope.launch {
+            try {
+                val workerCount = viewModel.allWorkers.value?.size ?: 0
+                
+                if (workerCount == 0) {
+                    android.widget.Toast.makeText(
+                        this@WorkerActivity,
+                        "No hay trabajadores para eliminar",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+                
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("⚠️ Eliminar Todos los Trabajadores")
+                    .setMessage(
+                        "¿Estás COMPLETAMENTE SEGURO de que deseas eliminar TODOS los trabajadores?\n\n" +
+                        "👥 Total de trabajadores: $workerCount\n\n" +
+                        "⚠️ ADVERTENCIA CRÍTICA:\n" +
+                        "• Esta acción NO SE PUEDE DESHACER\n" +
+                        "• Se eliminarán TODOS los trabajadores del sistema\n" +
+                        "• Se perderán TODAS las asignaciones de estaciones\n" +
+                        "• Se eliminarán TODAS las configuraciones de entrenamiento\n" +
+                        "• Se perderán TODOS los datos de certificación\n" +
+                        "• El sistema quedará sin trabajadores\n\n" +
+                        "Esta es una operación DESTRUCTIVA y PERMANENTE."
+                    )
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("SÍ, ELIMINAR TODO") { _, _ ->
+                        // Segundo diálogo de confirmación
+                        AlertDialog.Builder(this@WorkerActivity)
+                            .setTitle("⚠️ Confirmación Final")
+                            .setMessage(
+                                "Esta es tu ÚLTIMA OPORTUNIDAD para cancelar.\n\n" +
+                                "¿Confirmas que deseas eliminar los $workerCount trabajadores?\n\n" +
+                                "Esta acción es IRREVERSIBLE."
+                            )
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton("CONFIRMAR ELIMINACIÓN") { _, _ ->
+                                lifecycleScope.launch {
+                                    try {
+                                        viewModel.deleteAllWorkers()
+                                        android.widget.Toast.makeText(
+                                            this@WorkerActivity,
+                                            "✅ Todos los trabajadores han sido eliminados",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    } catch (e: Exception) {
+                                        AlertDialog.Builder(this@WorkerActivity)
+                                            .setTitle("Error")
+                                            .setMessage("No se pudieron eliminar los trabajadores: ${e.message}")
+                                            .setPositiveButton("OK", null)
+                                            .show()
+                                    }
+                                }
+                            }
+                            .setNegativeButton("Cancelar", null)
+                            .show()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@WorkerActivity)
+                    .setTitle("Error")
+                    .setMessage("Error al verificar trabajadores: ${e.message}")
                     .setPositiveButton("OK", null)
                     .show()
             }

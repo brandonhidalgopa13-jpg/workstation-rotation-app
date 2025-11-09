@@ -43,6 +43,10 @@ class WorkstationActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             finish()
         }
+        
+        binding.btnDeleteAllWorkstations.setOnClickListener {
+            showDeleteAllWorkstationsDialog()
+        }
     }
     
     private fun setupRecyclerView() {
@@ -341,4 +345,78 @@ class WorkstationActivity : AppCompatActivity() {
     }
     
     // Tutorial methods removed - functionality not available
+    
+    /**
+     * Muestra un diálogo de confirmación para eliminar todas las estaciones.
+     */
+    private fun showDeleteAllWorkstationsDialog() {
+        lifecycleScope.launch {
+            try {
+                val workstationCount = viewModel.allWorkstations.value?.size ?: 0
+                
+                if (workstationCount == 0) {
+                    android.widget.Toast.makeText(
+                        this@WorkstationActivity,
+                        "No hay estaciones para eliminar",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+                
+                AlertDialog.Builder(this@WorkstationActivity)
+                    .setTitle("⚠️ Eliminar Todas las Estaciones")
+                    .setMessage(
+                        "¿Estás COMPLETAMENTE SEGURO de que deseas eliminar TODAS las estaciones de trabajo?\n\n" +
+                        "📊 Total de estaciones: $workstationCount\n\n" +
+                        "⚠️ ADVERTENCIA CRÍTICA:\n" +
+                        "• Esta acción NO SE PUEDE DESHACER\n" +
+                        "• Se eliminarán TODAS las asignaciones de trabajadores\n" +
+                        "• Se perderán TODAS las configuraciones de estaciones\n" +
+                        "• Se afectarán TODAS las rotaciones existentes\n" +
+                        "• El sistema quedará sin estaciones de trabajo\n\n" +
+                        "Esta es una operación DESTRUCTIVA y PERMANENTE."
+                    )
+                    .setIcon(android.R.drawable.ic_dialog_alert)
+                    .setPositiveButton("SÍ, ELIMINAR TODO") { _, _ ->
+                        // Segundo diálogo de confirmación
+                        AlertDialog.Builder(this@WorkstationActivity)
+                            .setTitle("⚠️ Confirmación Final")
+                            .setMessage(
+                                "Esta es tu ÚLTIMA OPORTUNIDAD para cancelar.\n\n" +
+                                "¿Confirmas que deseas eliminar las $workstationCount estaciones?\n\n" +
+                                "Esta acción es IRREVERSIBLE."
+                            )
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton("CONFIRMAR ELIMINACIÓN") { _, _ ->
+                                lifecycleScope.launch {
+                                    try {
+                                        viewModel.deleteAllWorkstations()
+                                        android.widget.Toast.makeText(
+                                            this@WorkstationActivity,
+                                            "✅ Todas las estaciones han sido eliminadas",
+                                            android.widget.Toast.LENGTH_LONG
+                                        ).show()
+                                    } catch (e: Exception) {
+                                        AlertDialog.Builder(this@WorkstationActivity)
+                                            .setTitle("Error")
+                                            .setMessage("No se pudieron eliminar las estaciones: ${e.message}")
+                                            .setPositiveButton("OK", null)
+                                            .show()
+                                    }
+                                }
+                            }
+                            .setNegativeButton("Cancelar", null)
+                            .show()
+                    }
+                    .setNegativeButton("Cancelar", null)
+                    .show()
+            } catch (e: Exception) {
+                AlertDialog.Builder(this@WorkstationActivity)
+                    .setTitle("Error")
+                    .setMessage("Error al verificar estaciones: ${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
+    }
 }

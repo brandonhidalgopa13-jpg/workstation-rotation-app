@@ -55,6 +55,9 @@ class WorkerAdapter(
                 tvWorkerName.text = worker.name
                 // Email removido por simplicidad
                 tvAssignedWorkstations.text = "Estaciones: $workstationCount asignadas"
+                
+                // Remover listener temporalmente para evitar activación accidental
+                switchActive.setOnCheckedChangeListener(null)
                 switchActive.isChecked = worker.isActive
             }
         }
@@ -122,8 +125,13 @@ class WorkerAdapter(
          */
         private fun setupClickListeners(worker: Worker) {
             binding.apply {
-                switchActive.setOnCheckedChangeListener { _, isChecked ->
-                    onStatusChange(worker, isChecked)
+                // Configurar listener del switch DESPUÉS de establecer el estado
+                // para evitar activaciones accidentales durante el bind
+                switchActive.setOnCheckedChangeListener { buttonView, isChecked ->
+                    // Solo procesar si el cambio fue por interacción del usuario
+                    if (buttonView.isPressed) {
+                        onStatusChange(worker, isChecked)
+                    }
                 }
                 
                 btnEdit.setOnClickListener {

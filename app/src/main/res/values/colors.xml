@@ -217,4 +217,7 @@
     <color name="session_expired">#FFFF9800</color>     <!-- Naranja expirada -->
     <color name="session_invalid">#FFF44336</color>     <!-- Rojo inválida -->
     
+    <!-- Error Colors -->
+    <color name="error_red">#FFF44336</color>           <!-- Rojo error -->
+    
 </resources>
