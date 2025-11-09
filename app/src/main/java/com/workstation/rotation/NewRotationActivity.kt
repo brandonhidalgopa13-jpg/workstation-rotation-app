@@ -618,34 +618,80 @@ class NewRotationActivity : AppCompatActivity() {
                 
                 var currentY = headerHeight.toFloat()
                 
-                // ===== CAPTURAR ROTACIÓN 1 =====
+                // ===== CAPTURAR ROTACIÓN 1 COMPLETA =====
                 canvas.save()
                 canvas.translate(0f, currentY)
                 canvas.drawText("ROTACIÓN 1 - ACTUAL", 50f, 50f, labelPaint)
                 canvas.translate(0f, 80f)
                 
-                // Scroll al inicio
-                recycler1.scrollToPosition(0)
-                kotlinx.coroutines.delay(100)
+                // Crear bitmap temporal para capturar TODO el ancho
+                val rot1Bitmap = android.graphics.Bitmap.createBitmap(
+                    width1,
+                    height1,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                val rot1Canvas = android.graphics.Canvas(rot1Bitmap)
+                rot1Canvas.drawColor(android.graphics.Color.WHITE)
                 
-                // Dibujar rotación 1
-                recycler1.draw(canvas)
+                // Capturar en secciones scrolleando
+                val itemCount1 = recycler1.adapter?.itemCount ?: 0
+                var xOffset = 0f
+                for (i in 0 until itemCount1) {
+                    recycler1.scrollToPosition(i)
+                    kotlinx.coroutines.delay(50)
+                    
+                    val viewHolder = recycler1.findViewHolderForAdapterPosition(i)
+                    viewHolder?.itemView?.let { view ->
+                        rot1Canvas.save()
+                        rot1Canvas.translate(xOffset, 0f)
+                        view.draw(rot1Canvas)
+                        rot1Canvas.restore()
+                        xOffset += view.width.toFloat()
+                    }
+                }
+                
+                // Dibujar bitmap completo
+                canvas.drawBitmap(rot1Bitmap, 0f, 0f, null)
+                rot1Bitmap.recycle()
                 
                 canvas.restore()
                 currentY += height1.toFloat() + spacing
                 
-                // ===== CAPTURAR ROTACIÓN 2 =====
+                // ===== CAPTURAR ROTACIÓN 2 COMPLETA =====
                 canvas.save()
                 canvas.translate(0f, currentY)
                 canvas.drawText("ROTACIÓN 2 - SIGUIENTE", 50f, 50f, labelPaint)
                 canvas.translate(0f, 80f)
                 
-                // Scroll al inicio
-                recycler2.scrollToPosition(0)
-                kotlinx.coroutines.delay(100)
+                // Crear bitmap temporal para capturar TODO el ancho
+                val rot2Bitmap = android.graphics.Bitmap.createBitmap(
+                    width2,
+                    height2,
+                    android.graphics.Bitmap.Config.ARGB_8888
+                )
+                val rot2Canvas = android.graphics.Canvas(rot2Bitmap)
+                rot2Canvas.drawColor(android.graphics.Color.WHITE)
                 
-                // Dibujar rotación 2
-                recycler2.draw(canvas)
+                // Capturar en secciones scrolleando
+                val itemCount2 = recycler2.adapter?.itemCount ?: 0
+                xOffset = 0f
+                for (i in 0 until itemCount2) {
+                    recycler2.scrollToPosition(i)
+                    kotlinx.coroutines.delay(50)
+                    
+                    val viewHolder = recycler2.findViewHolderForAdapterPosition(i)
+                    viewHolder?.itemView?.let { view ->
+                        rot2Canvas.save()
+                        rot2Canvas.translate(xOffset, 0f)
+                        view.draw(rot2Canvas)
+                        rot2Canvas.restore()
+                        xOffset += view.width.toFloat()
+                    }
+                }
+                
+                // Dibujar bitmap completo
+                canvas.drawBitmap(rot2Bitmap, 0f, 0f, null)
+                rot2Bitmap.recycle()
                 
                 canvas.restore()
                 
