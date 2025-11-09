@@ -113,33 +113,20 @@
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal Optimizado para 100+ estaciones -->
-                    <HorizontalScrollView
-                        android:id="@+id/horizontalScrollRotation1"
+                    <!-- RecyclerView con scroll horizontal nativo -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerRotation1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:clipToPadding="false"
+                        android:overScrollMode="always"
+                        android:minHeight="500dp"
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
-                        android:scrollbarStyle="outsideOverlay"
                         android:scrollbarSize="12dp"
-                        android:scrollbarThumbHorizontal="@android:color/darker_gray"
-                        android:fillViewport="false"
-                        android:smoothScrollbar="true">
-
-                        <!-- RecyclerView optimizado para grandes volúmenes -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/recyclerRotation1"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal"
-                            android:padding="12dp"
-                            android:clipToPadding="false"
-                            android:overScrollMode="always"
-                            android:minHeight="500dp"
-                            android:scrollbars="none"
-                            tools:listitem="@layout/item_rotation_station_column" />
-
-                    </HorizontalScrollView>
+                        tools:listitem="@layout/item_rotation_station_column" />
 
                 </LinearLayout>
 
@@ -170,33 +157,20 @@
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal Optimizado para 100+ estaciones -->
-                    <HorizontalScrollView
-                        android:id="@+id/horizontalScrollRotation2"
+                    <!-- RecyclerView con scroll horizontal nativo -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recyclerRotation2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:clipToPadding="false"
+                        android:overScrollMode="always"
+                        android:minHeight="500dp"
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
-                        android:scrollbarStyle="outsideOverlay"
                         android:scrollbarSize="12dp"
-                        android:scrollbarThumbHorizontal="@android:color/darker_gray"
-                        android:fillViewport="false"
-                        android:smoothScrollbar="true">
-
-                        <!-- RecyclerView optimizado para grandes volúmenes -->
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/recyclerRotation2"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:orientation="horizontal"
-                            android:padding="12dp"
-                            android:clipToPadding="false"
-                            android:overScrollMode="always"
-                            android:minHeight="500dp"
-                            android:scrollbars="none"
-                            tools:listitem="@layout/item_rotation_station_column" />
-
-                    </HorizontalScrollView>
+                        tools:listitem="@layout/item_rotation_station_column" />
 
                 </LinearLayout>
 

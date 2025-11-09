@@ -553,30 +553,16 @@ class NewRotationActivity : AppCompatActivity() {
                 kotlinx.coroutines.delay(300)
                 
                 // Obtener ambas rotaciones
-                val rotation1Card = binding.cardRotation1
-                val rotation2Card = binding.cardRotation2
                 val recycler1 = binding.recyclerRotation1
                 val recycler2 = binding.recyclerRotation2
-                val scroll1 = binding.horizontalScrollRotation1
-                val scroll2 = binding.horizontalScrollRotation2
-                
-                // Forzar medición y layout
-                recycler1.measure(
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                )
-                recycler2.measure(
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
-                )
                 
                 // Calcular dimensiones reales del contenido
-                val width1 = maxOf(recycler1.measuredWidth, recycler1.computeHorizontalScrollRange(), 1200)
-                val width2 = maxOf(recycler2.measuredWidth, recycler2.computeHorizontalScrollRange(), 1200)
+                val width1 = maxOf(recycler1.computeHorizontalScrollRange(), 1200)
+                val width2 = maxOf(recycler2.computeHorizontalScrollRange(), 1200)
                 val maxWidth = maxOf(width1, width2)
                 
-                val height1 = maxOf(recycler1.measuredHeight, 600)
-                val height2 = maxOf(recycler2.measuredHeight, 600)
+                val height1 = maxOf(recycler1.height, 600)
+                val height2 = maxOf(recycler2.height, 600)
                 
                 val headerHeight = 250
                 val spacing = 80
@@ -595,9 +581,9 @@ class NewRotationActivity : AppCompatActivity() {
                 
                 val canvas = android.graphics.Canvas(bitmap)
                 
-                // Guardar estados originales
-                val originalScroll1X = scroll1.scrollX
-                val originalScroll2X = scroll2.scrollX
+                // Guardar estados originales de scroll
+                val originalScroll1X = recycler1.computeHorizontalScrollOffset()
+                val originalScroll2X = recycler2.computeHorizontalScrollOffset()
                 
                 // Fondo blanco
                 canvas.drawColor(android.graphics.Color.WHITE)
@@ -638,39 +624,15 @@ class NewRotationActivity : AppCompatActivity() {
                 canvas.drawText("ROTACIÓN 1 - ACTUAL", 50f, 50f, labelPaint)
                 canvas.translate(0f, 80f)
                 
-                // Capturar todo el ancho
-                scroll1.scrollTo(0, 0)
+                // Scroll al inicio
+                recycler1.scrollToPosition(0)
                 kotlinx.coroutines.delay(100)
                 
-                // Crear bitmap temporal para la rotación 1
-                val rot1Bitmap = android.graphics.Bitmap.createBitmap(
-                    width1,
-                    height1,
-                    android.graphics.Bitmap.Config.ARGB_8888
-                )
-                val rot1Canvas = android.graphics.Canvas(rot1Bitmap)
-                
-                // Capturar en secciones
-                var capturedWidth = 0
-                val sectionWidth = scroll1.width
-                while (capturedWidth < width1) {
-                    scroll1.scrollTo(capturedWidth, 0)
-                    kotlinx.coroutines.delay(50)
-                    
-                    rot1Canvas.save()
-                    rot1Canvas.translate(-capturedWidth.toFloat(), 0f)
-                    recycler1.draw(rot1Canvas)
-                    rot1Canvas.restore()
-                    
-                    capturedWidth += sectionWidth
-                }
-                
-                // Dibujar bitmap completo de rotación 1
-                canvas.drawBitmap(rot1Bitmap, 0f, 0f, null)
-                rot1Bitmap.recycle()
+                // Dibujar rotación 1
+                recycler1.draw(canvas)
                 
                 canvas.restore()
-                currentY += height1 + spacing
+                currentY += height1.toFloat() + spacing
                 
                 // ===== CAPTURAR ROTACIÓN 2 =====
                 canvas.save()
@@ -678,41 +640,18 @@ class NewRotationActivity : AppCompatActivity() {
                 canvas.drawText("ROTACIÓN 2 - SIGUIENTE", 50f, 50f, labelPaint)
                 canvas.translate(0f, 80f)
                 
-                // Capturar todo el ancho
-                scroll2.scrollTo(0, 0)
+                // Scroll al inicio
+                recycler2.scrollToPosition(0)
                 kotlinx.coroutines.delay(100)
                 
-                // Crear bitmap temporal para la rotación 2
-                val rot2Bitmap = android.graphics.Bitmap.createBitmap(
-                    width2,
-                    height2,
-                    android.graphics.Bitmap.Config.ARGB_8888
-                )
-                val rot2Canvas = android.graphics.Canvas(rot2Bitmap)
-                
-                // Capturar en secciones
-                capturedWidth = 0
-                while (capturedWidth < width2) {
-                    scroll2.scrollTo(capturedWidth, 0)
-                    kotlinx.coroutines.delay(50)
-                    
-                    rot2Canvas.save()
-                    rot2Canvas.translate(-capturedWidth.toFloat(), 0f)
-                    recycler2.draw(rot2Canvas)
-                    rot2Canvas.restore()
-                    
-                    capturedWidth += sectionWidth
-                }
-                
-                // Dibujar bitmap completo de rotación 2
-                canvas.drawBitmap(rot2Bitmap, 0f, 0f, null)
-                rot2Bitmap.recycle()
+                // Dibujar rotación 2
+                recycler2.draw(canvas)
                 
                 canvas.restore()
                 
-                // Restaurar scrolls
-                scroll1.scrollTo(originalScroll1X, 0)
-                scroll2.scrollTo(originalScroll2X, 0)
+                // Restaurar scrolls originales
+                recycler1.scrollToPosition(originalScroll1X / 200)
+                recycler2.scrollToPosition(originalScroll2X / 200)
                 
                 // Guardar imagen
                 val timestamp = System.currentTimeMillis()
