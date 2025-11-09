@@ -285,14 +285,16 @@ class SqlRotationService(
     }
     
     /**
-     * Encuentra una estación ALEATORIA para un trabajador regular con ALTA VARIABILIDAD.
-     * Esto asegura que los trabajadores roten entre diferentes estaciones
-     * en cada generación de rotación, evitando monotonía.
+     * Encuentra una estación para un trabajador regular usando ROTACIÓN BALANCEADA.
      * 
-     * MEJORAS DE ALEATORIEDAD:
-     * - Usa timestamp actual como semilla para mayor variabilidad
-     * - Mezcla las estaciones antes de seleccionar
-     * - Considera historial de rotaciones previas (si existe)
+     * SISTEMA DE PROBABILIDADES:
+     * - 1 estación asignada = 100% probabilidad en esa estación
+     * - 2 estaciones asignadas = 50% probabilidad en cada una
+     * - 3 estaciones asignadas = 33.3% probabilidad en cada una
+     * - N estaciones asignadas = 100/N % probabilidad en cada una
+     * 
+     * Esto asegura que los trabajadores roten equitativamente entre todas sus estaciones
+     * asignadas, distribuyendo su tiempo de manera justa.
      */
     private suspend fun findRandomStationForWorker(
         worker: Worker,
@@ -300,13 +302,23 @@ class SqlRotationService(
         currentAssignments: List<RotationItem>
     ): Workstation? {
         
-        // Obtener todas las estaciones donde el trabajador puede trabajar
+        // Paso 1: Obtener TODAS las estaciones asignadas al trabajador
+        val workerStationIds = rotationDao.getWorkerWorkstationIds(worker.id)
+        
+        if (workerStationIds.isEmpty()) {
+            return null
+        }
+        
+        // Paso 2: Filtrar solo las estaciones que necesitan trabajadores
         val eligibleStations = stations.filter { station ->
-            val canWork = rotationDao.canWorkerWorkAtStationFixed(worker.id, station.id)
+            // Debe estar en las estaciones asignadas del trabajador
+            val isAssigned = workerStationIds.contains(station.id)
+            
+            // Debe necesitar más trabajadores
             val currentCount = currentAssignments.count { it.workstationId == station.id }
             val needsWorkers = currentCount < station.requiredWorkers
             
-            canWork && needsWorkers
+            isAssigned && needsWorkers
         }
         
         // Si no hay estaciones elegibles, retornar null
@@ -314,13 +326,23 @@ class SqlRotationService(
             return null
         }
         
-        // ✨ ALTA ALEATORIEDAD: Mezclar múltiples veces con diferentes semillas
-        val shuffled1 = eligibleStations.shuffled()
-        val shuffled2 = shuffled1.shuffled()
-        val shuffled3 = shuffled2.shuffled()
+        // Paso 3: ROTACIÓN BALANCEADA
+        // Cada estación tiene la misma probabilidad: 100% / N estaciones
+        // Ejemplo:
+        // - 1 estación: 100% probabilidad
+        // - 2 estaciones: 50% cada una
+        // - 3 estaciones: 33.3% cada una
+        // - 5 estaciones: 20% cada una
         
-        // Seleccionar una estación COMPLETAMENTE ALEATORIA
-        return shuffled3.random()
+        val totalStations = eligibleStations.size
+        val probabilityPerStation = 100.0 / totalStations
+        
+        android.util.Log.d("SqlRotationService", "🎲 Rotación balanceada para ${worker.name}:")
+        android.util.Log.d("SqlRotationService", "  • Estaciones elegibles: $totalStations")
+        android.util.Log.d("SqlRotationService", "  • Probabilidad por estación: ${probabilityPerStation.toInt()}%")
+        
+        // Seleccionar aleatoriamente con probabilidad equitativa
+        return eligibleStations.random()
     }
     
     /**

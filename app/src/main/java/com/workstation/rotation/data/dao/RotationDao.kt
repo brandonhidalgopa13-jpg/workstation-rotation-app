@@ -409,6 +409,20 @@ interface RotationDao {
         ORDER BY w.name
     """)
     suspend fun getWorkersWithoutStationsFixed(): List<Worker>
+    
+    /**
+     * Obtiene los IDs de todas las estaciones asignadas a un trabajador.
+     * Usado para rotación balanceada basada en probabilidades.
+     */
+    @Query("""
+        SELECT ww.workstationId
+        FROM worker_workstations ww
+        INNER JOIN workstations ws ON ww.workstationId = ws.id
+        WHERE ww.workerId = :workerId
+        AND ws.isActive = 1
+        ORDER BY ws.name
+    """)
+    suspend fun getWorkerWorkstationIds(workerId: Long): List<Long>
 }
 
 /**
