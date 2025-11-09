@@ -33,6 +33,8 @@ class DataInitializationService(private val context: Context) {
     
     /**
      * Inicializa todos los datos de prueba
+     * NOTA: Esta función NO se ejecuta automáticamente.
+     * Los datos de prueba deben ser creados manualmente por el usuario.
      */
     suspend fun initializeTestData(): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -46,10 +48,9 @@ class DataInitializationService(private val context: Context) {
                 return@withContext true
             }
             
-            // Crear datos desde cero
-            createSampleWorkstations()
-            createSampleWorkers()
-            createWorkerCapabilities()
+            // NO crear datos automáticamente
+            // El usuario debe agregar sus propios trabajadores y estaciones
+            android.util.Log.d("DataInitService", "⚠️ No hay datos. El usuario debe crear trabajadores y estaciones manualmente.")
             
             true
         } catch (e: Exception) {
