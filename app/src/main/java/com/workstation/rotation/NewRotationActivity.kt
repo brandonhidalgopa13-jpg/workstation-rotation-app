@@ -113,13 +113,18 @@ class NewRotationActivity : AppCompatActivity() {
             adapter = rotation1Adapter
             
             // Optimizaciones para grandes volúmenes
-            setHasFixedSize(true) // Mejora rendimiento
+            setHasFixedSize(false) // Permitir tamaño dinámico
             setItemViewCacheSize(20) // Cache de 20 items
             recycledViewPool.setMaxRecycledViews(0, 30) // Pool de 30 vistas
             
             // Habilitar drawing cache para scroll suave
             isDrawingCacheEnabled = true
             drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
+            
+            // Forzar medición después de actualizar datos
+            post {
+                requestLayout()
+            }
         }
         
         // Configurar adapter para Rotación 2 (SIGUIENTE)
@@ -139,13 +144,18 @@ class NewRotationActivity : AppCompatActivity() {
             adapter = rotation2Adapter
             
             // Optimizaciones para grandes volúmenes
-            setHasFixedSize(true) // Mejora rendimiento
+            setHasFixedSize(false) // Permitir tamaño dinámico
             setItemViewCacheSize(20) // Cache de 20 items
             recycledViewPool.setMaxRecycledViews(0, 30) // Pool de 30 vistas
             
             // Habilitar drawing cache para scroll suave
             isDrawingCacheEnabled = true
             drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
+            
+            // Forzar medición después de actualizar datos
+            post {
+                requestLayout()
+            }
         }
     }
 
