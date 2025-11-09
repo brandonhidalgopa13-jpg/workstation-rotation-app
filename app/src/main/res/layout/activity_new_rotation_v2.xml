@@ -222,8 +222,9 @@
 
         </HorizontalScrollView>
 
-        <!-- Grid de Rotación con Scroll Horizontal -->
+        <!-- Grid de Rotación con Scroll Bidireccional Mejorado -->
         <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardRotationGrid"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -263,31 +264,44 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="← Desliza →"
+                        android:text="↔ Desliza ↕"
                         android:textSize="12sp"
                         android:textColor="@color/text_secondary"
                         android:textStyle="italic" />
 
                 </LinearLayout>
 
-                <!-- Scroll Horizontal para Estaciones -->
-                <HorizontalScrollView
-                    android:id="@+id/horizontalScrollView"
+                <!-- Contenedor con Scroll Bidireccional -->
+                <FrameLayout
+                    android:id="@+id/rotationGridContainer"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scrollbars="horizontal"
-                    android:fillViewport="false">
+                    android:layout_height="match_parent">
 
-                    <!-- RecyclerView Horizontal para Estaciones -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recyclerViewStations"
-                        android:layout_width="wrap_content"
+                    <!-- Scroll Horizontal Mejorado -->
+                    <HorizontalScrollView
+                        android:id="@+id/horizontalScrollView"
+                        android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="horizontal"
-                        android:padding="8dp"
-                        tools:listitem="@layout/item_station_column_v2" />
+                        android:scrollbars="horizontal"
+                        android:fadeScrollbars="false"
+                        android:scrollbarStyle="outsideOverlay"
+                        android:scrollbarSize="8dp"
+                        android:fillViewport="false">
 
-                </HorizontalScrollView>
+                        <!-- RecyclerView Horizontal para Estaciones con Scroll Vertical Interno -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerViewStations"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:orientation="horizontal"
+                            android:padding="8dp"
+                            android:clipToPadding="false"
+                            android:overScrollMode="always"
+                            tools:listitem="@layout/item_station_column_v2" />
+
+                    </HorizontalScrollView>
+
+                </FrameLayout>
 
             </LinearLayout>
 

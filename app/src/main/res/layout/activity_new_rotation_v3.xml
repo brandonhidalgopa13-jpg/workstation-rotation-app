@@ -87,8 +87,9 @@
 
             </HorizontalScrollView>
 
-            <!-- ROTACIÓN 1 (ACTUAL) -->
+            <!-- ROTACIÓN 1 (ACTUAL) - Mejorado con Scroll Bidireccional -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRotation1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -106,25 +107,33 @@
                         android:layout_height="wrap_content"
                         android:background="#FF9800"
                         android:padding="12dp"
-                        android:text="Rotación 1"
+                        android:text="Rotación 1 - ACTUAL"
                         android:textColor="@android:color/white"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal para la tabla -->
+                    <!-- Scroll Horizontal Mejorado para la tabla -->
                     <HorizontalScrollView
+                        android:id="@+id/horizontalScrollRotation1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:scrollbars="horizontal">
+                        android:scrollbars="horizontal"
+                        android:fadeScrollbars="false"
+                        android:scrollbarStyle="outsideOverlay"
+                        android:scrollbarSize="8dp"
+                        android:fillViewport="false">
 
-                        <!-- RecyclerView para las estaciones -->
+                        <!-- RecyclerView para las estaciones con scroll vertical interno -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/recyclerRotation1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:padding="8dp"
+                            android:clipToPadding="false"
+                            android:overScrollMode="always"
+                            android:minHeight="300dp"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>
@@ -133,8 +142,9 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- ROTACIÓN 2 (SIGUIENTE) -->
+            <!-- ROTACIÓN 2 (SIGUIENTE) - Mejorado con Scroll Bidireccional -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRotation2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="12dp"
@@ -151,25 +161,33 @@
                         android:layout_height="wrap_content"
                         android:background="#FF9800"
                         android:padding="12dp"
-                        android:text="Rotación 2"
+                        android:text="Rotación 2 - SIGUIENTE"
                         android:textColor="@android:color/white"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal para la tabla -->
+                    <!-- Scroll Horizontal Mejorado para la tabla -->
                     <HorizontalScrollView
+                        android:id="@+id/horizontalScrollRotation2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:scrollbars="horizontal">
+                        android:scrollbars="horizontal"
+                        android:fadeScrollbars="false"
+                        android:scrollbarStyle="outsideOverlay"
+                        android:scrollbarSize="8dp"
+                        android:fillViewport="false">
 
-                        <!-- RecyclerView para las estaciones -->
+                        <!-- RecyclerView para las estaciones con scroll vertical interno -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/recyclerRotation2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:padding="8dp"
+                            android:clipToPadding="false"
+                            android:overScrollMode="always"
+                            android:minHeight="300dp"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>

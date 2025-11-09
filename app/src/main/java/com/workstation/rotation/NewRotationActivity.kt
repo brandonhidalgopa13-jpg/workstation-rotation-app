@@ -514,43 +514,205 @@ class NewRotationActivity : AppCompatActivity() {
 
     private fun captureRotationPhoto() {
         try {
-            // Crear un bitmap de la vista completa de rotaciones
-            val gridView = binding.recyclerRotation1
+            // Mostrar loading
+            binding.loadingOverlay.visibility = View.VISIBLE
+            binding.tvLoadingMessage.text = "Capturando rotaciones completas..."
+            
+            // Obtener ambas rotaciones
+            val rotation1Card = binding.cardRotation1
+            val rotation2Card = binding.cardRotation2
+            val recycler1 = binding.recyclerRotation1
+            val recycler2 = binding.recyclerRotation2
+            val scroll1 = binding.horizontalScrollRotation1
+            val scroll2 = binding.horizontalScrollRotation2
+            
+            // Calcular el ancho máximo entre ambas rotaciones
+            val width1 = recycler1.computeHorizontalScrollRange()
+            val width2 = recycler2.computeHorizontalScrollRange()
+            val maxWidth = maxOf(width1, width2, 1200) // Mínimo 1200px
+            
+            // Calcular altura total (ambas rotaciones + headers + espaciado)
+            val height1 = rotation1Card.height
+            val height2 = rotation2Card.height
+            val headerHeight = 200 // Espacio para título y fecha
+            val spacing = 50 // Espaciado entre rotaciones
+            val totalHeight = headerHeight + height1 + spacing + height2 + 100
+            
+            // Crear bitmap grande para ambas rotaciones
             val bitmap = android.graphics.Bitmap.createBitmap(
-                gridView.width, 
-                gridView.height, 
+                maxWidth,
+                totalHeight,
                 android.graphics.Bitmap.Config.ARGB_8888
             )
+            
             val canvas = android.graphics.Canvas(bitmap)
-            gridView.draw(canvas)
+            
+            // Guardar estados originales de scroll
+            val originalScroll1X = scroll1.scrollX
+            val originalScroll2X = scroll2.scrollX
+            
+            // Dibujar fondo blanco
+            canvas.drawColor(android.graphics.Color.WHITE)
+            
+            // Configurar estilos de texto
+            val titlePaint = android.graphics.Paint().apply {
+                textSize = 56f
+                color = android.graphics.Color.BLACK
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                isAntiAlias = true
+            }
+            
+            val datePaint = android.graphics.Paint().apply {
+                textSize = 36f
+                color = android.graphics.Color.GRAY
+                isAntiAlias = true
+            }
+            
+            val labelPaint = android.graphics.Paint().apply {
+                textSize = 40f
+                color = android.graphics.Color.parseColor("#FF9800")
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
+                isAntiAlias = true
+            }
+            
+            // Dibujar título principal
+            val title = "Sistema de Rotación - Vista Completa"
+            val date = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+            
+            canvas.drawText(title, 40f, 80f, titlePaint)
+            canvas.drawText("Fecha: $date", 40f, 140f, datePaint)
+            
+            // Posición Y inicial para las rotaciones
+            var currentY = headerHeight.toFloat()
+            
+            // ===== CAPTURAR ROTACIÓN 1 (ACTUAL) =====
+            canvas.save()
+            canvas.translate(0f, currentY)
+            
+            // Resetear scroll para capturar desde el inicio
+            scroll1.scrollTo(0, 0)
+            
+            // Dibujar etiqueta de Rotación 1
+            canvas.drawText("ROTACIÓN 1 - ACTUAL", 40f, 40f, labelPaint)
+            canvas.translate(0f, 60f)
+            
+            // Capturar todo el contenido horizontal de Rotación 1
+            if (width1 > rotation1Card.width) {
+                // Capturar en secciones si es más ancho que la vista
+                var capturedWidth = 0
+                while (capturedWidth < width1) {
+                    scroll1.scrollTo(capturedWidth, 0)
+                    rotation1Card.draw(canvas)
+                    capturedWidth += rotation1Card.width
+                    if (capturedWidth < width1) {
+                        canvas.translate(-rotation1Card.width.toFloat(), 0f)
+                    }
+                }
+            } else {
+                rotation1Card.draw(canvas)
+            }
+            
+            canvas.restore()
+            currentY += height1 + spacing
+            
+            // ===== CAPTURAR ROTACIÓN 2 (SIGUIENTE) =====
+            canvas.save()
+            canvas.translate(0f, currentY)
+            
+            // Resetear scroll para capturar desde el inicio
+            scroll2.scrollTo(0, 0)
+            
+            // Dibujar etiqueta de Rotación 2
+            canvas.drawText("ROTACIÓN 2 - SIGUIENTE", 40f, 40f, labelPaint)
+            canvas.translate(0f, 60f)
+            
+            // Capturar todo el contenido horizontal de Rotación 2
+            if (width2 > rotation2Card.width) {
+                // Capturar en secciones si es más ancho que la vista
+                var capturedWidth = 0
+                while (capturedWidth < width2) {
+                    scroll2.scrollTo(capturedWidth, 0)
+                    rotation2Card.draw(canvas)
+                    capturedWidth += rotation2Card.width
+                    if (capturedWidth < width2) {
+                        canvas.translate(-rotation2Card.width.toFloat(), 0f)
+                    }
+                }
+            } else {
+                rotation2Card.draw(canvas)
+            }
+            
+            canvas.restore()
+            
+            // Restaurar scrolls originales
+            scroll1.scrollTo(originalScroll1X, 0)
+            scroll2.scrollTo(originalScroll2X, 0)
             
             // Guardar la imagen en la galería
+            val timestamp = System.currentTimeMillis()
+            val fileName = "Rotacion_Completa_$timestamp"
+            
             val savedUri = android.provider.MediaStore.Images.Media.insertImage(
                 contentResolver,
                 bitmap,
-                "Rotacion_${System.currentTimeMillis()}",
-                "Captura de rotación del ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(java.util.Date())}"
+                fileName,
+                "Captura completa: Rotación 1 (Actual) y Rotación 2 (Siguiente) con todas las estaciones - $date"
             )
             
+            // Ocultar loading
+            binding.loadingOverlay.visibility = View.GONE
+            
             if (savedUri != null) {
-                Snackbar.make(binding.root, "Foto guardada en la galería", Snackbar.LENGTH_LONG)
+                Snackbar.make(binding.root, "✅ Foto guardada: Ambas rotaciones con todas las estaciones", Snackbar.LENGTH_LONG)
                     .setAction("Ver") {
-                        // Abrir la imagen en la galería
                         val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
                             data = android.net.Uri.parse(savedUri)
                             type = "image/*"
                         }
                         startActivity(intent)
                     }
+                    .setActionTextColor(getColor(R.color.accent))
                     .show()
+                    
+                // Mostrar opción para compartir después de 2 segundos
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    showSharePhotoDialog(savedUri)
+                }, 2000)
             } else {
-                Snackbar.make(binding.root, "Error al guardar la foto", Snackbar.LENGTH_LONG).show()
+                Snackbar.make(binding.root, "❌ Error al guardar la foto", Snackbar.LENGTH_LONG)
+                    .setBackgroundTint(getColor(R.color.error))
+                    .show()
             }
+            
+            // Liberar el bitmap
+            bitmap.recycle()
             
         } catch (e: Exception) {
             e.printStackTrace()
-            Snackbar.make(binding.root, "Error al capturar foto: ${e.message}", Snackbar.LENGTH_LONG).show()
+            binding.loadingOverlay.visibility = View.GONE
+            Snackbar.make(binding.root, "❌ Error al capturar foto: ${e.message}", Snackbar.LENGTH_LONG)
+                .setBackgroundTint(getColor(R.color.error))
+                .show()
         }
+    }
+    
+    /**
+     * Muestra diálogo para compartir la foto capturada
+     */
+    private fun showSharePhotoDialog(imageUri: String) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Foto Capturada")
+            .setMessage("¿Deseas compartir la imagen de las rotaciones?")
+            .setPositiveButton("Compartir") { _, _ ->
+                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(android.content.Intent.EXTRA_STREAM, android.net.Uri.parse(imageUri))
+                    putExtra(android.content.Intent.EXTRA_TEXT, "Rotaciones del sistema - ${java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())}")
+                }
+                startActivity(android.content.Intent.createChooser(shareIntent, "Compartir rotación"))
+            }
+            .setNegativeButton("Cerrar", null)
+            .show()
     }
 
     override fun onBackPressed() {
