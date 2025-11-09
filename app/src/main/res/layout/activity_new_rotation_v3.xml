@@ -113,7 +113,7 @@
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal Mejorado para la tabla -->
+                    <!-- Scroll Horizontal Optimizado para 100+ estaciones -->
                     <HorizontalScrollView
                         android:id="@+id/horizontalScrollRotation1"
                         android:layout_width="match_parent"
@@ -121,10 +121,13 @@
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
                         android:scrollbarStyle="outsideOverlay"
-                        android:scrollbarSize="10dp"
-                        android:fillViewport="false">
+                        android:scrollbarSize="12dp"
+                        android:scrollbarThumbHorizontal="@android:color/darker_gray"
+                        android:fillViewport="false"
+                        android:smoothScrollbar="true"
+                        android:isScrollContainer="true">
 
-                        <!-- RecyclerView para las estaciones con scroll vertical interno -->
+                        <!-- RecyclerView optimizado para grandes volúmenes -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/recyclerRotation1"
                             android:layout_width="wrap_content"
@@ -134,6 +137,8 @@
                             android:clipToPadding="false"
                             android:overScrollMode="always"
                             android:minHeight="500dp"
+                            android:scrollbars="none"
+                            android:layoutAnimation="@null"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>
@@ -167,7 +172,7 @@
                         android:textStyle="bold"
                         android:gravity="center" />
 
-                    <!-- Scroll Horizontal Mejorado para la tabla -->
+                    <!-- Scroll Horizontal Optimizado para 100+ estaciones -->
                     <HorizontalScrollView
                         android:id="@+id/horizontalScrollRotation2"
                         android:layout_width="match_parent"
@@ -175,10 +180,13 @@
                         android:scrollbars="horizontal"
                         android:fadeScrollbars="false"
                         android:scrollbarStyle="outsideOverlay"
-                        android:scrollbarSize="10dp"
-                        android:fillViewport="false">
+                        android:scrollbarSize="12dp"
+                        android:scrollbarThumbHorizontal="@android:color/darker_gray"
+                        android:fillViewport="false"
+                        android:smoothScrollbar="true"
+                        android:isScrollContainer="true">
 
-                        <!-- RecyclerView para las estaciones con scroll vertical interno -->
+                        <!-- RecyclerView optimizado para grandes volúmenes -->
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/recyclerRotation2"
                             android:layout_width="wrap_content"
@@ -188,6 +196,8 @@
                             android:clipToPadding="false"
                             android:overScrollMode="always"
                             android:minHeight="500dp"
+                            android:scrollbars="none"
+                            android:layoutAnimation="@null"
                             tools:listitem="@layout/item_rotation_station_column" />
 
                     </HorizontalScrollView>

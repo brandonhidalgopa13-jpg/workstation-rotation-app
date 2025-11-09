@@ -103,6 +103,7 @@ class NewRotationActivity : AppCompatActivity() {
             }
         )
         
+        // Configurar RecyclerView optimizado para 100+ estaciones
         binding.recyclerRotation1.apply {
             layoutManager = LinearLayoutManager(
                 this@NewRotationActivity,
@@ -110,7 +111,15 @@ class NewRotationActivity : AppCompatActivity() {
                 false
             )
             adapter = rotation1Adapter
-            setHasFixedSize(false)
+            
+            // Optimizaciones para grandes volúmenes
+            setHasFixedSize(true) // Mejora rendimiento
+            setItemViewCacheSize(20) // Cache de 20 items
+            recycledViewPool.setMaxRecycledViews(0, 30) // Pool de 30 vistas
+            
+            // Habilitar drawing cache para scroll suave
+            isDrawingCacheEnabled = true
+            drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
         }
         
         // Configurar adapter para Rotación 2 (SIGUIENTE)
@@ -120,6 +129,7 @@ class NewRotationActivity : AppCompatActivity() {
             }
         )
         
+        // Configurar RecyclerView optimizado para 100+ estaciones
         binding.recyclerRotation2.apply {
             layoutManager = LinearLayoutManager(
                 this@NewRotationActivity,
@@ -127,7 +137,15 @@ class NewRotationActivity : AppCompatActivity() {
                 false
             )
             adapter = rotation2Adapter
-            setHasFixedSize(false)
+            
+            // Optimizaciones para grandes volúmenes
+            setHasFixedSize(true) // Mejora rendimiento
+            setItemViewCacheSize(20) // Cache de 20 items
+            recycledViewPool.setMaxRecycledViews(0, 30) // Pool de 30 vistas
+            
+            // Habilitar drawing cache para scroll suave
+            isDrawingCacheEnabled = true
+            drawingCacheQuality = View.DRAWING_CACHE_QUALITY_HIGH
         }
     }
 

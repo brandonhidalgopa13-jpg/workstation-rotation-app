@@ -10,7 +10,8 @@ import com.workstation.rotation.R
 import com.workstation.rotation.models.RotationGridRow
 
 /**
- * Adaptador para las columnas de estaciones en formato tabla horizontal
+ * Adaptador optimizado para columnas de estaciones en formato tabla horizontal
+ * Soporta 100+ estaciones con scroll eficiente
  * Cada columna muestra el nombre de la estación (header rosado) y los trabajadores en vertical
  */
 class RotationStationColumnAdapter(
@@ -19,6 +20,11 @@ class RotationStationColumnAdapter(
 
     private var stations = listOf<RotationGridRow>()
     private var rotationType: String = "CURRENT"
+
+    init {
+        // Optimización: Habilitar stable IDs para mejor rendimiento
+        setHasStableIds(true)
+    }
 
     fun submitList(newStations: List<RotationGridRow>, type: String) {
         stations = newStations
@@ -37,6 +43,16 @@ class RotationStationColumnAdapter(
     }
 
     override fun getItemCount(): Int = stations.size
+
+    override fun getItemId(position: Int): Long {
+        // Usar workstationId como ID estable
+        return stations[position].workstationId
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        // Optimización: Mismo tipo para todas las vistas
+        return 0
+    }
 
     class StationColumnViewHolder(
         itemView: View,
