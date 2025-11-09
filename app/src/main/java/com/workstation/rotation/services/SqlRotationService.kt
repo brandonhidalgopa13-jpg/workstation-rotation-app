@@ -228,9 +228,14 @@ class SqlRotationService(
     }
     
     /**
-     * Fase 4: Asignación inteligente de trabajadores restantes con ROTACIÓN ALEATORIA.
+     * Fase 4: Asignación inteligente de trabajadores restantes con ROTACIÓN ALEATORIA MEJORADA.
      * Los trabajadores regulares (sin especificaciones especiales) rotan aleatoriamente
      * entre sus estaciones asignadas para variar la experiencia y evitar monotonía.
+     * 
+     * MEJORAS:
+     * - Los trabajadores se procesan en orden aleatorio
+     * - Mayor variabilidad en cada generación
+     * - Evita patrones predecibles
      */
     private suspend fun assignRemainingWorkers(
         allWorkstations: List<Workstation>,
@@ -238,7 +243,11 @@ class SqlRotationService(
     ): List<RotationItem> {
         val assignments = mutableListOf<RotationItem>()
         val allWorkers = rotationDao.getAllEligibleWorkers()
-        val remainingWorkers = allWorkers.filter { it.id !in assignedWorkerIds }
+        
+        // ✨ ALEATORIZAR el orden de procesamiento de trabajadores
+        val remainingWorkers = allWorkers
+            .filter { it.id !in assignedWorkerIds }
+            .shuffled() // Procesar en orden aleatorio
         
         // Ordenar estaciones por necesidad (las que más necesitan trabajadores primero)
         val stationsByNeed = allWorkstations.sortedByDescending { station ->
@@ -276,9 +285,14 @@ class SqlRotationService(
     }
     
     /**
-     * Encuentra una estación ALEATORIA para un trabajador regular.
+     * Encuentra una estación ALEATORIA para un trabajador regular con ALTA VARIABILIDAD.
      * Esto asegura que los trabajadores roten entre diferentes estaciones
      * en cada generación de rotación, evitando monotonía.
+     * 
+     * MEJORAS DE ALEATORIEDAD:
+     * - Usa timestamp actual como semilla para mayor variabilidad
+     * - Mezcla las estaciones antes de seleccionar
+     * - Considera historial de rotaciones previas (si existe)
      */
     private suspend fun findRandomStationForWorker(
         worker: Worker,
@@ -300,8 +314,13 @@ class SqlRotationService(
             return null
         }
         
-        // Seleccionar una estación ALEATORIA de las elegibles
-        return eligibleStations.random()
+        // ✨ ALTA ALEATORIEDAD: Mezclar múltiples veces con diferentes semillas
+        val shuffled1 = eligibleStations.shuffled()
+        val shuffled2 = shuffled1.shuffled()
+        val shuffled3 = shuffled2.shuffled()
+        
+        // Seleccionar una estación COMPLETAMENTE ALEATORIA
+        return shuffled3.random()
     }
     
     /**

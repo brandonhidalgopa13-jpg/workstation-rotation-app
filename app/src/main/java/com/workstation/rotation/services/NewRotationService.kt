@@ -587,6 +587,32 @@ class NewRotationService(private val context: Context) {
         }
     }
     
+    /**
+     * Limpia todas las asignaciones de una rotación específica.
+     * Útil para regenerar rotaciones o empezar desde cero.
+     * 
+     * @param sessionId ID de la sesión
+     * @param rotationType Tipo de rotación (CURRENT o NEXT)
+     * @return true si se limpió exitosamente
+     */
+    suspend fun clearRotation(sessionId: Long, rotationType: String): Boolean = withContext(Dispatchers.IO) {
+        try {
+            android.util.Log.d("NewRotationService", "🧹 Limpiando rotación $rotationType de sesión $sessionId")
+            
+            // Limpiar asignaciones del tipo especificado
+            assignmentDao.clearRotationType(sessionId, rotationType)
+            
+            // Actualizar contadores de la sesión
+            updateSessionCounts(sessionId)
+            
+            android.util.Log.d("NewRotationService", "✅ Rotación $rotationType limpiada exitosamente")
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("NewRotationService", "❌ Error al limpiar rotación: ${e.message}", e)
+            false
+        }
+    }
+    
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     // 🛠️ FUNCIONES AUXILIARES
     // ═══════════════════════════════════════════════════════════════════════════════════════════

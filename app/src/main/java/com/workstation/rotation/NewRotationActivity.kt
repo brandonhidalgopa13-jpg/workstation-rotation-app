@@ -470,10 +470,33 @@ class NewRotationActivity : AppCompatActivity() {
     private fun clearRotation(rotationType: String) {
         MaterialAlertDialogBuilder(this)
             .setTitle("Limpiar Rotación")
-            .setMessage("¿Estás seguro de que deseas limpiar la rotación ${if (rotationType == "CURRENT") "actual" else "siguiente"}?")
+            .setMessage("¿Estás seguro de que deseas limpiar la rotación ${if (rotationType == "CURRENT") "actual" else "siguiente"}?\n\nEsta acción eliminará todas las asignaciones de trabajadores.")
             .setPositiveButton("Sí, Limpiar") { _, _ ->
-                // TODO: Implementar limpieza de rotación
-                Snackbar.make(binding.root, "Rotación limpiada", Snackbar.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    try {
+                        val success = rotationService.clearRotation(currentSessionId, rotationType)
+                        if (success) {
+                            Snackbar.make(
+                                binding.root,
+                                "✅ Rotación ${if (rotationType == "CURRENT") "actual" else "siguiente"} limpiada correctamente",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
+                            viewModel.refreshRotationGrid()
+                        } else {
+                            Snackbar.make(
+                                binding.root,
+                                "❌ Error al limpiar rotación",
+                                Snackbar.LENGTH_SHORT
+                            ).show()
+                        }
+                    } catch (e: Exception) {
+                        Snackbar.make(
+                            binding.root,
+                            "❌ Error: ${e.message}",
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
