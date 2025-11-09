@@ -124,12 +124,12 @@
                     android:id="@+id/btnWorkstations"
                     style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="56dp"
-                    android:text="Gestionar"
-                    android:textSize="14sp"
-                    android:paddingHorizontal="20dp"
-                    android:minWidth="110dp"
-                    app:cornerRadius="28dp"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="24dp"
+                    android:minWidth="100dp"
+                    app:cornerRadius="24dp"
                     app:backgroundTint="@color/primary_blue" />
 
             </LinearLayout>
@@ -198,12 +198,12 @@
                     android:id="@+id/btnWorkers"
                     style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="56dp"
-                    android:text="Administrar"
-                    android:textSize="14sp"
-                    android:paddingHorizontal="20dp"
-                    android:minWidth="110dp"
-                    app:cornerRadius="28dp"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="24dp"
+                    android:minWidth="100dp"
+                    app:cornerRadius="24dp"
                     app:backgroundTint="@color/accent_orange" />
 
             </LinearLayout>
@@ -272,12 +272,12 @@
                     android:id="@+id/btnRotation"
                     style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="56dp"
+                    android:layout_height="48dp"
                     android:text="Generar"
-                    android:textSize="14sp"
-                    android:paddingHorizontal="20dp"
-                    android:minWidth="110dp"
-                    app:cornerRadius="28dp"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="24dp"
+                    android:minWidth="100dp"
+                    app:cornerRadius="24dp"
                     app:backgroundTint="@color/accent_green" />
 
             </LinearLayout>
@@ -346,12 +346,12 @@
                     android:id="@+id/btnHistory"
                     style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="56dp"
-                    android:text="Ver Historial"
-                    android:textSize="14sp"
-                    android:paddingHorizontal="20dp"
-                    android:minWidth="110dp"
-                    app:cornerRadius="28dp"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="24dp"
+                    android:minWidth="100dp"
+                    app:cornerRadius="24dp"
                     app:backgroundTint="@color/teal_700" />
 
             </LinearLayout>
@@ -420,12 +420,12 @@
                     android:id="@+id/btnSettings"
                     style="@style/MainScreenButtonStyle"
                     android:layout_width="wrap_content"
-                    android:layout_height="56dp"
-                    android:text="Configurar"
-                    android:textSize="14sp"
-                    android:paddingHorizontal="20dp"
-                    android:minWidth="110dp"
-                    app:cornerRadius="28dp"
+                    android:layout_height="48dp"
+                    android:text="Abrir"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="24dp"
+                    android:minWidth="100dp"
+                    app:cornerRadius="24dp"
                     app:backgroundTint="@color/accent_purple" />
 
             </LinearLayout>
