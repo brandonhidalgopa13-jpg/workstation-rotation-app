@@ -458,32 +458,107 @@ class NewRotationService(private val context: Context) {
             android.util.Log.d("NewRotationService", "Trabajadores con estaciones asignadas: ${workersWithStations.size}")
             android.util.Log.d("NewRotationService", "Capacidades totales: ${capabilities.size}")
             
-            // Paso 1: Asignar líderes a estaciones prioritarias
-            workstations.filter { it.isPriority && it.isActive }.forEach { workstation ->
-                val leaders = capabilities.filter { 
-                    it.workstation_id == workstation.id && 
-                    it.can_be_leader && 
-                    it.canBeAssigned() &&
-                    workersWithStations.contains(it.worker_id) &&
-                    !assignedWorkers.contains(it.worker_id)
-                }.sortedByDescending { it.calculateSuitabilityScore() }
+            // Paso 1: Asignar LÍDERES a sus estaciones designadas (PRIORIDAD MÁXIMA)
+            android.util.Log.d("NewRotationService", "═══ PASO 1: ASIGNANDO LÍDERES ═══")
+            
+            workers.filter { it.isLeader && it.isActive }.forEach { leader ->
+                val leaderStationId = leader.leaderWorkstationId
                 
-                android.util.Log.d("NewRotationService", "Estación prioritaria: ${workstation.name}, Líderes disponibles: ${leaders.size}")
-                
-                leaders.take(1).forEach { leader ->
-                    assignments.add(RotationAssignment(
-                        worker_id = leader.worker_id,
-                        workstation_id = workstation.id,
-                        rotation_session_id = sessionId,
-                        rotation_type = rotationType,
-                        priority = 1
-                    ))
-                    assignedWorkers.add(leader.worker_id)
-                    android.util.Log.d("NewRotationService", "  ✅ Líder asignado: Worker ${leader.worker_id}")
+                if (leaderStationId != null) {
+                    // Verificar que el líder puede trabajar en su estación
+                    val capability = capabilities.find { 
+                        it.worker_id == leader.id && 
+                        it.workstation_id == leaderStationId &&
+                        it.canBeAssigned()
+                    }
+                    
+                    if (capability != null) {
+                        // Verificar si debe estar en esta rotación según su tipo de liderazgo
+                        val isFirstHalf = rotationType == "CURRENT"
+                        val shouldBeInRotation = when (leader.leadershipType) {
+                            "BOTH" -> true
+                            "FIRST_HALF" -> isFirstHalf
+                            "SECOND_HALF" -> !isFirstHalf
+                            else -> true
+                        }
+                        
+                        if (shouldBeInRotation && !assignedWorkers.contains(leader.id)) {
+                            val workstation = workstations.find { it.id == leaderStationId }
+                            assignments.add(RotationAssignment(
+                                worker_id = leader.id,
+                                workstation_id = leaderStationId,
+                                rotation_session_id = sessionId,
+                                rotation_type = rotationType,
+                                priority = 1
+                            ))
+                            assignedWorkers.add(leader.id)
+                            android.util.Log.d("NewRotationService", "  👑 LÍDER asignado: ${leader.name} → ${workstation?.name} (${leader.leadershipType})")
+                        } else {
+                            android.util.Log.d("NewRotationService", "  ⏭️ Líder ${leader.name} no corresponde a esta rotación (${leader.leadershipType})")
+                        }
+                    } else {
+                        android.util.Log.w("NewRotationService", "  ⚠️ Líder ${leader.name} no tiene capacidad para su estación designada")
+                    }
+                } else {
+                    android.util.Log.w("NewRotationService", "  ⚠️ Líder ${leader.name} no tiene estación designada")
                 }
             }
             
-            // Paso 2: Completar estaciones con mejores candidatos
+            // Paso 1.5: Asignar PAREJAS DE ENTRENAMIENTO (PRIORIDAD MÁXIMA)
+            android.util.Log.d("NewRotationService", "═══ PASO 1.5: ASIGNANDO ENTRENAMIENTOS ═══")
+            
+            workers.filter { it.isTrainee && it.isActive }.forEach { trainee ->
+                val trainerId = trainee.trainerId
+                val trainingStationId = trainee.trainingWorkstationId
+                
+                if (trainerId != null && trainingStationId != null) {
+                    val trainer = workers.find { it.id == trainerId && it.isActive }
+                    
+                    if (trainer != null && !assignedWorkers.contains(trainee.id) && !assignedWorkers.contains(trainer.id)) {
+                        // Verificar que ambos pueden trabajar en la estación
+                        val traineeCapability = capabilities.find { 
+                            it.worker_id == trainee.id && 
+                            it.workstation_id == trainingStationId &&
+                            it.canBeAssigned()
+                        }
+                        val trainerCapability = capabilities.find { 
+                            it.worker_id == trainer.id && 
+                            it.workstation_id == trainingStationId &&
+                            it.canBeAssigned()
+                        }
+                        
+                        if (traineeCapability != null && trainerCapability != null) {
+                            val workstation = workstations.find { it.id == trainingStationId }
+                            
+                            // Asignar entrenador
+                            assignments.add(RotationAssignment(
+                                worker_id = trainer.id,
+                                workstation_id = trainingStationId,
+                                rotation_session_id = sessionId,
+                                rotation_type = rotationType,
+                                priority = 1
+                            ))
+                            assignedWorkers.add(trainer.id)
+                            
+                            // Asignar entrenado
+                            assignments.add(RotationAssignment(
+                                worker_id = trainee.id,
+                                workstation_id = trainingStationId,
+                                rotation_session_id = sessionId,
+                                rotation_type = rotationType,
+                                priority = 1
+                            ))
+                            assignedWorkers.add(trainee.id)
+                            
+                            android.util.Log.d("NewRotationService", "  🎯 ENTRENAMIENTO: ${trainer.name} + ${trainee.name} → ${workstation?.name}")
+                        } else {
+                            android.util.Log.w("NewRotationService", "  ⚠️ Pareja ${trainer.name}-${trainee.name} no tiene capacidades para estación de entrenamiento")
+                        }
+                    }
+                }
+            }
+            
+            // Paso 2: Completar estaciones con ROTACIÓN ALEATORIA CON PORCENTAJES
             workstations.filter { it.isActive }.forEach { workstation ->
                 val currentAssigned = assignments.count { it.workstation_id == workstation.id }
                 val needed = workstation.requiredWorkers - currentAssigned
@@ -492,25 +567,40 @@ class NewRotationService(private val context: Context) {
                 android.util.Log.d("NewRotationService", "  Requeridos: ${workstation.requiredWorkers}, Asignados: $currentAssigned, Necesarios: $needed")
                 
                 if (needed > 0) {
+                    // ✨ ROTACIÓN BALANCEADA CON PORCENTAJES
+                    // Obtener candidatos elegibles
                     val candidates = capabilities.filter { 
                         it.workstation_id == workstation.id && 
                         it.canBeAssigned() &&
                         workersWithStations.contains(it.worker_id) &&
                         !assignedWorkers.contains(it.worker_id)
-                    }.sortedByDescending { it.calculateSuitabilityScore() }
+                    }
                     
                     android.util.Log.d("NewRotationService", "  Candidatos disponibles: ${candidates.size}")
                     
-                    candidates.take(needed).forEach { candidate ->
-                        assignments.add(RotationAssignment(
-                            worker_id = candidate.worker_id,
-                            workstation_id = workstation.id,
-                            rotation_session_id = sessionId,
-                            rotation_type = rotationType,
-                            priority = if (candidate.can_train) 2 else 3
-                        ))
-                        assignedWorkers.add(candidate.worker_id)
-                        android.util.Log.d("NewRotationService", "  ✅ Trabajador asignado: Worker ${candidate.worker_id}")
+                    if (candidates.isNotEmpty()) {
+                        // Calcular probabilidad por candidato: 100% / N candidatos
+                        val totalCandidates = candidates.size
+                        val probabilityPerCandidate = 100.0 / totalCandidates
+                        
+                        android.util.Log.d("NewRotationService", "  🎲 Rotación balanceada:")
+                        android.util.Log.d("NewRotationService", "    • Candidatos: $totalCandidates")
+                        android.util.Log.d("NewRotationService", "    • Probabilidad por candidato: ${probabilityPerCandidate.toInt()}%")
+                        
+                        // Mezclar aleatoriamente y seleccionar los necesarios
+                        val selectedCandidates = candidates.shuffled().take(needed)
+                        
+                        selectedCandidates.forEach { candidate ->
+                            assignments.add(RotationAssignment(
+                                worker_id = candidate.worker_id,
+                                workstation_id = workstation.id,
+                                rotation_session_id = sessionId,
+                                rotation_type = rotationType,
+                                priority = if (candidate.can_train) 2 else 3
+                            ))
+                            assignedWorkers.add(candidate.worker_id)
+                            android.util.Log.d("NewRotationService", "  ✅ Trabajador asignado (aleatorio): Worker ${candidate.worker_id}")
+                        }
                     }
                     
                     if (candidates.size < needed) {
