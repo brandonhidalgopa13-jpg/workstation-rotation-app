@@ -1703,6 +1703,12 @@ class SqlRotationViewModel(
     
     /**
      * Crea un plan de rotación específico para un trabajador.
+     * CORREGIDO: Usa rotación aleatoria con porcentajes equitativos.
+     * 
+     * SISTEMA DE PROBABILIDADES:
+     * - 2 estaciones asignadas = 50% probabilidad cada una
+     * - 3 estaciones asignadas = 33.3% probabilidad cada una
+     * - N estaciones asignadas = 100/N % probabilidad cada una
      */
     private fun createWorkerRotationPlan(
         worker: Worker,
@@ -1712,8 +1718,8 @@ class SqlRotationViewModel(
         secondHalfAssignments: Map<Long, List<Worker>>
     ): Pair<Long?, Long?> {
         
-        // Calcular necesidad de cada estación
-        val stationNeeds = eligibleStations.map { stationId ->
+        // Filtrar solo estaciones que tienen espacio disponible
+        val availableStations = eligibleStations.mapNotNull { stationId ->
             val station = workstations.find { it.id == stationId }
             if (station != null) {
                 val firstCount = firstHalfAssignments[stationId]?.size ?: 0
@@ -1721,25 +1727,61 @@ class SqlRotationViewModel(
                 val firstNeed = station.requiredWorkers - firstCount
                 val secondNeed = station.requiredWorkers - secondCount
                 
-                Triple(stationId, firstNeed, secondNeed)
-            } else {
-                Triple(stationId, 0, 0)
-            }
-        }.filter { it.second > 0 || it.third > 0 }
+                // Solo incluir si hay espacio en al menos una rotación
+                if (firstNeed > 0 || secondNeed > 0) {
+                    Triple(stationId, firstNeed, secondNeed)
+                } else null
+            } else null
+        }
         
-        if (stationNeeds.size >= 2) {
-            // Ordenar por necesidad y prioridad
-            val sortedNeeds = stationNeeds.sortedWith(
-                compareByDescending<Triple<Long, Int, Int>> { 
-                    workstations.find { ws -> ws.id == it.first }?.isPriority ?: false 
-                }.thenByDescending { it.second + it.third }
-            )
+        if (availableStations.size >= 2) {
+            // ✨ ROTACIÓN BALANCEADA CON PORCENTAJES
+            // Cada estación tiene la misma probabilidad: 100% / N estaciones
+            val totalStations = availableStations.size
+            val probabilityPerStation = 100.0 / totalStations
             
-            val firstChoice = sortedNeeds[0]
-            val secondChoice = sortedNeeds[1]
+            println("SQL_DEBUG: 🎲 Rotación balanceada para ${worker.name}:")
+            println("SQL_DEBUG:   • Estaciones disponibles: $totalStations")
+            println("SQL_DEBUG:   • Probabilidad por estación: ${probabilityPerStation.toInt()}%")
             
-            // Asignar a diferentes estaciones para rotación verdadera
-            return Pair(firstChoice.first, secondChoice.first)
+            // Mezclar aleatoriamente las estaciones disponibles
+            val shuffledStations = availableStations.shuffled()
+            
+            // Seleccionar dos estaciones DIFERENTES aleatoriamente
+            var firstStation: Triple<Long, Int, Int>? = null
+            var secondStation: Triple<Long, Int, Int>? = null
+            
+            // Primera estación: seleccionar aleatoriamente entre las que tienen espacio en primera rotación
+            val firstRotationStations = shuffledStations.filter { it.second > 0 }
+            if (firstRotationStations.isNotEmpty()) {
+                firstStation = firstRotationStations.random()
+            }
+            
+            // Segunda estación: seleccionar aleatoriamente entre las que tienen espacio en segunda rotación
+            // y que sean DIFERENTES a la primera estación
+            val secondRotationStations = shuffledStations.filter { 
+                it.third > 0 && it.first != firstStation?.first 
+            }
+            if (secondRotationStations.isNotEmpty()) {
+                secondStation = secondRotationStations.random()
+            } else {
+                // Si no hay estaciones diferentes disponibles, buscar cualquiera con espacio
+                val anyAvailable = shuffledStations.filter { 
+                    it.third > 0 
+                }
+                if (anyAvailable.isNotEmpty()) {
+                    secondStation = anyAvailable.random()
+                }
+            }
+            
+            if (firstStation != null && secondStation != null) {
+                val firstName = workstations.find { it.id == firstStation.first }?.name ?: "?"
+                val secondName = workstations.find { it.id == secondStation.first }?.name ?: "?"
+                
+                println("SQL_DEBUG:   ✅ Asignado: $firstName (1ª) ↔ $secondName (2ª)")
+                
+                return Pair(firstStation.first, secondStation.first)
+            }
         }
         
         return Pair(null, null)
@@ -1884,13 +1926,19 @@ class SqlRotationViewModel(
     
     /**
      * Crea un plan de rotación donde cada trabajador va a estaciones diferentes.
+     * CORREGIDO: Usa rotación aleatoria con porcentajes equitativos.
+     * 
+     * SISTEMA DE PROBABILIDADES:
+     * - 2 estaciones asignadas = 50% probabilidad cada una
+     * - 3 estaciones asignadas = 33.3% probabilidad cada una
+     * - N estaciones asignadas = 100/N % probabilidad cada una
      */
     private fun createRotationPlan(
         workers: List<Worker>,
         workstations: List<Workstation>,
         workerStationMap: Map<Long, List<Long>>
     ): Map<Long, Pair<Long?, Long?>> {
-        println("SQL_DEBUG: === CREANDO PLAN DE ROTACIÓN ===")
+        println("SQL_DEBUG: === CREANDO PLAN DE ROTACIÓN CON PORCENTAJES ===")
         
         val rotationPlan = mutableMapOf<Long, Pair<Long?, Long?>>()
         
@@ -1898,19 +1946,45 @@ class SqlRotationViewModel(
             val eligibleStations = workerStationMap[worker.id] ?: emptyList()
             
             if (eligibleStations.size >= 2) {
-                // Trabajador puede rotar entre al menos 2 estaciones
-                val firstStation = eligibleStations[0]
-                val secondStation = eligibleStations[1]
+                // ✨ ROTACIÓN BALANCEADA CON PORCENTAJES
+                // Cada estación tiene la misma probabilidad: 100% / N estaciones
+                val totalStations = eligibleStations.size
+                val probabilityPerStation = 100.0 / totalStations
+                
+                println("SQL_DEBUG: 🎲 Rotación balanceada para ${worker.name}:")
+                println("SQL_DEBUG:   • Estaciones disponibles: $totalStations")
+                println("SQL_DEBUG:   • Probabilidad por estación: ${probabilityPerStation.toInt()}%")
+                
+                // Mezclar aleatoriamente las estaciones disponibles
+                val shuffledStations = eligibleStations.shuffled()
+                
+                // Seleccionar dos estaciones DIFERENTES aleatoriamente
+                val firstStation = shuffledStations[0]
+                val secondStation = if (shuffledStations.size > 1) {
+                    // Asegurar que la segunda estación sea diferente a la primera
+                    shuffledStations.find { it != firstStation } ?: shuffledStations[1]
+                } else {
+                    shuffledStations[0] // Si solo hay una, usar la misma
+                }
+                
                 rotationPlan[worker.id] = Pair(firstStation, secondStation)
                 
-                println("SQL_DEBUG: 🔄 ${worker.name}: Estación $firstStation → Estación $secondStation")
+                val firstName = workstations.find { it.id == firstStation }?.name ?: "?"
+                val secondName = workstations.find { it.id == secondStation }?.name ?: "?"
+                
+                if (firstStation != secondStation) {
+                    println("SQL_DEBUG:   ✅ Rotación: $firstName (1ª) ↔ $secondName (2ª)")
+                } else {
+                    println("SQL_DEBUG:   📍 Fijo: $firstName (solo una estación disponible)")
+                }
                 
             } else if (eligibleStations.size == 1) {
                 // Trabajador solo puede trabajar en una estación (permanece fijo)
                 val onlyStation = eligibleStations[0]
                 rotationPlan[worker.id] = Pair(onlyStation, onlyStation)
                 
-                println("SQL_DEBUG: 📍 ${worker.name}: Fijo en estación $onlyStation (solo una opción)")
+                val stationName = workstations.find { it.id == onlyStation }?.name ?: "?"
+                println("SQL_DEBUG: 📍 ${worker.name}: Fijo en $stationName (solo una opción)")
                 
             } else {
                 // Trabajador sin estaciones asignadas
