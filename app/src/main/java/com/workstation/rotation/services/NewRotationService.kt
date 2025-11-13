@@ -597,12 +597,19 @@ class NewRotationService(private val context: Context) {
             // Obtener TODAS las asignaciones previas de esta sesión (ambos tipos de rotación)
             // para evitar que los trabajadores se queden en las mismas estaciones
             val allPreviousAssignments = assignmentDao.getBySession(sessionId)
-            val previousAssignmentMap = allPreviousAssignments
+            
+            // ✅ CORRECCIÓN v4.0.20: Usar Set de Pares en lugar de Map
+            // Esto permite detectar TODAS las combinaciones trabajador-estación previas
+            val previousAssignments = allPreviousAssignments
                 .filter { it.is_active }
-                .associate { it.worker_id to it.workstation_id }
+                .map { Pair(it.worker_id, it.workstation_id) }
+                .toSet()
             
             android.util.Log.d("NewRotationService", "📊 Asignaciones previas encontradas (todas las rotaciones): ${allPreviousAssignments.size}")
-            android.util.Log.d("NewRotationService", "📊 Mapa de asignaciones previas: $previousAssignmentMap")
+            android.util.Log.d("NewRotationService", "📊 Pares trabajador-estación previos: ${previousAssignments.size}")
+            previousAssignments.take(10).forEach { (workerId, workstationId) ->
+                android.util.Log.d("NewRotationService", "  • Worker $workerId -> Workstation $workstationId")
+            }
             
             workstations.filter { it.isActive }.forEach { workstation ->
                 val currentAssigned = assignments.count { it.workstation_id == workstation.id }
@@ -627,12 +634,13 @@ class NewRotationService(private val context: Context) {
                     // Separar candidatos en dos grupos:
                     // 1. Trabajadores que NO estuvieron en esta estación antes (PRIORIDAD ALTA)
                     // 2. Trabajadores que SÍ estuvieron en esta estación antes (PRIORIDAD BAJA)
+                    // ✅ CORRECCIÓN v4.0.20: Usar Set.contains() en lugar de Map
                     val candidatesNotHereBefore = allCandidates.filter { capability ->
-                        previousAssignmentMap[capability.worker_id] != workstation.id
+                        !previousAssignments.contains(Pair(capability.worker_id, workstation.id))
                     }
                     
                     val candidatesHereBefore = allCandidates.filter { capability ->
-                        previousAssignmentMap[capability.worker_id] == workstation.id
+                        previousAssignments.contains(Pair(capability.worker_id, workstation.id))
                     }
                     
                     android.util.Log.d("NewRotationService", "  • Candidatos totales: ${allCandidates.size}")
@@ -671,7 +679,8 @@ class NewRotationService(private val context: Context) {
                         
                         selectedCandidates.forEach { candidate ->
                             val worker = workers.find { it.id == candidate.worker_id }
-                            val wasHereBefore = previousAssignmentMap[candidate.worker_id] == workstation.id
+                            // ✅ CORRECCIÓN v4.0.20: Verificar correctamente si estuvo aquí antes
+                            val wasHereBefore = previousAssignments.contains(Pair(candidate.worker_id, workstation.id))
                             
                             assignments.add(RotationAssignment(
                                 worker_id = candidate.worker_id,
@@ -700,6 +709,23 @@ class NewRotationService(private val context: Context) {
             android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
             android.util.Log.d("NewRotationService", "✅ Total de asignaciones creadas: ${assignments.size}")
             android.util.Log.d("NewRotationService", "✅ Trabajadores únicos asignados: ${assignedWorkers.size}")
+            
+            // ✅ NUEVO v4.0.20: Verificar rotación por trabajador
+            android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
+            android.util.Log.d("NewRotationService", "📊 VERIFICACIÓN DE ROTACIÓN:")
+            assignedWorkers.forEach { workerId ->
+                val worker = workers.find { it.id == workerId }
+                val assignment = assignments.find { it.worker_id == workerId }
+                val workstation = workstations.find { it.id == assignment?.workstation_id }
+                
+                val wasHereBefore = previousAssignments.contains(
+                    Pair(workerId, assignment?.workstation_id ?: 0)
+                )
+                
+                val status = if (wasHereBefore) "🔁 REPETIDO" else "🆕 NUEVO"
+                android.util.Log.d("NewRotationService", 
+                    "  $status ${worker?.name ?: "Worker $workerId"} → ${workstation?.name ?: "Estación ${assignment?.workstation_id}"}")
+            }
             android.util.Log.d("NewRotationService", "═══════════════════════════════════════")
             
             // Insertar todas las asignaciones
