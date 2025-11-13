@@ -37,24 +37,49 @@ class WorkerViewModel(
     val workersWithWorkstations = workerDao.getWorkersWithWorkstations().asLiveData()
     
     suspend fun insertWorkerWithWorkstations(worker: Worker, workstationIds: List<Long>) {
-        android.util.Log.d("WorkerViewModel", "=== CREANDO TRABAJADOR CON ESTACIONES ===")
+        android.util.Log.d("WorkerViewModel", "═══════════════════════════════════════════")
+        android.util.Log.d("WorkerViewModel", "🆕 CREANDO TRABAJADOR CON ESTACIONES")
+        android.util.Log.d("WorkerViewModel", "═══════════════════════════════════════════")
         android.util.Log.d("WorkerViewModel", "Trabajador: ${worker.name}")
+        android.util.Log.d("WorkerViewModel", "  • Es líder: ${worker.isLeader}")
+        android.util.Log.d("WorkerViewModel", "  • Estación de liderazgo: ${worker.leaderWorkstationId}")
+        android.util.Log.d("WorkerViewModel", "  • Tipo de liderazgo: ${worker.leadershipType}")
+        android.util.Log.d("WorkerViewModel", "  • Es entrenador: ${worker.isTrainer}")
+        android.util.Log.d("WorkerViewModel", "  • Es entrenado: ${worker.isTrainee}")
         android.util.Log.d("WorkerViewModel", "Estaciones a asignar: $workstationIds")
         
         val workerId = workerDao.insertWorker(worker)
-        android.util.Log.d("WorkerViewModel", "Trabajador creado con ID: $workerId")
+        android.util.Log.d("WorkerViewModel", "✅ Trabajador creado con ID: $workerId")
         
         // Insertar relaciones en worker_workstations (tabla legacy)
         workstationIds.forEach { workstationId ->
             workerDao.insertWorkerWorkstation(WorkerWorkstation(workerId, workstationId))
+            android.util.Log.d("WorkerViewModel", "  ✓ Relación creada: Worker $workerId -> Workstation $workstationId")
         }
-        android.util.Log.d("WorkerViewModel", "Relaciones worker_workstations creadas")
+        android.util.Log.d("WorkerViewModel", "✅ Relaciones worker_workstations creadas: ${workstationIds.size}")
         
-        // SINCRONIZACIÓN: Crear capacidades en worker_workstation_capabilities
+        // SINCRONIZACIÓN CRÍTICA: Crear capacidades en worker_workstation_capabilities
+        android.util.Log.d("WorkerViewModel", "🔄 Iniciando sincronización de capacidades...")
         syncWorkerCapabilities(workerId, workstationIds)
         
+        // Verificar que las capacidades se crearon correctamente
+        val createdCapabilities = capabilityDao.getByWorker(workerId)
+        val activeCapabilities = createdCapabilities.filter { it.is_active }
+        
+        android.util.Log.d("WorkerViewModel", "📊 Verificación de capacidades:")
+        android.util.Log.d("WorkerViewModel", "  • Capacidades totales: ${createdCapabilities.size}")
+        android.util.Log.d("WorkerViewModel", "  • Capacidades activas: ${activeCapabilities.size}")
+        android.util.Log.d("WorkerViewModel", "  • Estaciones asignadas: ${workstationIds.size}")
+        
+        if (activeCapabilities.size != workstationIds.size) {
+            android.util.Log.e("WorkerViewModel", "❌ ERROR: Desincronización detectada!")
+            android.util.Log.e("WorkerViewModel", "   Esperadas: ${workstationIds.size}, Creadas: ${activeCapabilities.size}")
+        } else {
+            android.util.Log.d("WorkerViewModel", "✅ Sincronización verificada correctamente")
+        }
+        
         android.util.Log.d("WorkerViewModel", "✅ Trabajador creado y sincronizado correctamente")
-        android.util.Log.d("WorkerViewModel", "==========================================")
+        android.util.Log.d("WorkerViewModel", "═══════════════════════════════════════════")
     }
     
     suspend fun updateWorkerWithWorkstations(worker: Worker, workstationIds: List<Long>) {
@@ -457,20 +482,30 @@ class WorkerViewModel(
             
             // Agregar nuevas capacidades
             workstationsToAdd.forEach { workstationId ->
+                // Determinar si esta estación es la estación de liderazgo
+                val isLeaderStation = worker.isLeader && worker.leaderWorkstationId == workstationId
+                
                 val capability = com.workstation.rotation.data.entities.WorkerWorkstationCapability(
                     worker_id = workerId,
                     workstation_id = workstationId,
                     competency_level = baseCompetencyLevel,
                     is_active = true,
                     is_certified = worker.isCertified,
-                    can_be_leader = worker.isLeader && worker.leaderWorkstationId == workstationId,
+                    can_be_leader = isLeaderStation,
                     can_train = worker.isTrainer,
                     certified_at = if (worker.isCertified) worker.certificationDate else null,
-                    notes = "Capacidad creada automáticamente al asignar estación"
+                    notes = if (isLeaderStation) {
+                        "Capacidad de liderazgo - Estación designada"
+                    } else {
+                        "Capacidad creada automáticamente al asignar estación"
+                    }
                 )
                 
                 capabilityDao.insert(capability)
-                android.util.Log.d("WorkerViewModel", "✅ Capacidad creada: Trabajador $workerId -> Estación $workstationId (Nivel: $baseCompetencyLevel)")
+                android.util.Log.d("WorkerViewModel", "✅ Capacidad creada: Trabajador $workerId -> Estación $workstationId")
+                android.util.Log.d("WorkerViewModel", "   • Nivel: $baseCompetencyLevel")
+                android.util.Log.d("WorkerViewModel", "   • Puede ser líder: $isLeaderStation")
+                android.util.Log.d("WorkerViewModel", "   • Puede entrenar: ${worker.isTrainer}")
             }
             
             // Desactivar capacidades que ya no aplican
