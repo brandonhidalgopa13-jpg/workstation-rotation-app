@@ -591,14 +591,18 @@ class NewRotationService(private val context: Context) {
                 }
             }
             
-            // Paso 2: Completar estaciones con ROTACIÓN INTELIGENTE CON HISTORIAL
+            // Paso 2: Completar estaciones con ROTACIÓN INTELIGENTE CON HISTORIAL GLOBAL
             android.util.Log.d("NewRotationService", "═══ PASO 2: COMPLETANDO ESTACIONES CON ROTACIÓN INTELIGENTE ═══")
             
-            // Obtener asignaciones previas de esta sesión para evitar repeticiones
-            val previousAssignments = assignmentDao.getBySessionAndType(sessionId, rotationType)
-            val previousAssignmentMap = previousAssignments.associate { it.worker_id to it.workstation_id }
+            // Obtener TODAS las asignaciones previas de esta sesión (ambos tipos de rotación)
+            // para evitar que los trabajadores se queden en las mismas estaciones
+            val allPreviousAssignments = assignmentDao.getBySession(sessionId)
+            val previousAssignmentMap = allPreviousAssignments
+                .filter { it.is_active }
+                .associate { it.worker_id to it.workstation_id }
             
-            android.util.Log.d("NewRotationService", "📊 Asignaciones previas encontradas: ${previousAssignments.size}")
+            android.util.Log.d("NewRotationService", "📊 Asignaciones previas encontradas (todas las rotaciones): ${allPreviousAssignments.size}")
+            android.util.Log.d("NewRotationService", "📊 Mapa de asignaciones previas: $previousAssignmentMap")
             
             workstations.filter { it.isActive }.forEach { workstation ->
                 val currentAssigned = assignments.count { it.workstation_id == workstation.id }

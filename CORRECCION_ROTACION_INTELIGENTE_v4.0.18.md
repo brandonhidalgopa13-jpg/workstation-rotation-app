@@ -2,7 +2,7 @@
 
 ## 🎯 Problema Identificado
 
-**Descripción**: Los trabajadores no rotaban realmente entre estaciones. Aunque el algoritmo usaba `shuffled()`, los trabajadores aparecían siempre en las mismas estaciones en cada generación de rotación.
+**Descripción**: Los trabajadores no rotaban realmente ENTRE ESTACIONES. Solo cambiaban de posición DENTRO de la misma estación. Aunque el algoritmo usaba `shuffled()` y consideraba historial, solo miraba el historial del MISMO TIPO de rotación (CURRENT o NEXT), no el historial GLOBAL de todas las rotaciones.
 
 **Ejemplo del problema**:
 ```
@@ -197,3 +197,48 @@ El algoritmo usa una estrategia de **dos niveles**:
 **Versión**: 4.0.18  
 **Fecha**: 12/11/2025  
 **Estado**: ✅ Implementado y Compilado
+
+
+## 🔧 Corrección Adicional (v4.0.18.1)
+
+### Problema Específico
+
+El algoritmo anterior consideraba solo las asignaciones previas del MISMO TIPO de rotación:
+```kotlin
+// ❌ INCORRECTO - Solo mira el mismo tipo
+val previousAssignments = assignmentDao.getBySessionAndType(sessionId, rotationType)
+```
+
+Esto causaba que:
+- Rotación 1 (CURRENT): Carlos → Anneling, Maritza → Anneling
+- Rotación 2 (NEXT): Maritza → Anneling, Carlos → Anneling
+- ❌ Ambos siguen en Anneling, solo cambiaron de posición!
+
+### Solución Implementada
+
+Ahora el algoritmo considera TODAS las asignaciones previas de la sesión, sin importar el tipo:
+```kotlin
+// ✅ CORRECTO - Mira todas las rotaciones previas
+val allPreviousAssignments = assignmentDao.getBySession(sessionId)
+val previousAssignmentMap = allPreviousAssignments
+    .filter { it.is_active }
+    .associate { it.worker_id to it.workstation_id }
+```
+
+Esto garantiza que:
+- Rotación 1 (CURRENT): Carlos → Anneling, Maritza → Forming
+- Rotación 2 (NEXT): Brandon → Anneling, Oscar → Forming
+- ✅ Los trabajadores rotan a DIFERENTES ESTACIONES!
+
+### Resultado Esperado
+
+Con esta corrección, cuando generas una nueva rotación:
+1. El algoritmo revisa TODAS las asignaciones previas (CURRENT y NEXT)
+2. Prioriza asignar trabajadores a estaciones donde NO han estado
+3. Los trabajadores rotan ENTRE ESTACIONES, no solo dentro de la misma
+
+---
+
+**Versión**: 4.0.18.1  
+**Fecha**: 12/11/2025  
+**Estado**: ✅ Corregido y Compilado
