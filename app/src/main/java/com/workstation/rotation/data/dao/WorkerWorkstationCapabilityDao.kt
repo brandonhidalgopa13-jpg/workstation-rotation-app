@@ -55,6 +55,12 @@ interface WorkerWorkstationCapabilityDao {
     @Query("SELECT * FROM worker_workstation_capabilities WHERE is_active = 1 ORDER BY updated_at DESC")
     fun getActiveCapabilitiesFlow(): Flow<List<WorkerWorkstationCapability>>
     
+    @Query("SELECT * FROM worker_workstation_capabilities ORDER BY updated_at DESC")
+    suspend fun getAllCapabilities(): List<WorkerWorkstationCapability>
+    
+    @Query("DELETE FROM worker_workstation_capabilities")
+    suspend fun deleteAll()
+    
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     // 👤 CONSULTAS POR TRABAJADOR
     // ═══════════════════════════════════════════════════════════════════════════════════════════

@@ -112,6 +112,12 @@
             android:exported="false"
             android:label="Analytics Avanzados" />
             
+        <activity
+            android:name=".DiagnosticActivity"
+            android:exported="false"
+            android:label="Diagnóstico del Sistema"
+            android:theme="@style/Theme.REWS" />
+            
         <!-- FileProvider para compartir archivos de respaldo -->
         <provider
             android:name="androidx.core.content.FileProvider"
