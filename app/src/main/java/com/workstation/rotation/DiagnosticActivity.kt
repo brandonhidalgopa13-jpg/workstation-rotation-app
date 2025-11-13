@@ -2,12 +2,15 @@ package com.workstation.rotation
 
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.workstation.rotation.data.database.AppDatabase
 import com.workstation.rotation.data.entities.WorkerWorkstationCapability
-import com.workstation.rotation.databinding.ActivityDiagnosticsBinding
 import kotlinx.coroutines.launch
 
 /**
@@ -24,8 +27,13 @@ import kotlinx.coroutines.launch
  */
 class DiagnosticActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityDiagnosticsBinding
     private lateinit var database: AppDatabase
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvResults: TextView
+    private lateinit var btnRunDiagnostic: Button
+    private lateinit var btnRepairSync: Button
+    private lateinit var btnActivateAll: Button
+    private lateinit var btnResetCapabilities: Button
     
     private val workerDao by lazy { database.workerDao() }
     private val workstationDao by lazy { database.workstationDao() }
@@ -33,8 +41,7 @@ class DiagnosticActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityDiagnosticsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_diagnostics)
         
         database = AppDatabase.getDatabase(this)
         
@@ -46,37 +53,116 @@ class DiagnosticActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        setSupportActionBar(binding.toolbar)
+        val toolbar = findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Diagnóstico del Sistema"
         
-        binding.toolbar.setNavigationOnClickListener {
+        toolbar.setNavigationOnClickListener {
             finish()
         }
+        
+        // Inicializar vistas
+        progressBar = findViewById(R.id.progressBar)
+        
+        // Crear TextView para resultados si no existe
+        val scrollView = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollView)
+        val container = scrollView.getChildAt(0) as LinearLayout
+        
+        // Buscar o crear TextView de resultados
+        tvResults = TextView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 16, 0, 0)
+            }
+            typeface = android.graphics.Typeface.MONOSPACE
+            textSize = 12f
+            setPadding(16, 16, 16, 16)
+        }
+        container.addView(tvResults)
+        
+        // Crear botones
+        val buttonContainer = LinearLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            orientation = LinearLayout.VERTICAL
+            setPadding(0, 16, 0, 16)
+        }
+        
+        btnRunDiagnostic = Button(this).apply {
+            text = "🔍 Ejecutar Diagnóstico"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 8, 0, 8)
+            }
+        }
+        
+        btnRepairSync = Button(this).apply {
+            text = "🔧 Reparar Sincronización"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 8, 0, 8)
+            }
+        }
+        
+        btnActivateAll = Button(this).apply {
+            text = "✅ Activar Todas las Capacidades"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 8, 0, 8)
+            }
+        }
+        
+        btnResetCapabilities = Button(this).apply {
+            text = "🔄 Resetear Capacidades"
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 8, 0, 8)
+            }
+        }
+        
+        buttonContainer.addView(btnRunDiagnostic)
+        buttonContainer.addView(btnRepairSync)
+        buttonContainer.addView(btnActivateAll)
+        buttonContainer.addView(btnResetCapabilities)
+        
+        container.addView(buttonContainer, 0)
     }
 
     private fun setupClickListeners() {
-        binding.btnRunDiagnostic.setOnClickListener {
+        btnRunDiagnostic.setOnClickListener {
             runDiagnostic()
         }
         
-        binding.btnRepairSync.setOnClickListener {
+        btnRepairSync.setOnClickListener {
             repairSynchronization()
         }
         
-        binding.btnActivateAll.setOnClickListener {
+        btnActivateAll.setOnClickListener {
             activateAllCapabilities()
         }
         
-        binding.btnResetCapabilities.setOnClickListener {
+        btnResetCapabilities.setOnClickListener {
             showResetConfirmation()
         }
     }
 
     private fun runDiagnostic() {
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
-            binding.tvResults.text = "Ejecutando diagnóstico...\n\n"
+            progressBar.visibility = View.VISIBLE
+            tvResults.text = "Ejecutando diagnóstico...\n\n"
             
             try {
                 val report = StringBuilder()
@@ -210,19 +296,19 @@ class DiagnosticActivity : AppCompatActivity() {
                     report.append("  porque no tienen capacidades activas y asignables\n")
                 }
                 
-                binding.tvResults.text = report.toString()
+                tvResults.text = report.toString()
                 
             } catch (e: Exception) {
-                binding.tvResults.text = "❌ Error en diagnóstico:\n${e.message}\n\n${e.stackTraceToString()}"
+                tvResults.text = "❌ Error en diagnóstico:\n${e.message}\n\n${e.stackTraceToString()}"
             } finally {
-                binding.progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
         }
     }
 
     private fun repairSynchronization() {
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
             
             try {
                 val report = StringBuilder()
@@ -289,22 +375,22 @@ class DiagnosticActivity : AppCompatActivity() {
                 report.append("  • Capacidades reactivadas: $repaired\n")
                 report.append("═══════════════════════════════════════════════════════\n")
                 
-                binding.tvResults.text = report.toString()
+                tvResults.text = report.toString()
                 
                 // Ejecutar diagnóstico nuevamente
                 runDiagnostic()
                 
             } catch (e: Exception) {
-                binding.tvResults.text = "❌ Error en reparación:\n${e.message}"
+                tvResults.text = "❌ Error en reparación:\n${e.message}"
             } finally {
-                binding.progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
         }
     }
 
     private fun activateAllCapabilities() {
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
             
             try {
                 val allCapabilities = capabilityDao.getAllCapabilities()
@@ -320,16 +406,16 @@ class DiagnosticActivity : AppCompatActivity() {
                     activated++
                 }
                 
-                binding.tvResults.text = "✅ Activadas $activated capacidades\n\n" +
+                tvResults.text = "✅ Activadas $activated capacidades\n\n" +
                                         "Ejecutando diagnóstico nuevamente..."
                 
                 // Ejecutar diagnóstico nuevamente
                 runDiagnostic()
                 
             } catch (e: Exception) {
-                binding.tvResults.text = "❌ Error al activar capacidades:\n${e.message}"
+                tvResults.text = "❌ Error al activar capacidades:\n${e.message}"
             } finally {
-                binding.progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
         }
     }
@@ -347,7 +433,7 @@ class DiagnosticActivity : AppCompatActivity() {
 
     private fun resetAllCapabilities() {
         lifecycleScope.launch {
-            binding.progressBar.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
             
             try {
                 val report = StringBuilder()
@@ -397,15 +483,15 @@ class DiagnosticActivity : AppCompatActivity() {
                 report.append("  • Capacidades recreadas: $created\n")
                 report.append("═══════════════════════════════════════════════════════\n")
                 
-                binding.tvResults.text = report.toString()
+                tvResults.text = report.toString()
                 
                 // Ejecutar diagnóstico nuevamente
                 runDiagnostic()
                 
             } catch (e: Exception) {
-                binding.tvResults.text = "❌ Error en reset:\n${e.message}"
+                tvResults.text = "❌ Error en reset:\n${e.message}"
             } finally {
-                binding.progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
             }
         }
     }
