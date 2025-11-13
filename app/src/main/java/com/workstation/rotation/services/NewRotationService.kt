@@ -591,8 +591,14 @@ class NewRotationService(private val context: Context) {
                 }
             }
             
-            // Paso 2: Completar estaciones con ROTACIÓN ALEATORIA MEJORADA
-            android.util.Log.d("NewRotationService", "═══ PASO 2: COMPLETANDO ESTACIONES ═══")
+            // Paso 2: Completar estaciones con ROTACIÓN INTELIGENTE CON HISTORIAL
+            android.util.Log.d("NewRotationService", "═══ PASO 2: COMPLETANDO ESTACIONES CON ROTACIÓN INTELIGENTE ═══")
+            
+            // Obtener asignaciones previas de esta sesión para evitar repeticiones
+            val previousAssignments = assignmentDao.getBySessionAndType(sessionId, rotationType)
+            val previousAssignmentMap = previousAssignments.associate { it.worker_id to it.workstation_id }
+            
+            android.util.Log.d("NewRotationService", "📊 Asignaciones previas encontradas: ${previousAssignments.size}")
             
             workstations.filter { it.isActive }.forEach { workstation ->
                 val currentAssigned = assignments.count { it.workstation_id == workstation.id }
@@ -604,9 +610,9 @@ class NewRotationService(private val context: Context) {
                 android.util.Log.d("NewRotationService", "  • Necesarios: $needed")
                 
                 if (needed > 0) {
-                    // ✨ ROTACIÓN BALANCEADA CON PORCENTAJES
-                    // Obtener candidatos elegibles (trabajadores que pueden trabajar en esta estación)
-                    val candidates = capabilities.filter { capability ->
+                    // ✨ ROTACIÓN INTELIGENTE CON PRIORIDAD A TRABAJADORES QUE NO ESTUVIERON AQUÍ ANTES
+                    // Obtener candidatos elegibles
+                    val allCandidates = capabilities.filter { capability ->
                         capability.workstation_id == workstation.id && 
                         capability.is_active &&
                         capability.canBeAssigned() &&
@@ -614,22 +620,55 @@ class NewRotationService(private val context: Context) {
                         !assignedWorkers.contains(capability.worker_id)
                     }
                     
-                    android.util.Log.d("NewRotationService", "  • Candidatos disponibles: ${candidates.size}")
+                    // Separar candidatos en dos grupos:
+                    // 1. Trabajadores que NO estuvieron en esta estación antes (PRIORIDAD ALTA)
+                    // 2. Trabajadores que SÍ estuvieron en esta estación antes (PRIORIDAD BAJA)
+                    val candidatesNotHereBefore = allCandidates.filter { capability ->
+                        previousAssignmentMap[capability.worker_id] != workstation.id
+                    }
                     
-                    if (candidates.isNotEmpty()) {
-                        // Calcular probabilidad por candidato: 100% / N candidatos
-                        val totalCandidates = candidates.size
+                    val candidatesHereBefore = allCandidates.filter { capability ->
+                        previousAssignmentMap[capability.worker_id] == workstation.id
+                    }
+                    
+                    android.util.Log.d("NewRotationService", "  • Candidatos totales: ${allCandidates.size}")
+                    android.util.Log.d("NewRotationService", "  • Candidatos NUEVOS (no estuvieron aquí): ${candidatesNotHereBefore.size}")
+                    android.util.Log.d("NewRotationService", "  • Candidatos REPETIDOS (ya estuvieron aquí): ${candidatesHereBefore.size}")
+                    
+                    if (allCandidates.isNotEmpty()) {
+                        // ESTRATEGIA DE ROTACIÓN INTELIGENTE:
+                        // 1. Primero intentar asignar trabajadores que NO estuvieron aquí antes
+                        // 2. Si no hay suficientes, usar trabajadores que ya estuvieron aquí
+                        
+                        val selectedCandidates = mutableListOf<com.workstation.rotation.data.entities.WorkerWorkstationCapability>()
+                        
+                        // Paso 2.1: Seleccionar trabajadores nuevos (mezclar aleatoriamente)
+                        val newWorkersToAssign = candidatesNotHereBefore.shuffled().take(needed)
+                        selectedCandidates.addAll(newWorkersToAssign)
+                        
+                        android.util.Log.d("NewRotationService", "  🔄 Asignando ${newWorkersToAssign.size} trabajadores NUEVOS")
+                        
+                        // Paso 2.2: Si faltan trabajadores, usar los que ya estuvieron aquí
+                        val stillNeeded = needed - selectedCandidates.size
+                        if (stillNeeded > 0 && candidatesHereBefore.isNotEmpty()) {
+                            val repeatWorkersToAssign = candidatesHereBefore.shuffled().take(stillNeeded)
+                            selectedCandidates.addAll(repeatWorkersToAssign)
+                            android.util.Log.d("NewRotationService", "  ⚠️ Asignando ${repeatWorkersToAssign.size} trabajadores REPETIDOS (no hay suficientes nuevos)")
+                        }
+                        
+                        // Calcular probabilidad
+                        val totalCandidates = allCandidates.size
                         val probabilityPerCandidate = 100.0 / totalCandidates
                         
-                        android.util.Log.d("NewRotationService", "  🎲 Rotación balanceada:")
+                        android.util.Log.d("NewRotationService", "  🎲 Rotación inteligente:")
                         android.util.Log.d("NewRotationService", "    • Total candidatos: $totalCandidates")
                         android.util.Log.d("NewRotationService", "    • Probabilidad por candidato: ${probabilityPerCandidate.toInt()}%")
-                        
-                        // Mezclar aleatoriamente y seleccionar los necesarios
-                        val selectedCandidates = candidates.shuffled().take(needed)
+                        android.util.Log.d("NewRotationService", "    • Prioridad: NUEVOS primero, REPETIDOS después")
                         
                         selectedCandidates.forEach { candidate ->
                             val worker = workers.find { it.id == candidate.worker_id }
+                            val wasHereBefore = previousAssignmentMap[candidate.worker_id] == workstation.id
+                            
                             assignments.add(RotationAssignment(
                                 worker_id = candidate.worker_id,
                                 workstation_id = workstation.id,
@@ -638,14 +677,16 @@ class NewRotationService(private val context: Context) {
                                 priority = if (candidate.can_train) 2 else 3
                             ))
                             assignedWorkers.add(candidate.worker_id)
-                            android.util.Log.d("NewRotationService", "  ✅ Asignado: ${worker?.name ?: "Worker ${candidate.worker_id}"} (Prioridad: ${if (candidate.can_train) 2 else 3})")
+                            
+                            val statusIcon = if (wasHereBefore) "🔁" else "🆕"
+                            android.util.Log.d("NewRotationService", "  ✅ $statusIcon Asignado: ${worker?.name ?: "Worker ${candidate.worker_id}"} (${if (wasHereBefore) "REPETIDO" else "NUEVO"})")
                         }
                     } else {
                         android.util.Log.w("NewRotationService", "  ⚠️ No hay candidatos disponibles para esta estación")
                     }
                     
-                    if (candidates.size < needed) {
-                        android.util.Log.w("NewRotationService", "  ⚠️ ADVERTENCIA: Faltan ${needed - candidates.size} trabajadores para completar la estación")
+                    if (allCandidates.size < needed) {
+                        android.util.Log.w("NewRotationService", "  ⚠️ ADVERTENCIA: Faltan ${needed - allCandidates.size} trabajadores para completar la estación")
                     }
                 } else {
                     android.util.Log.d("NewRotationService", "  ✓ Estación completa")
