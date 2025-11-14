@@ -1,5 +1,7 @@
 package com.workstation.rotation
 
-actual fun getPlatform(): Platform = Platform.Desktop(
-    os = System.getProperty("os.name")
-)
+class DesktopPlatform : Platform {
+    override val name: String = "Desktop (${System.getProperty("os.name")})"
+}
+
+actual fun getPlatform(): Platform = DesktopPlatform()

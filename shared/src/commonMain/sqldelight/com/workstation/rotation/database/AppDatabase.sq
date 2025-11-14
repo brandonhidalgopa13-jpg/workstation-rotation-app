@@ -1,0 +1,171 @@
+import kotlin.Boolean;
+
+-- Tabla de Workers
+CREATE TABLE Worker (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    employeeId TEXT NOT NULL UNIQUE,
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    photoPath TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Tabla de Workstations
+CREATE TABLE Workstation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    description TEXT,
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    requiredWorkers INTEGER NOT NULL DEFAULT 1,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Tabla de Capacidades (relación Worker-Workstation)
+CREATE TABLE WorkerWorkstationCapability (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    workerId INTEGER NOT NULL,
+    workstationId INTEGER NOT NULL,
+    proficiencyLevel INTEGER NOT NULL DEFAULT 1,
+    certificationDate INTEGER,
+    FOREIGN KEY (workerId) REFERENCES Worker(id) ON DELETE CASCADE,
+    FOREIGN KEY (workstationId) REFERENCES Workstation(id) ON DELETE CASCADE,
+    UNIQUE(workerId, workstationId)
+);
+
+-- Tabla de Sesiones de Rotación
+CREATE TABLE RotationSession (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    startDate INTEGER NOT NULL,
+    endDate INTEGER,
+    isActive INTEGER AS Boolean NOT NULL DEFAULT 1,
+    createdAt INTEGER NOT NULL
+);
+
+-- Tabla de Asignaciones
+CREATE TABLE RotationAssignment (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    sessionId INTEGER NOT NULL,
+    workerId INTEGER NOT NULL,
+    workstationId INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    assignedAt INTEGER NOT NULL,
+    FOREIGN KEY (sessionId) REFERENCES RotationSession(id) ON DELETE CASCADE,
+    FOREIGN KEY (workerId) REFERENCES Worker(id) ON DELETE CASCADE,
+    FOREIGN KEY (workstationId) REFERENCES Workstation(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- QUERIES PARA WORKERS
+-- ============================================
+
+getAllWorkers:
+SELECT * FROM Worker ORDER BY name ASC;
+
+getActiveWorkers:
+SELECT * FROM Worker WHERE isActive = 1 ORDER BY name ASC;
+
+getWorkerById:
+SELECT * FROM Worker WHERE id = ?;
+
+insertWorker:
+INSERT INTO Worker(name, employeeId, isActive, photoPath, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateWorker:
+UPDATE Worker 
+SET name = ?, employeeId = ?, isActive = ?, photoPath = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteWorker:
+DELETE FROM Worker WHERE id = ?;
+
+-- ============================================
+-- QUERIES PARA WORKSTATIONS
+-- ============================================
+
+getAllWorkstations:
+SELECT * FROM Workstation ORDER BY name ASC;
+
+getActiveWorkstations:
+SELECT * FROM Workstation WHERE isActive = 1 ORDER BY name ASC;
+
+getWorkstationById:
+SELECT * FROM Workstation WHERE id = ?;
+
+insertWorkstation:
+INSERT INTO Workstation(name, code, description, isActive, requiredWorkers, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateWorkstation:
+UPDATE Workstation 
+SET name = ?, code = ?, description = ?, isActive = ?, requiredWorkers = ?, updatedAt = ?
+WHERE id = ?;
+
+deleteWorkstation:
+DELETE FROM Workstation WHERE id = ?;
+
+-- ============================================
+-- QUERIES PARA CAPACIDADES
+-- ============================================
+
+getCapabilitiesByWorker:
+SELECT * FROM WorkerWorkstationCapability WHERE workerId = ?;
+
+getCapabilitiesByWorkstation:
+SELECT * FROM WorkerWorkstationCapability WHERE workstationId = ?;
+
+insertCapability:
+INSERT INTO WorkerWorkstationCapability(workerId, workstationId, proficiencyLevel, certificationDate)
+VALUES (?, ?, ?, ?);
+
+deleteCapability:
+DELETE FROM WorkerWorkstationCapability WHERE id = ?;
+
+deleteCapabilitiesByWorker:
+DELETE FROM WorkerWorkstationCapability WHERE workerId = ?;
+
+-- ============================================
+-- QUERIES PARA ROTACIONES
+-- ============================================
+
+getAllSessions:
+SELECT * FROM RotationSession ORDER BY createdAt DESC;
+
+getActiveSession:
+SELECT * FROM RotationSession WHERE isActive = 1 LIMIT 1;
+
+getSessionById:
+SELECT * FROM RotationSession WHERE id = ?;
+
+insertSession:
+INSERT INTO RotationSession(name, startDate, endDate, isActive, createdAt)
+VALUES (?, ?, ?, ?, ?);
+
+updateSession:
+UPDATE RotationSession
+SET name = ?, startDate = ?, endDate = ?, isActive = ?
+WHERE id = ?;
+
+deleteSession:
+DELETE FROM RotationSession WHERE id = ?;
+
+-- ============================================
+-- QUERIES PARA ASIGNACIONES
+-- ============================================
+
+getAssignmentsBySession:
+SELECT * FROM RotationAssignment WHERE sessionId = ? ORDER BY position ASC;
+
+insertAssignment:
+INSERT INTO RotationAssignment(sessionId, workerId, workstationId, position, assignedAt)
+VALUES (?, ?, ?, ?, ?);
+
+deleteAssignmentsBySession:
+DELETE FROM RotationAssignment WHERE sessionId = ?;
+
+deleteAssignment:
+DELETE FROM RotationAssignment WHERE id = ?;
