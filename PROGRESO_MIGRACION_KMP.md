@@ -8,7 +8,7 @@
 ## Estado General
 
 ```
-Progreso: ██████░░░░░░░░░░░░░░░░░░░░░░░░░░ 25% (2/8 pasos)
+Progreso: ████████████░░░░░░░░░░░░░░░░░░░░ 37% (3/8 pasos)
 ```
 
 ---
@@ -51,16 +51,18 @@ Progreso: ██████░░░░░░░░░░░░░░░░░�
 
 ## Fases Pendientes ⏳
 
-### ⏳ Paso 3: Modelos de Dominio
-**Estado:** PENDIENTE  
-**Prioridad:** ALTA
+### ✅ Paso 3: Modelos de Dominio
+**Estado:** COMPLETADO  
+**Fecha:** 13 de noviembre de 2025  
+**Detalles:** Ver `PASO2_MODELOS_COMPLETADO.md`
 
 **Tareas:**
-- [ ] Crear `WorkerModel.kt`
-- [ ] Crear `WorkstationModel.kt`
-- [ ] Crear `CapabilityModel.kt`
-- [ ] Crear `RotationSessionModel.kt`
-- [ ] Crear `RotationAssignmentModel.kt`
+- [x] Crear `WorkerModel.kt`
+- [x] Crear `WorkstationModel.kt`
+- [x] Crear `CapabilityModel.kt`
+- [x] Crear `RotationSessionModel.kt`
+- [x] Crear `RotationAssignmentModel.kt`
+- [x] Crear `ModelMappers.kt` con funciones de conversión
 
 **Ubicación:** `shared/src/commonMain/kotlin/com/workstation/rotation/domain/models/`
 
