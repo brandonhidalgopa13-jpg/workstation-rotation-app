@@ -8,7 +8,7 @@
 ## Estado General
 
 ```
-Progreso: ████████████░░░░░░░░░░░░░░░░░░░░ 37% (3/8 pasos)
+Progreso: ████████████████░░░░░░░░░░░░░░░░ 50% (4/8 pasos)
 ```
 
 ---
@@ -66,16 +66,18 @@ Progreso: ████████████░░░░░░░░░░░�
 
 **Ubicación:** `shared/src/commonMain/kotlin/com/workstation/rotation/domain/models/`
 
-### ⏳ Paso 4: Repositorios
-**Estado:** PENDIENTE  
-**Prioridad:** ALTA
+### ✅ Paso 4: Repositorios
+**Estado:** COMPLETADO  
+**Fecha:** 13 de noviembre de 2025  
+**Detalles:** Ver `PASO3_REPOSITORIOS_COMPLETADO.md`
 
 **Tareas:**
-- [ ] Crear `WorkerRepository.kt`
-- [ ] Crear `WorkstationRepository.kt`
-- [ ] Crear `CapabilityRepository.kt`
-- [ ] Crear `RotationRepository.kt`
-- [ ] Implementar mappers de entidades SQLDelight a modelos
+- [x] Crear `WorkerRepository.kt`
+- [x] Crear `WorkstationRepository.kt`
+- [x] Crear `CapabilityRepository.kt`
+- [x] Crear `RotationRepository.kt`
+- [x] Implementar Flow para reactividad
+- [x] Usar Dispatchers.Default para operaciones de BD
 
 **Ubicación:** `shared/src/commonMain/kotlin/com/workstation/rotation/domain/repository/`
 
