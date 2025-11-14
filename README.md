@@ -1,251 +1,247 @@
-# 🏭 WorkStation Rotation v4.0
+# 🔄 Workstation Rotation - Multiplataforma
 
-[![Android](https://img.shields.io/badge/Platform-Android-green.svg)](https://android.com)
-[![Kotlin](https://img.shields.io/badge/Language-Kotlin-blue.svg)](https://kotlinlang.org)
-[![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg)](https://android-arsenal.com/api?level=24)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-success.svg)](https://github.com/workstation-rotation/android)
+> Sistema inteligente de rotación de trabajadores en estaciones de trabajo  
+> **Ahora disponible para Android, iOS y PC**
 
-Una aplicación empresarial avanzada para la gestión inteligente de rotaciones de trabajadores en estaciones de trabajo, con análisis predictivo, dashboard ejecutivo y sistema de notificaciones inteligentes.
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9.21-blue.svg)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/Compose-1.5.11-green.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![License](https://img.shields.io/badge/License-Proprietary-red.svg)]()
 
-## 🚀 Características Principales
+## 🌟 Características
 
-### ✨ Nueva Arquitectura de Rotación v4.0
-- **Sistema de Capacidades Avanzado**: Gestión granular de competencias trabajador-estación
-- **Algoritmo de Asignación Inteligente**: Optimización automática basada en múltiples criterios
-- **Interfaz Drag & Drop**: Rotación visual e intuitiva con validación en tiempo real
-- **Sesiones de Rotación**: Gestión completa del ciclo de vida de rotaciones
+- ✅ **Multiplataforma**: Android, iOS, Windows, macOS, Linux
+- ✅ **UI Adaptativa**: Se adapta automáticamente a móvil, tablet y desktop
+- ✅ **Algoritmo Inteligente**: Rotación equitativa y optimizada
+- ✅ **Offline First**: Base de datos local, funciona sin internet
+- ✅ **Material Design 3**: Interfaz moderna y fluida
+- ✅ **Modo Oscuro**: Automático según preferencias del sistema
 
-### 📊 Analytics y Business Intelligence
-- **Dashboard Ejecutivo**: KPIs en tiempo real y métricas de rendimiento
-- **Análisis Predictivo**: Predicciones de carga de trabajo y optimización
-- **Detección de Patrones**: Identificación automática de tendencias de rotación
-- **Reportes Avanzados**: Generación automática de informes ejecutivos
+## 📱 Plataformas
 
-### 🔔 Sistema de Notificaciones Inteligentes
-- **Notificaciones Contextuales**: Alertas basadas en eventos y condiciones
-- **Programación Inteligente**: Notificaciones adaptativas según patrones de uso
-- **Escalamiento Automático**: Sistema de alertas por niveles de prioridad
-- **Configuración Granular**: Control total sobre tipos y frecuencia de notificaciones
+| Plataforma | Estado | Versión Mínima |
+|------------|--------|----------------|
+| 🤖 Android | ✅ Disponible | Android 7.0 (API 24) |
+| 💻 Desktop | ✅ Disponible | Windows 10, macOS 10.14, Ubuntu 20.04 |
+| 🍎 iOS | 🚧 En desarrollo | iOS 14.0+ |
 
-### 🎨 Experiencia de Usuario Avanzada
-- **Animaciones Fluidas**: Transiciones suaves y micro-interacciones
-- **Diseño Responsivo**: Adaptación automática a diferentes tamaños de pantalla
-- **Modo Oscuro**: Soporte completo para tema oscuro/claro
-- **Onboarding Interactivo**: Guía paso a paso para nuevos usuarios
+## 🚀 Inicio Rápido
 
-## 🛠️ Tecnologías Utilizadas
+### Requisitos
+- JDK 17 o superior
+- Android Studio (para Android)
+- Xcode (para iOS, solo en macOS)
 
-- **Kotlin** - Lenguaje de programación principal
-- **Android Jetpack** - Componentes de arquitectura moderna
-- **Room** - Base de datos local con migraciones automáticas
-- **Coroutines** - Programación asíncrona y concurrencia
-- **Material Design 3** - Diseño de interfaz moderna
-- **MPAndroidChart** - Gráficos y visualizaciones avanzadas
-- **WorkManager** - Tareas en segundo plano y sincronización
-
-## 📱 Capturas de Pantalla
-
-| Dashboard Principal | Nueva Rotación | Analytics | Notificaciones |
-|:---:|:---:|:---:|:---:|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Rotation](docs/screenshots/rotation.png) | ![Analytics](docs/screenshots/analytics.png) | ![Notifications](docs/screenshots/notifications.png) |
-
-## 🚀 Instalación Rápida
-
-### Requisitos del Sistema
-- Android 7.0 (API 24) o superior
-- 2GB RAM mínimo, 4GB recomendado
-- 100MB de almacenamiento libre
-
-### Instalación desde APK
+### Ejecutar Desktop
 ```bash
-# Descargar la última versión
-wget https://github.com/workstation-rotation/android/releases/latest/download/workstation-rotation-v4.0.apk
+# Windows
+run-desktop.bat
 
-# Instalar usando ADB
-adb install workstation-rotation-v4.0.apk
+# Linux/Mac
+./gradlew :desktopApp:run
 ```
 
-### Compilación desde Código Fuente
+### Instalar en Android
 ```bash
-# Clonar el repositorio
-git clone https://github.com/workstation-rotation/android.git
-cd android
+./gradlew :androidApp:installDebug
+```
 
-# Compilar y ejecutar
-./gradlew assembleDebug
-./gradlew installDebug
+### Compilar Todo
+```bash
+# Windows
+build-multiplatform.bat
+
+# Linux/Mac
+./gradlew build
 ```
 
 ## 📖 Documentación
 
-- **[📚 Documentación Completa](WORKSTATION_ROTATION_v4.0_DOCUMENTACION_COMPLETA.md)** - Guía completa de funcionalidades
-- **[🚀 Release Notes v4.0](RELEASE_NOTES_v4.0.0.md)** - Novedades y mejoras de la versión 4.0
-- **[🏗️ Arquitectura](ARCHITECTURE.md)** - Documentación técnica de la arquitectura
-- **[📋 Changelog](CHANGELOG.md)** - Historial completo de cambios
-- **[🔧 Guía de Instalación](INSTALLATION_GUIDE.md)** - Instrucciones detalladas de instalación
+### 🎯 Empezar Aquí
+1. **[Resumen Ejecutivo](RESUMEN_EJECUTIVO_MIGRACION_KMP.md)** - Visión general del proyecto
+2. **[Verificar Instalación](VERIFICAR_INSTALACION.md)** - Compilar y ejecutar
+3. **[Guía Rápida](GUIA_RAPIDA_KMP.md)** - Comandos y referencia
 
-## 🎮 Uso Rápido
+### 📚 Documentación Completa
+- [Índice de Documentación](INDICE_DOCUMENTACION_KMP.md) - Todos los documentos
+- [Guía de Migración](MIGRACION_KMP_v5.0.0.md) - Detalles técnicos
+- [Siguiente Paso](SIGUIENTE_PASO_DESARROLLO.md) - Continuar desarrollo
 
-### 1. Configuración Inicial
-```kotlin
-// La aplicación incluye datos de ejemplo para testing rápido
-DataInitializationService.initializeTestData()
-```
-
-### 2. Crear Nueva Rotación
-1. Abrir **"Nueva Rotación"** desde el menú principal
-2. Usar **drag & drop** para asignar trabajadores a estaciones
-3. El sistema **valida automáticamente** capacidades y restricciones
-4. **Confirmar** la rotación para aplicar cambios
-
-### 3. Ver Analytics
-1. Acceder al **Dashboard Ejecutivo**
-2. Revisar **KPIs en tiempo real**
-3. Generar **reportes personalizados**
-4. Exportar datos en **PDF, Excel o CSV**
-
-## 🏗️ Arquitectura del Proyecto
+## 🏗️ Arquitectura
 
 ```
-app/
-├── src/main/java/com/workstation/rotation/
-│   ├── data/                    # Capa de Datos
-│   │   ├── database/           # Room Database y configuración
-│   │   ├── dao/                # Data Access Objects
-│   │   ├── entities/           # Entidades de base de datos
-│   │   └── cloud/              # Sincronización en la nube
-│   ├── services/               # Servicios de Negocio
-│   │   ├── NewRotationService  # Lógica de rotación v4.0
-│   │   ├── AnalyticsService    # Análisis y métricas
-│   │   └── NotificationSystem  # Sistema de notificaciones
-│   ├── viewmodels/             # ViewModels (MVVM)
-│   ├── adapters/               # RecyclerView Adapters
-│   ├── animations/             # Animaciones y transiciones
-│   ├── analytics/              # Módulo de analytics avanzados
-│   ├── dashboard/              # Dashboard ejecutivo
-│   ├── notifications/          # Sistema de notificaciones
-│   └── utils/                  # Utilidades y helpers
-└── src/main/res/               # Recursos (layouts, strings, etc.)
+┌─────────────────────────────────────────┐
+│         Shared Module (90%)             │
+│  ┌───────────────────────────────────┐  │
+│  │  UI (Compose Multiplatform)       │  │
+│  └───────────────────────────────────┘  │
+│  ┌───────────────────────────────────┐  │
+│  │  Business Logic                   │  │
+│  └───────────────────────────────────┘  │
+│  ┌───────────────────────────────────┐  │
+│  │  Database (SQLDelight)            │  │
+│  └───────────────────────────────────┘  │
+└─────────────────────────────────────────┘
+         │           │           │
+    ┌────┴───┐  ┌────┴────┐  ┌──┴─────┐
+    │Android │  │ Desktop │  │  iOS   │
+    │  (5%)  │  │   (5%)  │  │  (5%)  │
+    └────────┘  └─────────┘  └────────┘
 ```
 
-## 📊 Métricas de Rendimiento
+## 🛠️ Tecnologías
 
-| Métrica | v3.1 | v4.0 | Mejora |
-|---------|------|------|--------|
-| Tiempo de Inicio | 4s | 2s | 50% ⬇️ |
-| Tiempo de Respuesta | 1s | 500ms | 50% ⬇️ |
-| Uso de Memoria | 200MB | 150MB | 25% ⬇️ |
-| Cobertura de Testing | 60% | 85% | 25% ⬆️ |
+- **Kotlin Multiplatform** 1.9.21
+- **Compose Multiplatform** 1.5.11
+- **SQLDelight** 2.0.1
+- **Coroutines** 1.7.3
+- **Material 3** Latest
 
-## 🧪 Testing
+## 📂 Estructura del Proyecto
 
-```bash
-# Ejecutar tests unitarios
-./gradlew test
-
-# Ejecutar tests de integración
-./gradlew connectedAndroidTest
-
-# Generar reporte de cobertura
-./gradlew jacocoTestReport
+```
+WorkstationRotation/
+├── shared/              # Código compartido (90%)
+│   ├── commonMain/     # Común a todas las plataformas
+│   ├── androidMain/    # Específico Android
+│   ├── iosMain/        # Específico iOS
+│   └── desktopMain/    # Específico Desktop
+├── androidApp/         # App Android
+├── desktopApp/         # App Desktop
+└── iosApp/            # App iOS (próximamente)
 ```
 
-## 🤝 Contribución
+## ✨ Funcionalidades
 
-¡Las contribuciones son bienvenidas! Por favor sigue estos pasos:
+### ✅ Implementado (v5.0.0-rc)
+- Gestión de trabajadores (CRUD completo)
+- Gestión de estaciones (CRUD completo)
+- Generación de rotación inteligente
+- Historial de rotaciones
+- Vista detallada de rotación con estadísticas
+- Exportación de rotaciones (Texto, CSV, Markdown)
+- Compartir rotaciones (Android)
+- UI adaptativa para móvil y desktop
+- Base de datos local
+- Navegación completa
+- 23 tests unitarios
 
-1. **Fork** el proyecto
-2. **Crea** una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. **Commit** tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** a la rama (`git push origin feature/AmazingFeature`)
-5. **Abre** un Pull Request
+### 🚧 En Desarrollo
+- Sistema de seguridad (login)
+- Sincronización en la nube
+- Notificaciones
+- App iOS completa
+- Publicación en stores
 
-### Guías de Contribución
-- Sigue las convenciones de código Kotlin
-- Incluye tests para nuevas funcionalidades
-- Actualiza la documentación según sea necesario
-- Usa commits descriptivos siguiendo [Conventional Commits](https://conventionalcommits.org/)
+## 🎨 Capturas de Pantalla
 
-## 🐛 Reportar Problemas
+### Desktop
+```
+┌─────────────────────────────────────┐
+│  Rotación de Estaciones             │
+├─────────────────────────────────────┤
+│  ┌──────┐  ┌──────┐  ┌──────┐      │
+│  │Trabaj│  │Estac.│  │Nueva │      │
+│  │adores│  │iones │  │Rotac.│      │
+│  └──────┘  └──────┘  └──────┘      │
+└─────────────────────────────────────┘
+```
 
-¿Encontraste un bug? ¡Ayúdanos a mejorarlo!
+### Móvil
+```
+┌──────────────┐
+│ Rotación     │
+├──────────────┤
+│ Trabajadores │
+│ Estaciones   │
+│ Nueva Rotac. │
+│ Historial    │
+└──────────────┘
+```
 
-1. **Busca** si el problema ya fue reportado en [Issues](https://github.com/workstation-rotation/android/issues)
-2. **Crea** un nuevo issue con:
-   - Descripción clara del problema
-   - Pasos para reproducir
-   - Versión de Android y dispositivo
-   - Screenshots si es aplicable
+## 🔄 Migración desde v4.x
 
-## 🔮 Roadmap
+La versión 5.0 es una reescritura completa usando Kotlin Multiplatform.
 
-### v4.1 (Q1 2026)
-- 🤖 **Machine Learning**: IA avanzada para predicciones
-- 🌐 **API REST**: Integración con sistemas externos
-- 🌍 **Multi-idioma**: Soporte internacional
-- 📱 **Progressive Web App**: Versión web
+**Cambios principales:**
+- Room → SQLDelight
+- XML → Compose
+- Solo Android → Multiplataforma
 
-### v4.2 (Q2 2026)
-- 🥽 **Realidad Aumentada**: Visualización AR
-- 🎤 **Comandos de Voz**: Control por voz
-- ⌚ **Wearables**: Soporte para smartwatches
-- 🔗 **Blockchain**: Registro inmutable
+Ver [Guía de Migración](MIGRACION_KMP_v5.0.0.md) para más detalles.
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crea una rama (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -am 'Agregar funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crea un Pull Request
+
+## 📊 Estado del Proyecto
+
+**Versión Actual:** 5.0.0-rc (Release Candidate)  
+**Progreso:** 65% completado
+
+- ✅ Arquitectura: 100%
+- ✅ Base de datos: 100%
+- ✅ UI Framework: 100%
+- ✅ Pantallas: 100%
+- ✅ Funciones básicas: 100%
+- ✅ Funciones avanzadas: 100%
+- ✅ Tests unitarios: 23 tests
+- ⏳ iOS: 30%
+
+## 📝 Changelog
+
+### v5.0.0-rc (2025-11-13)
+- ✨ Migración completa a Kotlin Multiplatform
+- ✨ Soporte para Desktop (Windows/Mac/Linux)
+- ✨ Nueva UI con Compose Multiplatform
+- ✨ Base de datos SQLDelight
+- ✨ UI adaptativa automática
+- ✨ Gestión de trabajadores completa
+- ✨ Gestión de estaciones completa
+- ✨ Generación de rotación inteligente
+- ✨ Historial de rotaciones
+- ✨ Vista detallada de rotación
+- ✨ Exportación en 3 formatos (Texto, CSV, Markdown)
+- ✨ Compartir rotaciones (Android)
+- ✨ 23 tests unitarios
+- ✨ Todas las funciones básicas y avanzadas
+
+### v4.1.0 (Anterior)
+- Ver [CHANGELOG.md](CHANGELOG.md) para historial completo
 
 ## 📞 Soporte
 
-### Canales de Soporte
-- **📧 Email**: support@workstationrotation.com
-- **📖 Documentación**: https://docs.workstationrotation.com
-- **💬 Community**: https://community.workstationrotation.com
-- **🐛 Issues**: https://github.com/workstation-rotation/android/issues
+- **Documentación:** [Índice completo](INDICE_DOCUMENTACION_KMP.md)
+- **Problemas:** Crear un issue en el repositorio
+- **Preguntas:** Consultar la documentación primero
 
-### FAQ
-**P: ¿Funciona sin conexión a internet?**  
-R: Sí, la aplicación funciona completamente offline y sincroniza cuando hay conexión.
+## 👥 Equipo
 
-**P: ¿Puedo importar datos existentes?**  
-R: Sí, soporta importación desde Excel, CSV y otros formatos comunes.
-
-**P: ¿Es compatible con tablets?**  
-R: Sí, está optimizada para tablets con layouts específicos para pantallas grandes.
+- Equipo de desarrollo Workstation Rotation
 
 ## 📄 Licencia
 
-Este proyecto está licenciado bajo la **Licencia MIT** - ver el archivo [LICENSE](LICENSE) para más detalles.
-
-```
-MIT License
-
-Copyright (c) 2025 WorkStation Rotation
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
-## 🏆 Reconocimientos
-
-- **Material Design** por las guías de diseño
-- **Android Jetpack** por los componentes de arquitectura
-- **MPAndroidChart** por las capacidades de gráficos
-- **Kotlin Team** por el excelente lenguaje de programación
-- **Community Contributors** por el feedback y mejoras continuas
+Este proyecto es privado y propietario.
 
 ---
 
-**⭐ Si te gusta este proyecto, ¡dale una estrella en GitHub!**
+## 🎯 Próximos Pasos
 
-**🚀 ¡Descarga WorkStation Rotation v4.0 y revoluciona la gestión de tu equipo de trabajo!**
+1. **Desarrolladores:** Lee [SIGUIENTE_PASO_DESARROLLO.md](SIGUIENTE_PASO_DESARROLLO.md)
+2. **Usuarios:** Descarga la última versión de [Releases]()
+3. **Contribuidores:** Revisa las [Issues abiertas]()
+
+## 🌟 ¿Por qué Kotlin Multiplatform?
+
+- **90% código compartido** entre plataformas
+- **Desarrollo más rápido** - Escribe una vez, funciona en todas partes
+- **Mejor rendimiento** - Código nativo en cada plataforma
+- **Mantenimiento reducido** - Un solo código base
+- **Futuro asegurado** - Tecnología respaldada por JetBrains y Google
 
 ---
 
-*Desarrollado con ❤️ para optimizar la productividad empresarial*
-
-**© 2025 WorkStation Rotation - Todos los derechos reservados**
+**Hecho con ❤️ usando Kotlin Multiplatform**

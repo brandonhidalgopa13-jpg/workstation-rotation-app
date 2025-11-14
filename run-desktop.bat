@@ -1,0 +1,3 @@
+@echo off
+echo Ejecutando Workstation Rotation Desktop...
+call gradlew :desktopApp:run
