@@ -12,7 +12,12 @@ actual class DatabaseDriverFactory {
         val databaseFile = File(databasePath, "workstation_rotation.db")
         
         val driver = JdbcSqliteDriver("jdbc:sqlite:${databaseFile.absolutePath}")
-        AppDatabase.Schema.create(driver)
+        
+        // Solo crear el esquema si la base de datos no existe
+        if (!databaseFile.exists() || databaseFile.length() == 0L) {
+            AppDatabase.Schema.create(driver)
+        }
+        
         return driver
     }
 }
