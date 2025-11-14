@@ -8,7 +8,7 @@
 ## Estado General
 
 ```
-Progreso: ████████████████░░░░░░░░░░░░░░░░ 50% (4/8 pasos)
+Progreso: ████████████████████░░░░░░░░░░░░ 62% (5/8 pasos)
 ```
 
 ---
@@ -81,16 +81,18 @@ Progreso: ████████████████░░░░░░░�
 
 **Ubicación:** `shared/src/commonMain/kotlin/com/workstation/rotation/domain/repository/`
 
-### ⏳ Paso 5: ViewModels Compartidos
-**Estado:** PENDIENTE  
-**Prioridad:** ALTA
+### ✅ Paso 5: ViewModels Compartidos
+**Estado:** COMPLETADO  
+**Fecha:** 13 de noviembre de 2025  
+**Detalles:** Ver `PASO4_VIEWMODELS_COMPLETADO.md`
 
 **Tareas:**
-- [ ] Crear `WorkerViewModel.kt`
-- [ ] Crear `WorkstationViewModel.kt`
-- [ ] Crear `RotationViewModel.kt`
-- [ ] Implementar StateFlow para estado reactivo
-- [ ] Gestión de coroutines
+- [x] Crear `WorkerViewModel.kt`
+- [x] Crear `WorkstationViewModel.kt`
+- [x] Crear `RotationViewModel.kt`
+- [x] Implementar StateFlow para estado reactivo
+- [x] Gestión de errores y loading
+- [x] Inyección de CoroutineScope
 
 **Ubicación:** `shared/src/commonMain/kotlin/com/workstation/rotation/presentation/viewmodels/`
 
